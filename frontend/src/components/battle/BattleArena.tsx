@@ -67,34 +67,34 @@ const PokemonBattleCard: React.FC<PokemonBattleCardProps> = ({
     <SlideIn 
       direction={position === 'left' ? 'left' : 'right'} 
       delay={0.3}
-      className="w-full max-w-md"
+      className="w-full"
     >
       <Card 
         className={`
-          relative transition-all duration-300 cursor-pointer group
+          relative transition-all duration-300 cursor-pointer group h-full
           ${isSelected ? 'ring-4 ring-blue-500 bg-blue-50 dark:bg-blue-950 scale-105' : ''}
           ${disabled ? 'opacity-50 cursor-not-allowed' : 'hover:shadow-2xl hover:scale-[1.02]'}
           ${showResults && pokemon.wins > 500 ? 'ring-2 ring-green-500' : ''}
         `}
         onClick={!disabled ? onSelect : undefined}
       >
-        <CardHeader className="text-center pb-2">
-          <div className="relative mx-auto">
+        <CardHeader className="text-center pb-4">
+          <div className="relative mx-auto mb-4">
             {pokemon.sprites?.front ? (
               <div className="relative">
                 <img 
                   src={pokemon.sprites.front} 
                   alt={pokemon.name}
-                  className="w-32 h-32 object-contain mx-auto drop-shadow-lg"
+                  className="w-40 h-40 md:w-48 md:h-48 lg:w-56 lg:h-56 object-contain mx-auto drop-shadow-2xl hover:scale-110 transition-transform duration-300"
                 />
                 {isSelected && (
-                  <div className="absolute -top-2 -right-2 w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
-                    <Crown className="h-4 w-4 text-white" />
+                  <div className="absolute -top-2 -right-2 w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center animate-bounce">
+                    <Crown className="h-5 w-5 text-white" />
                   </div>
                 )}
               </div>
             ) : (
-              <div className="w-32 h-32 bg-gray-200 dark:bg-gray-700 rounded-lg flex items-center justify-center mx-auto">
+              <div className="w-40 h-40 md:w-48 md:h-48 lg:w-56 lg:h-56 bg-gray-200 dark:bg-gray-700 rounded-lg flex items-center justify-center mx-auto">
                 <span className="text-gray-500 dark:text-gray-400 text-sm">
                   No Image
                 </span>
@@ -103,13 +103,13 @@ const PokemonBattleCard: React.FC<PokemonBattleCardProps> = ({
             
             <Badge 
               variant="secondary" 
-              className="absolute -top-2 -left-2 bg-white dark:bg-gray-800 border-2"
+              className="absolute -top-2 -left-2 bg-white dark:bg-gray-800 border-2 text-lg px-3 py-1"
             >
               Lv.{pokemon.level}
             </Badge>
           </div>
           
-          <CardTitle className="text-2xl font-bold capitalize text-center">
+          <CardTitle className="text-3xl md:text-4xl font-bold capitalize text-center">
             {pokemon.name}
           </CardTitle>
         </CardHeader>
@@ -117,11 +117,11 @@ const PokemonBattleCard: React.FC<PokemonBattleCardProps> = ({
         <CardContent className="space-y-4">
           {/* Types */}
           {pokemon.types && pokemon.types.length > 0 && (
-            <div className="flex gap-2 justify-center flex-wrap">
+            <div className="flex gap-3 justify-center flex-wrap">
               {pokemon.types.map((type) => (
                 <Badge
                   key={type}
-                  className={`${getTypeColor(type)} text-white font-medium capitalize px-3 py-1`}
+                  className={`${getTypeColor(type)} text-white font-bold capitalize px-4 py-2 text-base shadow-lg hover:scale-110 transition-transform`}
                 >
                   {type}
                 </Badge>
@@ -150,18 +150,22 @@ const PokemonBattleCard: React.FC<PokemonBattleCardProps> = ({
               onClick={onSelect}
               disabled={disabled}
               variant={isSelected ? "default" : "outline"}
-              className="w-full h-12 text-lg font-semibold"
+              className={`w-full h-14 text-lg font-bold transition-all ${
+                isSelected 
+                  ? 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700' 
+                  : 'hover:bg-gradient-to-r hover:from-blue-100 hover:to-purple-100 dark:hover:from-blue-900 dark:hover:to-purple-900'
+              }`}
               size="lg"
             >
               {isSelected ? (
                 <>
-                  <Crown className="mr-2 h-5 w-5" />
-                  Selected
+                  <Crown className="mr-2 h-6 w-6" />
+                  My Pick to Win!
                 </>
               ) : (
                 <>
-                  <Target className="mr-2 h-5 w-5" />
-                  Choose Winner
+                  <Target className="mr-2 h-6 w-6" />
+                  Choose This Fighter
                 </>
               )}
             </Button>
@@ -329,8 +333,9 @@ const BattleArena: React.FC = () => {
 
         {/* Battle Arena */}
         <FadeIn delay={0.4}>
-          <Card className="bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 shadow-2xl">
-            <CardContent className="p-8">
+          <Card className="bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 shadow-2xl overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-transparent to-purple-500/5 pointer-events-none" />
+            <CardContent className="p-6 md:p-8 lg:p-12 relative">
               {isLoading ? (
                 <div className="py-16">
                   <BattleLoading 
@@ -342,7 +347,20 @@ const BattleArena: React.FC = () => {
               ) : currentBattle ? (
                 <div className="space-y-8">
                   {/* Pokemon Battle */}
-                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-center">
+                  <div className="relative">
+                    {/* VS Badge for Mobile */}
+                    <div className="md:hidden text-center mb-4">
+                      <BounceIn delay={0.5}>
+                        <div className="bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-full w-16 h-16 flex items-center justify-center mx-auto shadow-lg">
+                          <span className="text-lg font-bold">VS</span>
+                        </div>
+                      </BounceIn>
+                      <div className="text-sm text-muted-foreground mt-2">
+                        {currentBattle.totalBattles} battle simulation
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-12 lg:gap-16 items-center justify-center max-w-6xl mx-auto">
                     {/* Pokemon 1 */}
                     <PokemonBattleCard
                       pokemon={currentBattle.pokemon1}
@@ -353,16 +371,13 @@ const BattleArena: React.FC = () => {
                       position="left"
                     />
 
-                    {/* VS Section */}
-                    <div className="text-center">
+                    {/* VS Badge - Positioned absolutely on larger screens */}
+                    <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 hidden md:block z-10">
                       <BounceIn delay={0.5}>
-                        <div className="bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-full w-24 h-24 flex items-center justify-center mx-auto mb-4 shadow-lg">
-                          <span className="text-2xl font-bold">VS</span>
+                        <div className="bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-full w-20 h-20 lg:w-24 lg:h-24 flex items-center justify-center shadow-2xl border-4 border-white dark:border-gray-800">
+                          <span className="text-xl lg:text-2xl font-bold">VS</span>
                         </div>
                       </BounceIn>
-                      <div className="text-sm text-muted-foreground">
-                        {currentBattle.totalBattles} battle simulation
-                      </div>
                     </div>
 
                     {/* Pokemon 2 */}
@@ -375,6 +390,14 @@ const BattleArena: React.FC = () => {
                       position="right"
                     />
                   </div>
+                  
+                  {/* Battle Info for Desktop */}
+                  <div className="hidden md:block text-center mt-4">
+                    <div className="text-sm text-muted-foreground">
+                      {currentBattle.totalBattles} battle simulation
+                    </div>
+                  </div>
+                </div>
 
                   {/* Action Buttons */}
                   <div className="text-center space-y-4">
