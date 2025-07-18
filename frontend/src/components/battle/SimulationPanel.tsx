@@ -90,7 +90,7 @@ const SimulationPanel: React.FC = () => {
               <BattleSimulationDisplay
                 pokemon1={currentBattle.pokemon1}
                 pokemon2={currentBattle.pokemon2}
-                simulationResults={[currentBattle.sampleBattle]}
+                simulationResults={currentBattle.sampleBattle ? [currentBattle.sampleBattle] : []}
                 isSimulating={isSimulating}
               />
             ) : (

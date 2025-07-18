@@ -26,7 +26,7 @@ import {
   IconSkull
 } from '@tabler/icons-react';
 
-interface BattleSimulationProps {
+interface BattleTesterProps {
   isExpanded: boolean;
   onToggleExpanded: () => void;
   pokemon1: any;
@@ -34,6 +34,7 @@ interface BattleSimulationProps {
   onSimulateBattle: () => void;
   simulation: any;
   isSimulating: boolean;
+  rightOffset?: number;
 }
 
 interface BattleTurn {
@@ -47,21 +48,16 @@ interface BattleTurn {
   effectiveness: 'super' | 'normal' | 'not very' | 'no';
 }
 
-interface BattleSimulation {
-  winner: string;
-  turns: BattleTurn[];
-  totalTurns: number;
-  duration: number;
-}
 
-const BattleSimulation: React.FC<BattleSimulationProps> = ({
+const BattleTester: React.FC<BattleTesterProps> = ({
   isExpanded,
   onToggleExpanded,
   pokemon1,
   pokemon2,
   onSimulateBattle,
   simulation,
-  isSimulating
+  isSimulating,
+  rightOffset = 420
 }) => {
   const theme = useMantineTheme();
   const { colorScheme } = useMantineColorScheme();
@@ -106,13 +102,13 @@ const BattleSimulation: React.FC<BattleSimulationProps> = ({
     <Box
       pos="fixed"
       top={60}
-      right={0}
+      right={rightOffset}
       h="calc(100vh - 60px)"
       style={{
         width: isExpanded ? '400px' : '60px',
-        transition: 'width 0.3s ease',
+        transition: 'width 0.3s ease, right 0.3s ease',
         borderLeft: `1px solid ${colorScheme === 'dark' ? theme.colors.dark[5] : theme.colors.gray[3]}`,
-        zIndex: 999,
+        zIndex: 998,
         boxShadow: 'var(--mantine-shadow-lg)',
         backgroundColor: colorScheme === 'dark' ? theme.colors.dark[7] : theme.white
       }}
@@ -139,7 +135,7 @@ const BattleSimulation: React.FC<BattleSimulationProps> = ({
                 <Group gap="sm">
                   <IconSwords size={20} color="var(--mantine-color-grape-6)" />
                   <Title order={4} c="grape.6">
-                    Battle Simulation
+                    Battle Tester
                   </Title>
                 </Group>
               </Collapse>
@@ -312,7 +308,7 @@ const BattleSimulation: React.FC<BattleSimulationProps> = ({
                   <Stack align="center" gap="md">
                     <IconSwords size={32} color="var(--mantine-color-gray-6)" />
                     <Text size="sm" c="dimmed" ta="center">
-                      Click the sword icon to simulate a single battle and see the turn-by-turn breakdown!
+                      Click the sword icon to test a single battle and see the turn-by-turn breakdown!
                     </Text>
                   </Stack>
                 </Card>
@@ -324,7 +320,7 @@ const BattleSimulation: React.FC<BattleSimulationProps> = ({
                   <Stack align="center" gap="md">
                     <Loader size="lg" />
                     <Text size="sm" c="dimmed" ta="center">
-                      Simulating battle...
+                      Testing battle...
                     </Text>
                   </Stack>
                 </Card>
@@ -351,4 +347,4 @@ const BattleSimulation: React.FC<BattleSimulationProps> = ({
   );
 };
 
-export default BattleSimulation;
+export default BattleTester;

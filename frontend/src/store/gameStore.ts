@@ -30,6 +30,8 @@ interface BattleHistoryEntry {
 interface GameStore extends GameState {
   // Additional state
   battleHistory: BattleHistoryEntry[];
+  currentPokemon1?: CompletePokemon;
+  currentPokemon2?: CompletePokemon;
   
   // Actions
   generateNewBattle: (battleSettings?: {
@@ -62,6 +64,8 @@ const initialState: GameState = {
 const initialGameStore = {
   ...initialState,
   battleHistory: [] as BattleHistoryEntry[],
+  currentPokemon1: undefined,
+  currentPokemon2: undefined,
 };
 
 export const useGameStore = create<GameStore>()(
@@ -344,6 +348,8 @@ export const useGameStore = create<GameStore>()(
             
             set({ 
               currentBattle: battleResult,
+              currentPokemon1: completePokemon1,
+              currentPokemon2: completePokemon2,
               isLoading: false,
               error: null 
             });

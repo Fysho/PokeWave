@@ -81,13 +81,13 @@ interface SingleBattleResult {
   totalTurns: number;
 }
 
-async function simulateSingleBattle(
+export async function simulateSingleBattle(
   pokemon1: CompletePokemon,
   pokemon2: CompletePokemon,
   generation: number
 ): Promise<SingleBattleResult> {
   try {
-    const battle = new Battle({ formatid: `gen${generation}customgame` });
+    const battle = new Battle({ formatid: `gen${generation}customgame` as any });
     
     // Create team strings using the pre-created Pokemon data
     const p1team = createTeamString(pokemon1);
@@ -136,7 +136,7 @@ async function simulateSingleBattle(
         if (line.includes('|-damage|')) {
           const parts = line.split('|');
           const pokemon = parts[2].includes('p1') ? 'p1' : 'p2';
-          const hpInfo = parts[3];
+          // const hpInfo = parts[3];
           events.push({
             turn: currentTurn,
             type: 'damage',
@@ -193,7 +193,7 @@ async function simulateSingleBattle(
     
     while (!battleEnded && turnCount < maxTurns) {
       turnCount++;
-      battle.log = [];
+      (battle as any).log = [];
       
       // Make random moves for both players
       const p1Active = battle.sides[0].active[0];
@@ -218,7 +218,7 @@ async function simulateSingleBattle(
       }
       
       // Parse the battle log for this turn
-      parseBattleLog(battle.log, turnCount);
+      parseBattleLog((battle as any).log, turnCount);
       
       if (battle.ended) {
         battleEnded = true;

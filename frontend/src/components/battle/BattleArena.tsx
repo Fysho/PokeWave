@@ -84,7 +84,6 @@ const PokemonBattleCard: React.FC<PokemonBattleCardProps> = ({
   const calculateSpriteSize = () => {
     if (guessPercentage === undefined || guessPercentage === null || showResults) return 320; // Default size when showing results (2x bigger)
     
-    const baseSize = 320; // 2x bigger (was 160)
     const minSize = 240; // 2x bigger (was 120)
     const maxSize = 400; // 2x bigger (was 200)
     

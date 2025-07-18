@@ -12,7 +12,9 @@ import {
 } from '@tabler/icons-react';
 import BattleSettings from '../settings/BattleSettings';
 import SimulationPanel from '../battle/SimulationPanel';
+import BattleTester from '../battle/BattleTester';
 import { useSettingsStore } from '../../store/settingsStore';
+import { useGameStore } from '../../store/gameStore';
 
 interface MainLayoutProps {
   children: React.ReactNode;
@@ -33,9 +35,16 @@ const MainLayout: React.FC<MainLayoutProps> = ({
     battleSettings, 
     isSettingsPanelExpanded, 
     isSimulationPanelExpanded,
+    isBattleTesterExpanded,
+    battleTesterSimulation,
+    isBattleTesterSimulating,
     setBattleSettings, 
-    toggleSettingsPanel
+    toggleSettingsPanel,
+    toggleBattleTester,
+    setBattleTesterSimulation,
+    setIsBattleTesterSimulating
   } = useSettingsStore();
+  const { currentBattle, currentPokemon1, currentPokemon2 } = useGameStore();
 
   const navigationItems = [
     { id: 'battle', label: 'Battle', icon: IconDeviceGamepad2, description: 'Predict Pokemon battles' },
@@ -60,6 +69,73 @@ const MainLayout: React.FC<MainLayoutProps> = ({
       {/* Battle Simulation Panel */}
       {activeTab === 'battle' && (
         <SimulationPanel />
+      )}
+
+      {/* Battle Tester Panel */}
+      {activeTab === 'battle' && (
+        <BattleTester
+          isExpanded={isBattleTesterExpanded}
+          onToggleExpanded={toggleBattleTester}
+          pokemon1={currentBattle?.pokemon1}
+          pokemon2={currentBattle?.pokemon2}
+          rightOffset={isSimulationPanelExpanded ? 420 : 60}
+          onSimulateBattle={async () => {
+            if (!currentPokemon1 || !currentPokemon2) return;
+            
+            setIsBattleTesterSimulating(true);
+            try {
+              // Import and use the single battle simulation
+              const { simulateSingleBattle } = await import('../../utils/mainBattleSimulation');
+              
+              const startTime = Date.now();
+              const result = await simulateSingleBattle(
+                currentPokemon1,
+                currentPokemon2,
+                battleSettings.generation
+              );
+              
+              // Format the result for the battle tester display
+              const formattedResult = {
+                winner: result.winner === 1 ? currentPokemon1.name : currentPokemon2.name,
+                totalTurns: result.totalTurns,
+                executionTime: Date.now() - startTime,
+                pokemon1: currentBattle.pokemon1,
+                pokemon2: currentBattle.pokemon2,
+                turns: result.events.map((event, index) => {
+                  if (event.type === 'move') {
+                    const attacker = event.pokemon === 'p1' ? currentPokemon1.name : currentPokemon2.name;
+                    const defender = event.pokemon === 'p1' ? currentPokemon2.name : currentPokemon1.name;
+                    
+                    // Find the next damage event for this move
+                    const damageEvent = result.events.slice(index + 1).find(e => 
+                      e.type === 'damage' && e.turn === event.turn
+                    );
+                    
+                    return {
+                      turn: event.turn,
+                      attacker,
+                      defender,
+                      move: event.details?.move || 'Unknown Move',
+                      damage: damageEvent?.details?.damage || 0,
+                      remainingHP: 0, // Will be calculated based on final HP
+                      critical: false,
+                      effectiveness: 'normal'
+                    };
+                  }
+                  return null;
+                }).filter(Boolean)
+              };
+              
+              setBattleTesterSimulation(formattedResult);
+            } catch (error) {
+              console.error('Battle test error:', error);
+            } finally {
+              setIsBattleTesterSimulating(false);
+            }
+          }}
+          simulation={battleTesterSimulation}
+          isSimulating={isBattleTesterSimulating}
+        />
       )}
 
       <AppShell

@@ -12,16 +12,24 @@ interface SettingsState {
   battleSettings: BattleSettings;
   isSettingsPanelExpanded: boolean;
   isSimulationPanelExpanded: boolean;
+  isBattleTesterExpanded: boolean;
   battleSimulation: any;
+  battleTesterSimulation: any;
   isSimulating: boolean;
+  isBattleTesterSimulating: boolean;
   setBattleSettings: (settings: BattleSettings) => void;
   toggleSettingsPanel: () => void;
   setSettingsPanelExpanded: (expanded: boolean) => void;
   toggleSimulationPanel: () => void;
   setSimulationPanelExpanded: (expanded: boolean) => void;
+  toggleBattleTester: () => void;
+  setBattleTesterExpanded: (expanded: boolean) => void;
   setBattleSimulation: (simulation: any) => void;
+  setBattleTesterSimulation: (simulation: any) => void;
   setIsSimulating: (isSimulating: boolean) => void;
+  setIsBattleTesterSimulating: (isSimulating: boolean) => void;
   clearBattleSimulation: () => void;
+  clearBattleTesterSimulation: () => void;
 }
 
 export const useSettingsStore = create<SettingsState>()(
@@ -35,16 +43,24 @@ export const useSettingsStore = create<SettingsState>()(
       },
       isSettingsPanelExpanded: false,
       isSimulationPanelExpanded: false,
+      isBattleTesterExpanded: false,
       battleSimulation: null,
+      battleTesterSimulation: null,
       isSimulating: false,
+      isBattleTesterSimulating: false,
       setBattleSettings: (settings) => set({ battleSettings: settings }),
       toggleSettingsPanel: () => set((state) => ({ isSettingsPanelExpanded: !state.isSettingsPanelExpanded })),
       setSettingsPanelExpanded: (expanded) => set({ isSettingsPanelExpanded: expanded }),
       toggleSimulationPanel: () => set((state) => ({ isSimulationPanelExpanded: !state.isSimulationPanelExpanded })),
       setSimulationPanelExpanded: (expanded) => set({ isSimulationPanelExpanded: expanded }),
+      toggleBattleTester: () => set((state) => ({ isBattleTesterExpanded: !state.isBattleTesterExpanded })),
+      setBattleTesterExpanded: (expanded) => set({ isBattleTesterExpanded: expanded }),
       setBattleSimulation: (simulation) => set({ battleSimulation: simulation }),
+      setBattleTesterSimulation: (simulation) => set({ battleTesterSimulation: simulation }),
       setIsSimulating: (isSimulating) => set({ isSimulating: isSimulating }),
+      setIsBattleTesterSimulating: (isSimulating) => set({ isBattleTesterSimulating: isSimulating }),
       clearBattleSimulation: () => set({ battleSimulation: null, isSimulating: false }),
+      clearBattleTesterSimulation: () => set({ battleTesterSimulation: null, isBattleTesterSimulating: false }),
     }),
     {
       name: 'pokewave-settings',
@@ -52,6 +68,7 @@ export const useSettingsStore = create<SettingsState>()(
         battleSettings: state.battleSettings,
         isSettingsPanelExpanded: state.isSettingsPanelExpanded,
         isSimulationPanelExpanded: state.isSimulationPanelExpanded,
+        isBattleTesterExpanded: state.isBattleTesterExpanded,
       }),
       // Handle migration for existing users without generation or withItems field
       onRehydrateStorage: () => (state) => {
