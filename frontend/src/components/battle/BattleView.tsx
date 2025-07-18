@@ -4,6 +4,8 @@ import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import PokemonCard from './PokemonCard';
 import { useGameStore } from '../../store/gameStore';
+import { BattleLoading } from '../ui/loading';
+import { FadeIn, SlideIn, ResultReveal, Countup, StaggeredFadeIn, BounceIn } from '../ui/transitions';
 import { Loader2, Swords, Trophy, Target, TrendingUp } from 'lucide-react';
 
 const BattleView: React.FC = () => {
@@ -84,49 +86,57 @@ const BattleView: React.FC = () => {
   }
 
   return (
-    <div className="w-full max-w-4xl mx-auto space-y-6">
+    <FadeIn className="w-full max-w-4xl mx-auto space-y-6">
       {/* Stats Header */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card>
-          <CardContent className="p-4 text-center">
-            <div className="flex items-center justify-center space-x-2">
-              <Trophy className="h-4 w-4 text-yellow-500" />
-              <span className="text-sm font-medium">Score</span>
-            </div>
-            <div className="text-2xl font-bold">{score}</div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-4 text-center">
-            <div className="flex items-center justify-center space-x-2">
-              <TrendingUp className="h-4 w-4 text-green-500" />
-              <span className="text-sm font-medium">Streak</span>
-            </div>
-            <div className="text-2xl font-bold">{streak}</div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-4 text-center">
-            <div className="flex items-center justify-center space-x-2">
-              <Target className="h-4 w-4 text-blue-500" />
-              <span className="text-sm font-medium">Accuracy</span>
-            </div>
-            <div className="text-2xl font-bold">{getAccuracy()}%</div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardContent className="p-4 text-center">
-            <div className="flex items-center justify-center space-x-2">
-              <Swords className="h-4 w-4 text-purple-500" />
-              <span className="text-sm font-medium">Battles</span>
-            </div>
-            <div className="text-2xl font-bold">{totalGuesses}</div>
-          </CardContent>
-        </Card>
-      </div>
+      <StaggeredFadeIn staggerDelay={0.1}>
+        {[
+          <Card key="score">
+            <CardContent className="p-4 text-center">
+              <div className="flex items-center justify-center space-x-2">
+                <Trophy className="h-4 w-4 text-yellow-500" />
+                <span className="text-sm font-medium">Score</span>
+              </div>
+              <div className="text-2xl font-bold">
+                <Countup from={0} to={score} duration={1} />
+              </div>
+            </CardContent>
+          </Card>,
+          
+          <Card key="streak">
+            <CardContent className="p-4 text-center">
+              <div className="flex items-center justify-center space-x-2">
+                <TrendingUp className="h-4 w-4 text-green-500" />
+                <span className="text-sm font-medium">Streak</span>
+              </div>
+              <div className="text-2xl font-bold">
+                <Countup from={0} to={streak} duration={1} />
+              </div>
+            </CardContent>
+          </Card>,
+          
+          <Card key="accuracy">
+            <CardContent className="p-4 text-center">
+              <div className="flex items-center justify-center space-x-2">
+                <Target className="h-4 w-4 text-blue-500" />
+                <span className="text-sm font-medium">Accuracy</span>
+              </div>
+              <div className="text-2xl font-bold">{getAccuracy()}%</div>
+            </CardContent>
+          </Card>,
+          
+          <Card key="battles">
+            <CardContent className="p-4 text-center">
+              <div className="flex items-center justify-center space-x-2">
+                <Swords className="h-4 w-4 text-purple-500" />
+                <span className="text-sm font-medium">Battles</span>
+              </div>
+              <div className="text-2xl font-bold">
+                <Countup from={0} to={totalGuesses} duration={1} />
+              </div>
+            </CardContent>
+          </Card>
+        ]}
+      </StaggeredFadeIn>
 
       {/* Battle Arena */}
       <Card>
@@ -141,37 +151,42 @@ const BattleView: React.FC = () => {
         </CardHeader>
         <CardContent>
           {isLoading ? (
-            <div className="flex items-center justify-center py-12">
-              <Loader2 className="h-8 w-8 animate-spin" />
-              <span className="ml-2">Generating battle...</span>
-            </div>
+            <BattleLoading 
+              pokemon1Name={currentBattle?.pokemon1.name || 'Pokemon'}
+              pokemon2Name={currentBattle?.pokemon2.name || 'Pokemon'}
+              className="py-12"
+            />
           ) : currentBattle ? (
             <div className="space-y-6">
               {/* Pokemon Selection */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <PokemonCard
-                  pokemon={currentBattle.pokemon1}
-                  types={[]} // We'll need to fetch this from API or include in response
-                  onSelect={() => handlePokemonSelect(currentBattle.pokemon1.id)}
-                  isSelected={selectedPokemon === currentBattle.pokemon1.id}
-                  disabled={isLoading || showResults}
-                  showResults={showResults}
-                />
+                <SlideIn direction="left" delay={0.2}>
+                  <PokemonCard
+                    pokemon={currentBattle.pokemon1}
+                    types={[]} // We'll need to fetch this from API or include in response
+                    onSelect={() => handlePokemonSelect(currentBattle.pokemon1.id)}
+                    isSelected={selectedPokemon === currentBattle.pokemon1.id}
+                    disabled={isLoading || showResults}
+                    showResults={showResults}
+                  />
+                </SlideIn>
                 
-                <div className="flex items-center justify-center">
+                <BounceIn delay={0.4} className="flex items-center justify-center">
                   <Badge variant="outline" className="text-lg font-bold px-4 py-2">
                     VS
                   </Badge>
-                </div>
+                </BounceIn>
                 
-                <PokemonCard
-                  pokemon={currentBattle.pokemon2}
-                  types={[]} // We'll need to fetch this from API or include in response
-                  onSelect={() => handlePokemonSelect(currentBattle.pokemon2.id)}
-                  isSelected={selectedPokemon === currentBattle.pokemon2.id}
-                  disabled={isLoading || showResults}
-                  showResults={showResults}
-                />
+                <SlideIn direction="right" delay={0.2}>
+                  <PokemonCard
+                    pokemon={currentBattle.pokemon2}
+                    types={[]} // We'll need to fetch this from API or include in response
+                    onSelect={() => handlePokemonSelect(currentBattle.pokemon2.id)}
+                    isSelected={selectedPokemon === currentBattle.pokemon2.id}
+                    disabled={isLoading || showResults}
+                    showResults={showResults}
+                  />
+                </SlideIn>
               </div>
 
               {/* Battle Actions */}
@@ -199,27 +214,33 @@ const BattleView: React.FC = () => {
                       Battle Results
                     </div>
                     
-                    {guessResult && (
-                      <div className={`p-4 rounded-lg border ${
-                        guessResult.isCorrect 
+                    <ResultReveal 
+                      isVisible={!!guessResult} 
+                      isCorrect={guessResult?.isCorrect}
+                      className={`p-4 rounded-lg border ${
+                        guessResult?.isCorrect 
                           ? 'bg-green-50 border-green-200 dark:bg-green-950 dark:border-green-800' 
                           : 'bg-red-50 border-red-200 dark:bg-red-950 dark:border-red-800'
-                      }`}>
-                        <div className={`text-lg font-semibold ${
-                          guessResult.isCorrect ? 'text-green-700 dark:text-green-400' : 'text-red-700 dark:text-red-400'
-                        }`}>
-                          {guessResult.isCorrect ? '✅ Correct!' : '❌ Wrong!'}
-                        </div>
-                        <div className="text-sm mt-2">
-                          {guessResult.message}
-                        </div>
-                        {guessResult.isCorrect && (
-                          <div className="text-sm font-medium mt-2">
-                            Points earned: +{guessResult.points}
+                      }`}
+                    >
+                      {guessResult && (
+                        <>
+                          <div className={`text-lg font-semibold ${
+                            guessResult.isCorrect ? 'text-green-700 dark:text-green-400' : 'text-red-700 dark:text-red-400'
+                          }`}>
+                            {guessResult.isCorrect ? '✅ Correct!' : '❌ Wrong!'}
                           </div>
-                        )}
-                      </div>
-                    )}
+                          <div className="text-sm mt-2">
+                            {guessResult.message}
+                          </div>
+                          {guessResult.isCorrect && (
+                            <div className="text-sm font-medium mt-2">
+                              Points earned: +<Countup from={0} to={guessResult.points} duration={1} />
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </ResultReveal>
                     
                     <div className="text-sm text-muted-foreground">
                       Simulation completed in {currentBattle.executionTime}ms
@@ -245,7 +266,7 @@ const BattleView: React.FC = () => {
           )}
         </CardContent>
       </Card>
-    </div>
+    </FadeIn>
   );
 };
 
