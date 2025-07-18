@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
 import type { GameState, ApiError } from '../types/api';
+import type { CompletePokemon } from '../types/pokemon';
 import ApiService from '../services/api';
 import { simulateMainBattle } from '../utils/mainBattleSimulation';
 import { evaluateGuess } from '../utils/guessEvaluation';
@@ -115,10 +116,93 @@ export const useGameStore = create<GameStore>()(
               (battleSettings.setLevel || 50) : 
               Math.floor(Math.random() * 100) + 1;
 
-            // Get and Set Valid Abilities
             // Import Dex to access Pokemon data
             const { Dex } = await import('@pkmn/dex');
             const dex = Dex.forGen(battleSettings?.generation || 9);
+            
+            // Helper function to calculate stats
+            const calculateStats = (species: any, level: number) => {
+              const calculateStat = (base: number, isHP: boolean = false) => {
+                const iv = 31;
+                const ev = 0;
+                if (isHP) {
+                  return Math.floor((2 * base + iv + ev / 4) * level / 100 + level + 10);
+                }
+                return Math.floor((2 * base + iv + ev / 4) * level / 100 + 5);
+              };
+
+              return {
+                hp: calculateStat(species.baseStats.hp, true),
+                attack: calculateStat(species.baseStats.atk),
+                defense: calculateStat(species.baseStats.def),
+                specialAttack: calculateStat(species.baseStats.spa),
+                specialDefense: calculateStat(species.baseStats.spd),
+                speed: calculateStat(species.baseStats.spe)
+              };
+            };
+            
+            // Helper function to create a complete Pokemon object
+            const createCompletePokemon = async (
+              pokemonId: number, 
+              level: number,
+              species: any,
+              moves: string[],
+              ability: string,
+              item?: string
+            ): Promise<CompletePokemon> => {
+              // Format move names for display
+              const formatMoveName = (move: string): string => {
+                return move
+                  .replace(/([A-Z])/g, ' $1')
+                  .replace(/^./, str => str.toUpperCase())
+                  .trim();
+              };
+              
+              // Get sprites
+              let sprites = { front: '', back: '', shiny: '' };
+              try {
+                sprites = await ApiService.getPokemonSprites(pokemonId);
+              } catch (error) {
+                console.warn('Failed to fetch sprites:', error);
+              }
+              
+              return {
+                id: pokemonId,
+                name: species.name,
+                species: species.name,
+                level,
+                types: species.types.map((t: string) => t.toLowerCase()),
+                stats: calculateStats(species, level),
+                moves,
+                moveNames: moves.map(formatMoveName),
+                ability,
+                abilityName: ability,
+                item,
+                itemName: item ? formatItemName(item) : undefined,
+                sprites,
+                wins: 0
+              };
+            };
+            
+            // Helper function to format item names
+            const formatItemName = (item: string): string => {
+              const itemNames: { [key: string]: string } = {
+                'leftovers': 'Leftovers',
+                'choiceband': 'Choice Band',
+                'choicescarf': 'Choice Scarf',
+                'choicespecs': 'Choice Specs',
+                'lifeorb': 'Life Orb',
+                'focussash': 'Focus Sash',
+                'assaultvest': 'Assault Vest',
+                'eviolite': 'Eviolite',
+                'blacksludge': 'Black Sludge',
+                'rockyhelmet': 'Rocky Helmet',
+                'lightclay': 'Light Clay',
+                'sitrusberry': 'Sitrus Berry'
+              };
+              
+              return itemNames[item.toLowerCase()] || item.replace(/([A-Z])/g, ' $1').trim();
+            };
             
             // Get species data for both Pokemon (by national dex number)
             const getSpeciesById = (id: number): any => {
@@ -232,31 +316,31 @@ export const useGameStore = create<GameStore>()(
             const pokemon1Ability = getValidAbility(species1);
             const pokemon2Ability = getValidAbility(species2);
 
-            // Use local simulation instead of API
-            const battleResult = await simulateMainBattle(pokemon1Id, pokemon2Id, {
+            // Create complete Pokemon objects
+            const [completePokemon1, completePokemon2] = await Promise.all([
+              createCompletePokemon(
+                pokemon1Id,
+                pokemon1Level,
+                species1,
+                pokemon1Moves,
+                pokemon1Ability,
+                pokemon1Item
+              ),
+              createCompletePokemon(
+                pokemon2Id,
+                pokemon2Level,
+                species2,
+                pokemon2Moves,
+                pokemon2Ability,
+                pokemon2Item
+              )
+            ]);
+
+            // Use local simulation with complete Pokemon objects
+            const battleResult = await simulateMainBattle(completePokemon1, completePokemon2, {
               generation: battleSettings?.generation || 9,
-              pokemon1Level,
-              pokemon2Level,
-              pokemon1Moves,
-              pokemon2Moves,
-              pokemon1Ability,
-              pokemon2Ability,
-              pokemon1Item,
-              pokemon2Item,
               returnSampleBattle: true
             });
-            
-            // Fetch sprites from API for the UI
-            try {
-              const [sprites1, sprites2] = await Promise.all([
-                ApiService.getPokemonSprites(pokemon1Id),
-                ApiService.getPokemonSprites(pokemon2Id)
-              ]);
-              battleResult.pokemon1.sprites = sprites1;
-              battleResult.pokemon2.sprites = sprites2;
-            } catch (spriteError) {
-              console.warn('Failed to fetch sprites:', spriteError);
-            }
             
             set({ 
               currentBattle: battleResult,

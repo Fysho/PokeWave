@@ -1,5 +1,6 @@
-import { Dex } from '@pkmn/dex';
 import { Battle } from '@pkmn/sim';
+import type { CompletePokemon } from '../types/pokemon';
+import { createTeamString } from '../types/pokemon';
 
 interface BattleResult {
   battleId: string;
@@ -56,116 +57,6 @@ interface BattleResult {
 
 const NUM_BATTLES = 100; // Run 100 battles
 
-function getSpeciesById(dex: any, id: number): any {
-  // Try by national dex number first
-  const allSpecies = dex.species.all();
-  const found = allSpecies.find((s: any) => s.num === id);
-  if (found) return found;
-  
-  // Fallback to trying by ID string
-  const species = dex.species.get(String(id));
-  if (species && species.exists) return species;
-  
-  return null;
-}
-
-function getRandomMoves(species: any, dex: any, count: number = 4): string[] {
-  // Type-based move pools
-  const movePool: { [key: string]: string[] } = {
-    normal: ['tackle', 'scratch', 'pound', 'quickattack', 'slash', 'bodyslam'],
-    fire: ['ember', 'flamethrower', 'fireblast', 'flamecharge', 'firepunch'],
-    water: ['watergun', 'surf', 'hydropump', 'aquajet', 'bubblebeam'],
-    electric: ['thundershock', 'thunderbolt', 'thunder', 'thunderpunch', 'spark'],
-    grass: ['vinewhip', 'razorleaf', 'solarbeam', 'energyball', 'leafstorm'],
-    ice: ['icepunch', 'icebeam', 'blizzard', 'iceshard', 'aurorabeam'],
-    fighting: ['lowkick', 'brickbreak', 'closecombat', 'machpunch', 'crosschop'],
-    poison: ['poisonsting', 'sludgebomb', 'toxic', 'poisonjab', 'venoshock'],
-    ground: ['earthquake', 'dig', 'earthpower', 'mudshot', 'bulldoze'],
-    flying: ['gust', 'wingattack', 'airslash', 'hurricane', 'aerialace'],
-    psychic: ['confusion', 'psychic', 'psybeam', 'zenheadbutt', 'psychocut'],
-    bug: ['bugbite', 'signalbeam', 'bugbuzz', 'xscissor', 'uturn'],
-    rock: ['rockthrow', 'rockslide', 'stoneedge', 'powergem', 'rockblast'],
-    ghost: ['lick', 'shadowball', 'shadowclaw', 'hex', 'shadowsneak'],
-    dragon: ['dragonrage', 'dragonpulse', 'dragonclaw', 'outrage', 'dracometeor'],
-    dark: ['bite', 'crunch', 'darkpulse', 'knockoff', 'suckerpunch'],
-    steel: ['metalclaw', 'ironhead', 'flashcannon', 'meteormash', 'bulletpunch'],
-    fairy: ['fairywind', 'moonblast', 'dazzlinggleam', 'playrough', 'drainingkiss']
-  };
-  
-  const defaultMoves = ['tackle', 'scratch', 'pound', 'quickattack'];
-  const moves: string[] = [];
-  
-  // Get moves based on Pokemon's types
-  if (species.types) {
-    for (const type of species.types) {
-      const typeMoves = movePool[type.toLowerCase()];
-      if (typeMoves) {
-        const shuffled = [...typeMoves].sort(() => Math.random() - 0.5);
-        moves.push(...shuffled.slice(0, 2));
-      }
-    }
-  }
-  
-  // Remove duplicates and select required count
-  const allMoves = [...new Set(moves)];
-  const shuffledMoves = allMoves.sort(() => Math.random() - 0.5);
-  const selectedMoves = shuffledMoves.slice(0, count);
-  
-  // Fill with default moves if needed
-  while (selectedMoves.length < count) {
-    const defaultMove = defaultMoves[selectedMoves.length % defaultMoves.length];
-    if (!selectedMoves.includes(defaultMove)) {
-      selectedMoves.push(defaultMove);
-    }
-  }
-  
-  return selectedMoves;
-}
-
-function getRandomAbility(species: any): string {
-  const abilities = [];
-  
-  if (species.abilities) {
-    if (species.abilities['0']) abilities.push(species.abilities['0']);
-    if (species.abilities['1']) abilities.push(species.abilities['1']);
-    if (species.abilities['H']) abilities.push(species.abilities['H']);
-  }
-  
-  if (abilities.length === 0) {
-    return 'Pressure';
-  }
-  
-  return abilities[Math.floor(Math.random() * abilities.length)];
-}
-
-function formatMoveName(move: string): string {
-  // Convert move ID to display name
-  return move
-    .replace(/([A-Z])/g, ' $1')
-    .replace(/^./, str => str.toUpperCase())
-    .trim();
-}
-
-function calculateStats(species: any, level: number): any {
-  const calculateStat = (base: number, isHP: boolean = false) => {
-    const iv = 31;
-    const ev = 0;
-    if (isHP) {
-      return Math.floor((2 * base + iv + ev / 4) * level / 100 + level + 10);
-    }
-    return Math.floor((2 * base + iv + ev / 4) * level / 100 + 5);
-  };
-
-  return {
-    hp: calculateStat(species.baseStats.hp, true),
-    attack: calculateStat(species.baseStats.atk),
-    defense: calculateStat(species.baseStats.def),
-    specialAttack: calculateStat(species.baseStats.spa),
-    specialDefense: calculateStat(species.baseStats.spd),
-    speed: calculateStat(species.baseStats.spe)
-  };
-}
-
 interface BattleEvent {
   turn: number;
   type: 'move' | 'damage' | 'status' | 'weather' | 'ability' | 'item' | 'faint' | 'switch';
@@ -191,32 +82,16 @@ interface SingleBattleResult {
 }
 
 async function simulateSingleBattle(
-  species1: any,
-  species2: any,
-  level1: number,
-  level2: number,
-  generation: number,
-  p1moves?: string[],
-  p2moves?: string[],
-  p1ability?: string,
-  p2ability?: string,
-  p1item?: string,
-  p2item?: string,
-  p1stats?: any,
-  p2stats?: any
+  pokemon1: CompletePokemon,
+  pokemon2: CompletePokemon,
+  generation: number
 ): Promise<SingleBattleResult> {
   try {
     const battle = new Battle({ formatid: `gen${generation}customgame` });
     
-    // Create team strings
-    const p1movesStr = p1moves ? p1moves.join(',') : getRandomMoves(species1, null, 4).join(',');
-    const p2movesStr = p2moves ? p2moves.join(',') : getRandomMoves(species2, null, 4).join(',');
-    
-    const p1abilityStr = p1ability || getRandomAbility(species1);
-    const p2abilityStr = p2ability || getRandomAbility(species2);
-    
-    const p1team = `${species1.name.toLowerCase().replace(/[^a-z0-9]/g, '')}|${p1item || ''}|${p1abilityStr}||${p1movesStr}||`;
-    const p2team = `${species2.name.toLowerCase().replace(/[^a-z0-9]/g, '')}|${p2item || ''}|${p2abilityStr}||${p2movesStr}||`;
+    // Create team strings using the pre-created Pokemon data
+    const p1team = createTeamString(pokemon1);
+    const p2team = createTeamString(pokemon2);
     
     try {
       battle.setPlayer('p1', { team: p1team });
@@ -228,8 +103,8 @@ async function simulateSingleBattle(
         winner,
         events: [],
         finalHP: {
-          p1: species1 ? calculateStats(species1, level1).hp : 100,
-          p2: species2 ? calculateStats(species2, level2).hp : 100
+          p1: pokemon1.stats.hp,
+          p2: pokemon2.stats.hp
         },
         totalTurns: 0
       };
@@ -380,8 +255,8 @@ async function simulateSingleBattle(
       winner,
       events: [],
       finalHP: {
-        p1: species1 ? calculateStats(species1, level1).hp : 100,
-        p2: species2 ? calculateStats(species2, level2).hp : 100
+        p1: pokemon1.stats.hp,
+        p2: pokemon2.stats.hp
       },
       totalTurns: 0
     };
@@ -389,42 +264,18 @@ async function simulateSingleBattle(
 }
 
 export async function simulateMainBattle(
-  pokemon1Id: number,
-  pokemon2Id: number,
+  pokemon1: CompletePokemon,
+  pokemon2: CompletePokemon,
   options?: {
     generation?: number;
-    pokemon1Level?: number;
-    pokemon2Level?: number;
-    pokemon1Moves?: string[];
-    pokemon2Moves?: string[];
-    pokemon1Ability?: string;
-    pokemon2Ability?: string;
-    pokemon1Item?: string;
-    pokemon2Item?: string;
     returnSampleBattle?: boolean;
   }
 ): Promise<BattleResult & { sampleBattle?: SingleBattleResult }> {
   const startTime = Date.now();
   
   const generation = options?.generation || 9;
-  const dex = Dex.forGen(generation);
   
-  // Get Pokemon species
-  const species1 = getSpeciesById(dex, pokemon1Id);
-  const species2 = getSpeciesById(dex, pokemon2Id);
-  
-  if (!species1 || !species2) {
-    throw new Error(`Invalid Pokemon IDs: ${pokemon1Id}, ${pokemon2Id}`);
-  }
-  
-  const pokemon1Level = options?.pokemon1Level || 50;
-  const pokemon2Level = options?.pokemon2Level || 50;
-  
-  console.log(`Starting ${NUM_BATTLES} battle simulations between ${species1.name} and ${species2.name}`);
-  
-  // Calculate stats to pass to battle simulation
-  const pokemon1Stats = calculateStats(species1, pokemon1Level);
-  const pokemon2Stats = calculateStats(species2, pokemon2Level);
+  console.log(`Starting ${NUM_BATTLES} battle simulations between ${pokemon1.name} and ${pokemon2.name}`);
   
   // Run battles
   let pokemon1Wins = 0;
@@ -438,21 +289,7 @@ export async function simulateMainBattle(
     
     for (let j = 0; j < batchSize && i + j < NUM_BATTLES; j++) {
       batchPromises.push(
-        simulateSingleBattle(
-          species1, 
-          species2, 
-          pokemon1Level, 
-          pokemon2Level, 
-          generation,
-          options?.pokemon1Moves,
-          options?.pokemon2Moves,
-          options?.pokemon1Ability,
-          options?.pokemon2Ability,
-          options?.pokemon1Item,
-          options?.pokemon2Item,
-          pokemon1Stats,
-          pokemon2Stats
-        )
+        simulateSingleBattle(pokemon1, pokemon2, generation)
       );
     }
     
@@ -480,55 +317,34 @@ export async function simulateMainBattle(
   const winRate = (pokemon1Wins / NUM_BATTLES) * 100;
   const executionTime = Date.now() - startTime;
   
-  console.log(`Battle results: ${species1.name} won ${pokemon1Wins}/${NUM_BATTLES} (${winRate.toFixed(1)}%)`);
+  console.log(`Battle results: ${pokemon1.name} won ${pokemon1Wins}/${NUM_BATTLES} (${winRate.toFixed(1)}%)`);
   console.log(`Execution time: ${executionTime}ms`);
-  
-  // Get types
-  const pokemon1Types = species1.types.map((t: string) => t.toLowerCase());
-  const pokemon2Types = species2.types.map((t: string) => t.toLowerCase());
-  
-  // Get moves (use provided or generate random)
-  const pokemon1Moves = options?.pokemon1Moves ? 
-    options.pokemon1Moves.map(formatMoveName) : 
-    getRandomMoves(species1, dex, 4).map(formatMoveName);
-  const pokemon2Moves = options?.pokemon2Moves ? 
-    options.pokemon2Moves.map(formatMoveName) : 
-    getRandomMoves(species2, dex, 4).map(formatMoveName);
-  
-  // Get abilities (use provided or generate random)
-  const pokemon1Ability = options?.pokemon1Ability || getRandomAbility(species1);
-  const pokemon2Ability = options?.pokemon2Ability || getRandomAbility(species2);
-  
-  // Stats were already calculated above, no need to recalculate
-  
-  // Note: Sprites will need to be fetched from the API or cached
-  const sprites = { front: '', back: '', shiny: '' };
   
   const result: BattleResult & { sampleBattle?: SingleBattleResult } = {
     battleId: crypto.randomUUID(),
     pokemon1: {
-      id: pokemon1Id,
-      name: species1.name,
-      level: pokemon1Level,
+      id: pokemon1.id,
+      name: pokemon1.name,
+      level: pokemon1.level,
       wins: pokemon1Wins,
-      types: pokemon1Types,
-      sprites: sprites,
-      moves: pokemon1Moves,
-      stats: pokemon1Stats,
-      ability: pokemon1Ability,
-      item: options?.pokemon1Item
+      types: pokemon1.types,
+      sprites: pokemon1.sprites,
+      moves: pokemon1.moveNames,
+      stats: pokemon1.stats,
+      ability: pokemon1.abilityName,
+      item: pokemon1.item
     },
     pokemon2: {
-      id: pokemon2Id,
-      name: species2.name,
-      level: pokemon2Level,
+      id: pokemon2.id,
+      name: pokemon2.name,
+      level: pokemon2.level,
       wins: pokemon2Wins,
-      types: pokemon2Types,
-      sprites: sprites,
-      moves: pokemon2Moves,
-      stats: pokemon2Stats,
-      ability: pokemon2Ability,
-      item: options?.pokemon2Item
+      types: pokemon2.types,
+      sprites: pokemon2.sprites,
+      moves: pokemon2.moveNames,
+      stats: pokemon2.stats,
+      ability: pokemon2.abilityName,
+      item: pokemon2.item
     },
     totalBattles: NUM_BATTLES,
     winRate,

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   Card,
   Stack,
@@ -16,15 +16,12 @@ import {
   ActionIcon
 } from '@mantine/core';
 import {
-  IconSwords,
   IconFlame,
-  IconDroplet,
   IconBolt,
   IconSnowflake,
   IconSkull,
-  IconSleeping,
+  IconZzz,
   IconHeartbeat,
-  IconShield,
   IconChevronDown,
   IconChevronUp,
   IconRefresh
@@ -88,7 +85,7 @@ const BattleSimulationDisplay: React.FC<BattleSimulationDisplayProps> = ({
         return <IconBolt size={16} color={theme.colors.yellow[6]} />;
       case 'sleep':
       case 'slp':
-        return <IconSleeping size={16} color={theme.colors.blue[6]} />;
+        return <IconZzz size={16} color={theme.colors.blue[6]} />;
       case 'freeze':
       case 'frz':
         return <IconSnowflake size={16} color={theme.colors.cyan[6]} />;
@@ -118,7 +115,6 @@ const BattleSimulationDisplay: React.FC<BattleSimulationDisplayProps> = ({
   };
 
   const formatEventDescription = (event: BattleEvent) => {
-    const pokemonName = event.pokemon === 'p1' ? pokemon1.name : pokemon2.name;
     let description = event.description.replace(/p1/g, pokemon1.name).replace(/p2/g, pokemon2.name);
     
     if (event.details?.criticalHit) {

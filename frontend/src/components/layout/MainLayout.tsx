@@ -13,7 +13,6 @@ import {
 import BattleSettings from '../settings/BattleSettings';
 import SimulationPanel from '../battle/SimulationPanel';
 import { useSettingsStore } from '../../store/settingsStore';
-import { useGameStore } from '../../store/gameStore';
 
 interface MainLayoutProps {
   children: React.ReactNode;

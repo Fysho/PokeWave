@@ -25,7 +25,6 @@ const SimulationPanel: React.FC = () => {
   const { 
     isSimulationPanelExpanded, 
     toggleSimulationPanel,
-    battleSimulation,
     isSimulating
   } = useSettingsStore();
   
