@@ -179,6 +179,12 @@ export class ApiService {
     aiDifficulty?: 'random' | 'elite';
   }): Promise<any> {
     try {
+      console.log('ApiService.simulateSingleBattle: Starting request', {
+        pokemon1Id,
+        pokemon2Id,
+        options
+      });
+      
       // Generate levels based on settings
       let pokemon1Level = 50;
       let pokemon2Level = 50;
@@ -191,7 +197,7 @@ export class ApiService {
         pokemon2Level = Math.floor(Math.random() * 100) + 1;
       }
 
-      const response = await api.post('/battle/simulate-single', {
+      const payload = {
         pokemon1Id,
         pokemon2Id,
         options: {
@@ -202,9 +208,20 @@ export class ApiService {
           movesetType: options?.movesetType || 'random',
           aiDifficulty: options?.aiDifficulty || 'random'
         }
+      };
+      
+      console.log('ApiService.simulateSingleBattle: Sending payload', payload);
+      
+      const response = await api.post('/battle/simulate-single', payload);
+      
+      console.log('ApiService.simulateSingleBattle: Response received', {
+        status: response.status,
+        data: response.data
       });
+      
       return response.data;
     } catch (error) {
+      console.error('ApiService.simulateSingleBattle: Error occurred', error);
       throw error;
     }
   }

@@ -49,31 +49,47 @@ const MainLayout: React.FC<MainLayoutProps> = ({
 
   const handleSimulateBattle = async () => {
     if (!currentBattle) {
-      console.log('No current battle available');
+      console.error('handleSimulateBattle: No current battle available');
       return;
     }
     
-    console.log('Starting battle simulation', {
+    console.log('handleSimulateBattle: Starting battle simulation', {
       pokemon1: currentBattle.pokemon1,
       pokemon2: currentBattle.pokemon2,
+      pokemon1Id: currentBattle.pokemon1.id,
+      pokemon2Id: currentBattle.pokemon2.id,
       settings: battleSettings
     });
     
     setIsSimulating(true);
     try {
+      console.log('handleSimulateBattle: Calling API...');
       const result = await ApiService.simulateSingleBattle(
         currentBattle.pokemon1.id,
         currentBattle.pokemon2.id,
         battleSettings
       );
-      console.log('Battle simulation result:', result);
+      console.log('handleSimulateBattle: Battle simulation result:', result);
+      
+      if (!result) {
+        console.error('handleSimulateBattle: No result returned from API');
+        throw new Error('No result returned from battle simulation');
+      }
+      
       setBattleSimulation(result);
       // Auto-expand the simulation panel to show results
       if (!isSimulationPanelExpanded) {
         setSimulationPanelExpanded(true);
       }
     } catch (error) {
-      console.error('Error simulating battle:', error);
+      console.error('handleSimulateBattle: Error simulating battle:', error);
+      console.error('handleSimulateBattle: Error details:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+        response: (error as any).response?.data
+      });
+      // Set empty simulation to show error state
+      setBattleSimulation(null);
     } finally {
       setIsSimulating(false);
     }

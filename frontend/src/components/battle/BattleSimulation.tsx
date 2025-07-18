@@ -317,6 +317,18 @@ const BattleSimulation: React.FC<BattleSimulationProps> = ({
                   </Stack>
                 </Card>
               )}
+              
+              {/* Loading state */}
+              {isSimulating && (
+                <Card withBorder p="md">
+                  <Stack align="center" gap="md">
+                    <Loader size="lg" />
+                    <Text size="sm" c="dimmed" ta="center">
+                      Simulating battle...
+                    </Text>
+                  </Stack>
+                </Card>
+              )}
             </Stack>
           </Box>
         </Collapse>
