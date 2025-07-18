@@ -260,9 +260,15 @@ class PokemonShowdownService {
       const stream = new BattleStreams.BattleStream();
       const outputs: string[] = [];
       
-      // Create teams
-      const p1team = await this.createTeam(species1, pokemon1Level, generation);
-      const p2team = await this.createTeam(species2, pokemon2Level, generation);
+      // Fetch additional Pokemon data for moves
+      const [pokemon1Data, pokemon2Data] = await this.fetchPokemonData(
+        config.pokemon1Id,
+        config.pokemon2Id
+      );
+
+      // Create teams with actual moves
+      const p1team = await this.createTeam(species1, pokemon1Level, generation, pokemon1Data?.moves || []);
+      const p2team = await this.createTeam(species2, pokemon2Level, generation, pokemon2Data?.moves || []);
 
       // Run battle and collect outputs
       const battleResult = await new Promise<{ outputs: string[], winner: string }>(async (resolve) => {
@@ -471,11 +477,22 @@ class PokemonShowdownService {
     }
   }
 
-  private async createTeam(species: Species, level: number, generation: number): Promise<string> {
+  private async createTeam(species: Species, level: number, generation: number, pokemonMoves: string[] = []): Promise<string> {
     const dex = Dex.forGen(generation);
     
-    // Get random moves from learnset
-    const moves = this.getRandomMoves(species, dex, 4);
+    // Use the provided moves if available, otherwise fall back to random moves
+    let moves: string[] = [];
+    if (pokemonMoves.length > 0) {
+      // Convert move names from display format to Pokemon Showdown format
+      // e.g., "Thunder Shock" -> "thundershock"
+      moves = pokemonMoves.slice(0, 4).map(move => 
+        move.toLowerCase().replace(/\s+/g, '')
+      );
+      logger.info(`Using provided moves for ${species.name}:`, moves);
+    } else {
+      moves = this.getRandomMoves(species, dex, 4);
+      logger.info(`Using random moves for ${species.name}:`, moves);
+    }
     
     // Create a simple set
     const set = {
@@ -515,6 +532,7 @@ class PokemonShowdownService {
     let turn = 1;
     
     // Get some moves for each Pokemon
+    // Note: This is a simplified battle, moves would need to be passed in for full accuracy
     const moves1 = this.getRandomMoves(species1, dex, 4);
     const moves2 = this.getRandomMoves(species2, dex, 4);
     
