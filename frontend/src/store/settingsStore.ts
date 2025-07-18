@@ -21,6 +21,7 @@ interface SettingsState {
   setSimulationPanelExpanded: (expanded: boolean) => void;
   setBattleSimulation: (simulation: any) => void;
   setIsSimulating: (isSimulating: boolean) => void;
+  clearBattleSimulation: () => void;
 }
 
 export const useSettingsStore = create<SettingsState>()(
@@ -43,6 +44,7 @@ export const useSettingsStore = create<SettingsState>()(
       setSimulationPanelExpanded: (expanded) => set({ isSimulationPanelExpanded: expanded }),
       setBattleSimulation: (simulation) => set({ battleSimulation: simulation }),
       setIsSimulating: (isSimulating) => set({ isSimulating: isSimulating }),
+      clearBattleSimulation: () => set({ battleSimulation: null, isSimulating: false }),
     }),
     {
       name: 'pokewave-settings',

@@ -242,7 +242,8 @@ export const useGameStore = create<GameStore>()(
               pokemon1Ability,
               pokemon2Ability,
               pokemon1Item,
-              pokemon2Item
+              pokemon2Item,
+              returnSampleBattle: true
             });
             
             // Fetch sprites from API for the UI

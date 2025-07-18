@@ -166,6 +166,30 @@ function calculateStats(species: any, level: number): any {
   };
 }
 
+interface BattleEvent {
+  turn: number;
+  type: 'move' | 'damage' | 'status' | 'weather' | 'ability' | 'item' | 'faint' | 'switch';
+  pokemon: 'p1' | 'p2';
+  description: string;
+  details?: {
+    move?: string;
+    damage?: number;
+    status?: string;
+    effectiveness?: 'super' | 'normal' | 'not very' | 'immune';
+    criticalHit?: boolean;
+  };
+}
+
+interface SingleBattleResult {
+  winner: 1 | 2;
+  events: BattleEvent[];
+  finalHP: {
+    p1: number;
+    p2: number;
+  };
+  totalTurns: number;
+}
+
 async function simulateSingleBattle(
   species1: any,
   species2: any,
@@ -177,8 +201,10 @@ async function simulateSingleBattle(
   p1ability?: string,
   p2ability?: string,
   p1item?: string,
-  p2item?: string
-): Promise<1 | 2> {
+  p2item?: string,
+  p1stats?: any,
+  p2stats?: any
+): Promise<SingleBattleResult> {
   try {
     const battle = new Battle({ formatid: `gen${generation}customgame` });
     
@@ -197,14 +223,101 @@ async function simulateSingleBattle(
       battle.setPlayer('p2', { team: p2team });
     } catch (error) {
       // If there's an error setting up the battle, randomly determine winner
-      return Math.random() < 0.5 ? 1 : 2;
+      const winner = Math.random() < 0.5 ? 1 : 2;
+      return {
+        winner,
+        events: [],
+        finalHP: {
+          p1: species1 ? calculateStats(species1, level1).hp : 100,
+          p2: species2 ? calculateStats(species2, level2).hp : 100
+        },
+        totalTurns: 0
+      };
     }
     
     let battleEnded = false;
     let turnCount = 0;
     const maxTurns = 50;
+    const events: BattleEvent[] = [];
+    
+    // Helper function to parse battle log and extract events
+    const parseBattleLog = (log: string[], currentTurn: number) => {
+      for (const line of log) {
+        // Parse move usage
+        if (line.includes('|move|')) {
+          const parts = line.split('|');
+          const pokemon = parts[2].includes('p1') ? 'p1' : 'p2';
+          const moveName = parts[3];
+          events.push({
+            turn: currentTurn,
+            type: 'move',
+            pokemon,
+            description: `${pokemon} used ${moveName}`,
+            details: { move: moveName }
+          });
+        }
+        
+        // Parse damage
+        if (line.includes('|-damage|')) {
+          const parts = line.split('|');
+          const pokemon = parts[2].includes('p1') ? 'p1' : 'p2';
+          const hpInfo = parts[3];
+          events.push({
+            turn: currentTurn,
+            type: 'damage',
+            pokemon,
+            description: `${pokemon} took damage`,
+            details: { damage: 0 } // We'll calculate actual damage later
+          });
+        }
+        
+        // Parse status effects
+        if (line.includes('|-status|')) {
+          const parts = line.split('|');
+          const pokemon = parts[2].includes('p1') ? 'p1' : 'p2';
+          const status = parts[3];
+          events.push({
+            turn: currentTurn,
+            type: 'status',
+            pokemon,
+            description: `${pokemon} was ${status}`,
+            details: { status }
+          });
+        }
+        
+        // Parse burn/poison damage
+        if (line.includes('|-damage|') && line.includes('[from]')) {
+          const parts = line.split('|');
+          const pokemon = parts[2].includes('p1') ? 'p1' : 'p2';
+          const source = parts[4]?.replace('[from] ', '');
+          if (source === 'brn' || source === 'psn' || source === 'tox') {
+            events.push({
+              turn: currentTurn,
+              type: 'damage',
+              pokemon,
+              description: `${pokemon} was hurt by ${source === 'brn' ? 'burn' : 'poison'}`,
+              details: { status: source }
+            });
+          }
+        }
+        
+        // Parse fainting
+        if (line.includes('|faint|')) {
+          const parts = line.split('|');
+          const pokemon = parts[2].includes('p1') ? 'p1' : 'p2';
+          events.push({
+            turn: currentTurn,
+            type: 'faint',
+            pokemon,
+            description: `${pokemon} fainted!`,
+            details: {}
+          });
+        }
+      }
+    };
     
     while (!battleEnded && turnCount < maxTurns) {
+      turnCount++;
       battle.log = [];
       
       // Make random moves for both players
@@ -229,22 +342,49 @@ async function simulateSingleBattle(
         }
       }
       
+      // Parse the battle log for this turn
+      parseBattleLog(battle.log, turnCount);
+      
       if (battle.ended) {
         battleEnded = true;
-        return battle.winner === 'p1' ? 1 : 2;
+        const winner = battle.winner === 'p1' ? 1 : 2;
+        return {
+          winner,
+          events,
+          finalHP: {
+            p1: battle.sides[0].active[0]?.hp || 0,
+            p2: battle.sides[1].active[0]?.hp || 0
+          },
+          totalTurns: turnCount
+        };
       }
-      
-      turnCount++;
     }
     
     // If battle didn't end, determine winner by remaining HP
     const p1HP = battle.sides[0].active[0]?.hp || 0;
     const p2HP = battle.sides[1].active[0]?.hp || 0;
-    return p1HP > p2HP ? 1 : 2;
+    return {
+      winner: p1HP > p2HP ? 1 : 2,
+      events,
+      finalHP: {
+        p1: p1HP,
+        p2: p2HP
+      },
+      totalTurns: turnCount
+    };
     
   } catch (error) {
     // Fallback to random winner on error
-    return Math.random() < 0.5 ? 1 : 2;
+    const winner = Math.random() < 0.5 ? 1 : 2;
+    return {
+      winner,
+      events: [],
+      finalHP: {
+        p1: species1 ? calculateStats(species1, level1).hp : 100,
+        p2: species2 ? calculateStats(species2, level2).hp : 100
+      },
+      totalTurns: 0
+    };
   }
 }
 
@@ -261,8 +401,9 @@ export async function simulateMainBattle(
     pokemon2Ability?: string;
     pokemon1Item?: string;
     pokemon2Item?: string;
+    returnSampleBattle?: boolean;
   }
-): Promise<BattleResult> {
+): Promise<BattleResult & { sampleBattle?: SingleBattleResult }> {
   const startTime = Date.now();
   
   const generation = options?.generation || 9;
@@ -281,9 +422,14 @@ export async function simulateMainBattle(
   
   console.log(`Starting ${NUM_BATTLES} battle simulations between ${species1.name} and ${species2.name}`);
   
+  // Calculate stats to pass to battle simulation
+  const pokemon1Stats = calculateStats(species1, pokemon1Level);
+  const pokemon2Stats = calculateStats(species2, pokemon2Level);
+  
   // Run battles
   let pokemon1Wins = 0;
   let pokemon2Wins = 0;
+  let sampleBattle: SingleBattleResult | undefined;
   
   // Run battles in batches to avoid blocking the UI
   const batchSize = 10;
@@ -303,18 +449,25 @@ export async function simulateMainBattle(
           options?.pokemon1Ability,
           options?.pokemon2Ability,
           options?.pokemon1Item,
-          options?.pokemon2Item
+          options?.pokemon2Item,
+          pokemon1Stats,
+          pokemon2Stats
         )
       );
     }
     
     const results = await Promise.all(batchPromises);
     
-    for (const winner of results) {
-      if (winner === 1) {
+    for (const result of results) {
+      if (result.winner === 1) {
         pokemon1Wins++;
       } else {
         pokemon2Wins++;
+      }
+      
+      // Capture first battle with events as sample
+      if (!sampleBattle && result.events.length > 0 && options?.returnSampleBattle) {
+        sampleBattle = result;
       }
     }
     
@@ -346,14 +499,12 @@ export async function simulateMainBattle(
   const pokemon1Ability = options?.pokemon1Ability || getRandomAbility(species1);
   const pokemon2Ability = options?.pokemon2Ability || getRandomAbility(species2);
   
-  // Calculate stats
-  const pokemon1Stats = calculateStats(species1, pokemon1Level);
-  const pokemon2Stats = calculateStats(species2, pokemon2Level);
+  // Stats were already calculated above, no need to recalculate
   
   // Note: Sprites will need to be fetched from the API or cached
   const sprites = { front: '', back: '', shiny: '' };
   
-  return {
+  const result: BattleResult & { sampleBattle?: SingleBattleResult } = {
     battleId: crypto.randomUUID(),
     pokemon1: {
       id: pokemon1Id,
@@ -383,4 +534,10 @@ export async function simulateMainBattle(
     winRate,
     executionTime
   };
+  
+  if (sampleBattle) {
+    result.sampleBattle = sampleBattle;
+  }
+  
+  return result;
 }

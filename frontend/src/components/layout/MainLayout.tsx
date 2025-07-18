@@ -11,10 +11,9 @@ import {
   IconMoon
 } from '@tabler/icons-react';
 import BattleSettings from '../settings/BattleSettings';
-import BattleSimulation from '../battle/BattleSimulation';
+import SimulationPanel from '../battle/SimulationPanel';
 import { useSettingsStore } from '../../store/settingsStore';
 import { useGameStore } from '../../store/gameStore';
-import { simulateSingleBattle } from '../../utils/battleSimulation';
 
 interface MainLayoutProps {
   children: React.ReactNode;
@@ -35,71 +34,9 @@ const MainLayout: React.FC<MainLayoutProps> = ({
     battleSettings, 
     isSettingsPanelExpanded, 
     isSimulationPanelExpanded,
-    battleSimulation,
-    isSimulating,
     setBattleSettings, 
-    toggleSettingsPanel,
-    toggleSimulationPanel,
-    setSimulationPanelExpanded,
-    setBattleSimulation,
-    setIsSimulating
+    toggleSettingsPanel
   } = useSettingsStore();
-  
-  const { currentBattle } = useGameStore();
-
-  const handleSimulateBattle = async () => {
-    if (!currentBattle) {
-      console.error('handleSimulateBattle: No current battle available');
-      return;
-    }
-    
-    console.log('handleSimulateBattle: Starting LOCAL battle simulation', {
-      pokemon1: currentBattle.pokemon1,
-      pokemon2: currentBattle.pokemon2,
-      pokemon1Id: currentBattle.pokemon1.id,
-      pokemon2Id: currentBattle.pokemon2.id,
-      settings: battleSettings
-    });
-    
-    setIsSimulating(true);
-    try {
-      console.log('handleSimulateBattle: Running battle locally...');
-      
-      // Run battle simulation locally
-      const result = await simulateSingleBattle(
-        currentBattle.pokemon1.id,
-        currentBattle.pokemon2.id,
-        {
-          generation: battleSettings.generation || 1,
-          pokemon1Level: battleSettings.levelMode === 'set' ? battleSettings.setLevel : Math.floor(Math.random() * 100) + 1,
-          pokemon2Level: battleSettings.levelMode === 'set' ? battleSettings.setLevel : Math.floor(Math.random() * 100) + 1
-        }
-      );
-      
-      console.log('handleSimulateBattle: Local battle simulation result:', result);
-      
-      if (!result) {
-        console.error('handleSimulateBattle: No result returned from battle simulation');
-        throw new Error('No result returned from battle simulation');
-      }
-      
-      setBattleSimulation(result);
-      // Auto-expand the simulation panel to show results
-      if (!isSimulationPanelExpanded) {
-        setSimulationPanelExpanded(true);
-      }
-    } catch (error) {
-      console.error('handleSimulateBattle: Error simulating battle:', error);
-      console.error('handleSimulateBattle: Error details:', {
-        message: error instanceof Error ? error.message : 'Unknown error',
-        stack: error instanceof Error ? error.stack : undefined
-      });
-      // Set empty simulation to show error state
-      setBattleSimulation(null);
-    } finally {
-      setIsSimulating(false);
-    }
-  };
 
   const navigationItems = [
     { id: 'battle', label: 'Battle', icon: IconDeviceGamepad2, description: 'Predict Pokemon battles' },
@@ -123,15 +60,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({
 
       {/* Battle Simulation Panel */}
       {activeTab === 'battle' && (
-        <BattleSimulation
-          isExpanded={isSimulationPanelExpanded}
-          onToggleExpanded={toggleSimulationPanel}
-          pokemon1={currentBattle?.pokemon1}
-          pokemon2={currentBattle?.pokemon2}
-          onSimulateBattle={handleSimulateBattle}
-          simulation={battleSimulation}
-          isSimulating={isSimulating}
-        />
+        <SimulationPanel />
       )}
 
       <AppShell
