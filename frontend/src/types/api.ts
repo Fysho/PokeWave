@@ -48,16 +48,18 @@ export interface BattleResult {
 
 export interface GuessSubmission {
   battleId: string;
-  guess: number; // Pokemon ID that user thinks will win
+  guessPercentage: number; // Percentage (0-100) that user thinks Pokemon 1 will win
 }
 
 export interface GuessResult {
   battleId: string;
-  guess: number;
-  correctAnswer: number;
+  guessPercentage: number;
+  actualWinRate: number;
   isCorrect: boolean;
-  winRate: number;
+  accuracy: number;
   points: number;
+  message: string;
+  pokemon1Won: boolean;
 }
 
 export interface GameState {

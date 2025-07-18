@@ -17,11 +17,11 @@ interface BattleHistoryEntry {
     name: string;
     wins: number;
   };
-  userGuess: number;
-  correctAnswer: number;
+  guessPercentage: number;
+  actualWinRate: number;
   isCorrect: boolean;
+  accuracy: number;
   points: number;
-  winRate: number;
   timestamp: Date;
   executionTime: number;
 }
@@ -244,19 +244,22 @@ const BattleHistory: React.FC<BattleHistoryProps> = ({
                       <div>
                         <div className="text-muted-foreground">Your guess:</div>
                         <div className="font-medium">
-                          {entry.userGuess === entry.pokemon1.id ? entry.pokemon1.name : entry.pokemon2.name}
+                          {entry.guessPercentage}% for {entry.pokemon1.name}
                         </div>
                       </div>
                       <div>
-                        <div className="text-muted-foreground">Actual winner:</div>
+                        <div className="text-muted-foreground">Actual win rate:</div>
                         <div className="font-medium">
-                          {entry.correctAnswer === entry.pokemon1.id ? entry.pokemon1.name : entry.pokemon2.name}
+                          {entry.actualWinRate.toFixed(1)}% for {entry.pokemon1.name}
+                          <span className="text-xs text-muted-foreground ml-1">
+                            ({entry.accuracy.toFixed(1)}% off)
+                          </span>
                         </div>
                       </div>
                     </div>
                     
                     <div className="mt-2 text-xs text-muted-foreground">
-                      Win rate: {entry.winRate.toFixed(1)}% | 
+                      {entry.pokemon1.name} won {((entry.pokemon1.wins / 1000) * 100).toFixed(1)}% | 
                       {new Date(entry.timestamp).toLocaleTimeString()}
                     </div>
                   </SlideIn>

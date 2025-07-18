@@ -49,12 +49,13 @@ interface BattleResult {
 
 interface GuessResult {
   battleId: string;
-  guess: number;
-  correctAnswer: number;
+  guessPercentage: number;
+  actualWinRate: number;
   isCorrect: boolean;
-  winRate: number;
+  accuracy: number;
   points: number;
   message: string;
+  pokemon1Won: boolean;
 }
 
 class BattleService {
@@ -108,7 +109,7 @@ class BattleService {
     }
   }
 
-  async submitGuess(battleId: string, guess: number): Promise<GuessResult> {
+  async submitGuess(battleId: string, guessPercentage: number): Promise<GuessResult> {
     try {
       // Check active battles first
       let battle = this.activeBattles.get(battleId);
@@ -125,41 +126,47 @@ class BattleService {
         throw new ApiError(404, 'Battle not found');
       }
 
-      // Validate that the guess is one of the two Pokemon in the battle
-      if (guess !== battle.pokemon1.id && guess !== battle.pokemon2.id) {
-        throw new ApiError(400, 'Guess must be the ID of one of the Pokemon in the battle');
-      }
+      // Calculate the actual win rate for Pokemon 1
+      const actualWinRate = (battle.pokemon1.wins / battle.totalBattles) * 100;
+      
+      // Check if the guess is within 10% of the actual win rate
+      const accuracy = Math.abs(actualWinRate - guessPercentage);
+      const isCorrect = accuracy <= 10;
+      
+      // Determine which Pokemon won
+      const pokemon1Won = battle.pokemon1.wins > battle.pokemon2.wins;
 
-      // Determine the correct answer (the Pokemon with more wins)
-      const correctAnswer = battle.pokemon1.wins > battle.pokemon2.wins 
-        ? battle.pokemon1.id 
-        : battle.pokemon2.id;
-
-      const isCorrect = guess === correctAnswer;
-
-      // Calculate points based on correctness and win rate margin
+      // Calculate points based on accuracy
       let points = 0;
       if (isCorrect) {
-        // Award more points for correctly guessing closer battles
-        const winRateMargin = Math.abs(battle.winRate - 50); // How close to 50/50
-        const difficultyBonus = Math.max(1, Math.round(10 - (winRateMargin / 5))); // 1-10 points
-        points = 10 + difficultyBonus; // Base 10 points + difficulty bonus
+        // Base points for being within 10%
+        points = 20;
+        
+        // Bonus points for being closer (up to 30 extra points)
+        const accuracyBonus = Math.round((10 - accuracy) * 3);
+        points += accuracyBonus;
+        
+        // Extra bonus for very close battles (near 50/50)
+        const battleDifficulty = Math.abs(actualWinRate - 50);
+        if (battleDifficulty <= 10) {
+          points += 10; // Hard battle bonus
+        } else if (battleDifficulty <= 20) {
+          points += 5; // Medium battle bonus
+        }
       }
 
       // Generate feedback message
       let message: string;
       if (isCorrect) {
-        const winRateMargin = Math.abs(battle.winRate - 50);
-        if (winRateMargin <= 5) {
-          message = `Excellent! You correctly picked the winner in a very close battle (${battle.winRate.toFixed(1)}% win rate)!`;
-        } else if (winRateMargin <= 15) {
-          message = `Great job! You correctly identified the winner!`;
+        if (accuracy <= 2) {
+          message = `Amazing! You were only ${accuracy.toFixed(1)}% off! ${battle.pokemon1.name} won ${actualWinRate.toFixed(1)}% of the battles.`;
+        } else if (accuracy <= 5) {
+          message = `Excellent! You were ${accuracy.toFixed(1)}% off. ${battle.pokemon1.name} won ${actualWinRate.toFixed(1)}% of the battles.`;
         } else {
-          message = `Correct! That was a relatively easy one to predict.`;
+          message = `Good job! You were ${accuracy.toFixed(1)}% off. ${battle.pokemon1.name} won ${actualWinRate.toFixed(1)}% of the battles.`;
         }
       } else {
-        const winnerName = correctAnswer === battle.pokemon1.id ? battle.pokemon1.name : battle.pokemon2.name;
-        message = `Wrong! ${winnerName} actually won ${battle.winRate.toFixed(1)}% of the battles.`;
+        message = `Not quite! You were ${accuracy.toFixed(1)}% off. ${battle.pokemon1.name} actually won ${actualWinRate.toFixed(1)}% of the battles. You need to be within 10% to score points.`;
       }
 
       // Clean up the battle from active battles
@@ -167,12 +174,13 @@ class BattleService {
 
       return {
         battleId,
-        guess,
-        correctAnswer,
+        guessPercentage,
+        actualWinRate,
         isCorrect,
-        winRate: battle.winRate,
+        accuracy,
         points,
-        message
+        message,
+        pokemon1Won
       };
     } catch (error) {
       if (error instanceof ApiError) {

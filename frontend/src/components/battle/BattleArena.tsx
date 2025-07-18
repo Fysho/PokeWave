@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Button } from '../ui/button';
+import { Slider } from '../ui/slider';
 import { Badge } from '../ui/badge';
 import { useGameStore } from '../../store/gameStore';
 import { BattleLoading } from '../ui/loading';
@@ -22,20 +23,16 @@ import {
 
 interface PokemonBattleCardProps {
   pokemon: any;
-  onSelect: () => void;
-  isSelected: boolean;
-  disabled: boolean;
   showResults: boolean;
   position: 'left' | 'right';
+  winPercentage?: number;
 }
 
 const PokemonBattleCard: React.FC<PokemonBattleCardProps> = ({
   pokemon,
-  onSelect,
-  isSelected,
-  disabled,
   showResults,
-  position
+  position,
+  winPercentage
 }) => {
   const getTypeColor = (type: string): string => {
     const typeColors: { [key: string]: string } = {
@@ -61,7 +58,7 @@ const PokemonBattleCard: React.FC<PokemonBattleCardProps> = ({
     return typeColors[type.toLowerCase()] || 'bg-gray-500 dark:bg-gray-400';
   };
 
-  const winPercentage = showResults ? ((pokemon.wins / 1000) * 100).toFixed(1) : null;
+  const displayWinPercentage = winPercentage !== undefined ? winPercentage.toFixed(1) : showResults ? ((pokemon.wins / 1000) * 100).toFixed(1) : null;
 
   return (
     <SlideIn 
@@ -71,12 +68,9 @@ const PokemonBattleCard: React.FC<PokemonBattleCardProps> = ({
     >
       <Card 
         className={`
-          relative transition-all duration-300 cursor-pointer group h-full
-          ${isSelected ? 'ring-4 ring-primary bg-primary/10 scale-105' : ''}
-          ${disabled ? 'opacity-50 cursor-not-allowed' : 'hover:shadow-2xl hover:scale-[1.02]'}
+          relative transition-all duration-300 group h-full
           ${showResults && pokemon.wins > 500 ? 'ring-2 ring-green-500' : ''}
         `}
-        onClick={!disabled ? onSelect : undefined}
       >
         <CardHeader className="text-center pb-4">
           <div className="relative mx-auto mb-4">
@@ -87,8 +81,8 @@ const PokemonBattleCard: React.FC<PokemonBattleCardProps> = ({
                   alt={pokemon.name}
                   className="w-40 h-40 md:w-48 md:h-48 lg:w-56 lg:h-56 object-contain mx-auto drop-shadow-2xl hover:scale-110 transition-transform duration-300"
                 />
-                {isSelected && (
-                  <div className="absolute -top-2 -right-2 w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center animate-bounce">
+                {showResults && pokemon.wins > 500 && (
+                  <div className="absolute -top-2 -right-2 w-10 h-10 bg-green-500 rounded-full flex items-center justify-center animate-bounce">
                     <Crown className="h-5 w-5 text-white" />
                   </div>
                 )}
@@ -135,7 +129,7 @@ const PokemonBattleCard: React.FC<PokemonBattleCardProps> = ({
               <div className="bg-muted/50 rounded-lg p-4 text-center">
                 <div className="text-sm text-muted-foreground mb-1">Battle Results</div>
                 <div className="text-3xl font-bold text-primary mb-1">
-                  {winPercentage}%
+                  {displayWinPercentage}%
                 </div>
                 <div className="text-sm text-muted-foreground">
                   {pokemon.wins}/1000 wins
@@ -144,32 +138,6 @@ const PokemonBattleCard: React.FC<PokemonBattleCardProps> = ({
             </ScaleIn>
           )}
 
-          {/* Select Button */}
-          {!showResults && (
-            <Button
-              onClick={onSelect}
-              disabled={disabled}
-              variant={isSelected ? "default" : "outline"}
-              className={`w-full h-14 text-lg font-bold transition-all ${
-                isSelected 
-                  ? 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700' 
-                  : 'hover:bg-primary/10'
-              }`}
-              size="lg"
-            >
-              {isSelected ? (
-                <>
-                  <Crown className="mr-2 h-6 w-6" />
-                  My Pick to Win!
-                </>
-              ) : (
-                <>
-                  <Target className="mr-2 h-6 w-6" />
-                  Choose This Fighter
-                </>
-              )}
-            </Button>
-          )}
         </CardContent>
       </Card>
     </SlideIn>
@@ -190,7 +158,7 @@ const BattleArena: React.FC = () => {
     clearError,
   } = useGameStore();
 
-  const [selectedPokemon, setSelectedPokemon] = useState<number | null>(null);
+  const [guessPercentage, setGuessPercentage] = useState<number>(50);
   const [showResults, setShowResults] = useState(false);
   const [guessResult, setGuessResult] = useState<any>(null);
   const [showStreakCelebration, setShowStreakCelebration] = useState(false);
@@ -203,7 +171,7 @@ const BattleArena: React.FC = () => {
   }, [currentBattle, isLoading, generateNewBattle]);
 
   useEffect(() => {
-    setSelectedPokemon(null);
+    setGuessPercentage(50);
     setShowResults(false);
     setGuessResult(null);
   }, [currentBattle]);
@@ -217,16 +185,16 @@ const BattleArena: React.FC = () => {
     }
   }, [streak, lastStreakShown]);
 
-  const handlePokemonSelect = (pokemonId: number) => {
+  const handleSliderChange = (value: number[]) => {
     if (isLoading || showResults) return;
-    setSelectedPokemon(pokemonId);
+    setGuessPercentage(value[0]);
   };
 
   const handleSubmitGuess = async () => {
-    if (!selectedPokemon || !currentBattle) return;
+    if (!currentBattle) return;
     
     try {
-      const result = await submitGuess(selectedPokemon);
+      const result = await submitGuess(guessPercentage);
       setGuessResult(result);
       setShowResults(true);
       
@@ -364,11 +332,9 @@ const BattleArena: React.FC = () => {
                     {/* Pokemon 1 */}
                     <PokemonBattleCard
                       pokemon={currentBattle.pokemon1}
-                      onSelect={() => handlePokemonSelect(currentBattle.pokemon1.id)}
-                      isSelected={selectedPokemon === currentBattle.pokemon1.id}
-                      disabled={isLoading || showResults}
                       showResults={showResults}
                       position="left"
+                      winPercentage={showResults ? guessResult?.actualWinRate : undefined}
                     />
 
                     {/* VS Badge - Positioned absolutely on larger screens */}
@@ -383,11 +349,9 @@ const BattleArena: React.FC = () => {
                     {/* Pokemon 2 */}
                     <PokemonBattleCard
                       pokemon={currentBattle.pokemon2}
-                      onSelect={() => handlePokemonSelect(currentBattle.pokemon2.id)}
-                      isSelected={selectedPokemon === currentBattle.pokemon2.id}
-                      disabled={isLoading || showResults}
                       showResults={showResults}
                       position="right"
+                      winPercentage={showResults ? (100 - (guessResult?.actualWinRate || 0)) : undefined}
                     />
                   </div>
                   
@@ -399,13 +363,56 @@ const BattleArena: React.FC = () => {
                   </div>
                   </div>
 
+                  {/* Win Rate Prediction Slider */}
+                  {!showResults && (
+                    <div className="max-w-2xl mx-auto space-y-4 mt-8">
+                      <div className="text-center">
+                        <h3 className="text-xl font-semibold mb-2">
+                          How many battles will {currentBattle.pokemon1.name} win?
+                        </h3>
+                        <p className="text-sm text-muted-foreground">
+                          Drag the slider to predict the win percentage (you need to be within 10% to score points)
+                        </p>
+                      </div>
+                      
+                      <div className="bg-card rounded-lg p-6 space-y-4">
+                        <div className="flex justify-between items-center mb-2">
+                          <div className="text-left">
+                            <div className="font-semibold">{currentBattle.pokemon1.name}</div>
+                            <div className="text-4xl font-bold text-primary">{guessPercentage}%</div>
+                          </div>
+                          <div className="text-right">
+                            <div className="font-semibold">{currentBattle.pokemon2.name}</div>
+                            <div className="text-4xl font-bold text-muted-foreground">{100 - guessPercentage}%</div>
+                          </div>
+                        </div>
+                        
+                        <Slider
+                          value={[guessPercentage]}
+                          onValueChange={handleSliderChange}
+                          min={0}
+                          max={100}
+                          step={1}
+                          className="w-full"
+                          disabled={isLoading}
+                        />
+                        
+                        <div className="flex justify-between text-sm text-muted-foreground">
+                          <span>0%</span>
+                          <span>50%</span>
+                          <span>100%</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Action Buttons */}
                   <div className="text-center space-y-4">
                     {!showResults ? (
                       <div className="flex justify-center gap-4">
                         <Button
                           onClick={handleSubmitGuess}
-                          disabled={!selectedPokemon || isLoading}
+                          disabled={isLoading}
                           className="px-8 py-3 text-lg font-semibold"
                           size="lg"
                         >
@@ -449,7 +456,13 @@ const BattleArena: React.FC = () => {
                                 <div className={`text-2xl font-bold mb-2 ${
                                   guessResult.isCorrect ? 'text-green-700 dark:text-green-300' : 'text-red-700 dark:text-red-300'
                                 }`}>
-                                  {guessResult.isCorrect ? '🎉 Correct!' : '❌ Wrong!'}
+                                  {guessResult.isCorrect ? '🎉 Within 10%!' : '❌ Not close enough!'}
+                                </div>
+                                <div className="text-lg mb-2">
+                                  Your guess: <span className="font-bold">{guessResult.guessPercentage}%</span>
+                                </div>
+                                <div className="text-lg mb-2">
+                                  Actual win rate: <span className="font-bold text-primary">{guessResult.actualWinRate.toFixed(1)}%</span>
                                 </div>
                                 <div className="text-muted-foreground mb-2">
                                   {guessResult.message}

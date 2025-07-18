@@ -15,11 +15,11 @@ interface BattleHistoryEntry {
     name: string;
     wins: number;
   };
-  userGuess: number;
-  correctAnswer: number;
+  guessPercentage: number;
+  actualWinRate: number;
   isCorrect: boolean;
+  accuracy: number;
   points: number;
-  winRate: number;
   timestamp: Date;
   executionTime: number;
 }
@@ -30,7 +30,7 @@ interface GameStore extends GameState {
   
   // Actions
   generateNewBattle: () => Promise<void>;
-  submitGuess: (pokemonId: number) => Promise<any>;
+  submitGuess: (guessPercentage: number) => Promise<any>;
   resetGame: () => void;
   clearError: () => void;
   setLoading: (loading: boolean) => void;
@@ -79,7 +79,7 @@ export const useGameStore = create<GameStore>()(
           }
         },
 
-        submitGuess: async (pokemonId: number) => {
+        submitGuess: async (guessPercentage: number) => {
           const { currentBattle, score, streak, totalGuesses, correctGuesses, battleHistory } = get();
           
           if (!currentBattle) {
@@ -92,7 +92,7 @@ export const useGameStore = create<GameStore>()(
           try {
             const guessResult = await ApiService.submitGuess({
               battleId: currentBattle.battleId,
-              guess: pokemonId,
+              guessPercentage: guessPercentage,
             });
 
             const newTotalGuesses = totalGuesses + 1;
@@ -105,11 +105,11 @@ export const useGameStore = create<GameStore>()(
               id: crypto.randomUUID(),
               pokemon1: currentBattle.pokemon1,
               pokemon2: currentBattle.pokemon2,
-              userGuess: pokemonId,
-              correctAnswer: guessResult.correctAnswer,
+              guessPercentage: guessPercentage,
+              actualWinRate: guessResult.actualWinRate,
               isCorrect: guessResult.isCorrect,
+              accuracy: guessResult.accuracy,
               points: guessResult.points,
-              winRate: guessResult.winRate,
               timestamp: new Date(),
               executionTime: currentBattle.executionTime || 0,
             };
