@@ -37,30 +37,60 @@ function formatPokemonName(name: string): string {
 }
 
 function getRandomMoves(species: any, dex: any, count: number = 4): string[] {
+  // Since we don't have learnset data in the frontend, use a simple move pool
+  // based on Pokemon type
+  const movePool: { [key: string]: string[] } = {
+    normal: ['tackle', 'scratch', 'pound', 'quickattack', 'slash', 'bodyslam'],
+    fire: ['ember', 'flamethrower', 'fireblast', 'flamecharge', 'firepunch'],
+    water: ['watergun', 'surf', 'hydropump', 'aquajet', 'bubblebeam'],
+    electric: ['thundershock', 'thunderbolt', 'thunder', 'thunderpunch', 'spark'],
+    grass: ['vinewhip', 'razorleaf', 'solarbeam', 'energyball', 'leafstorm'],
+    ice: ['icepunch', 'icebeam', 'blizzard', 'iceshard', 'aurorabeam'],
+    fighting: ['lowkick', 'brickbreak', 'closecombat', 'machpunch', 'crosschop'],
+    poison: ['poisonsting', 'sludgebomb', 'toxic', 'poisonjab', 'venoshock'],
+    ground: ['earthquake', 'dig', 'earthpower', 'mudshot', 'bulldoze'],
+    flying: ['gust', 'wingattack', 'airslash', 'hurricane', 'aerialace'],
+    psychic: ['confusion', 'psychic', 'psybeam', 'zenheadbutt', 'psychocut'],
+    bug: ['bugbite', 'signalbeam', 'bugbuzz', 'xscissor', 'uturn'],
+    rock: ['rockthrow', 'rockslide', 'stoneedge', 'powergem', 'rockblast'],
+    ghost: ['lick', 'shadowball', 'shadowclaw', 'hex', 'shadowsneak'],
+    dragon: ['dragonrage', 'dragonpulse', 'dragonclaw', 'outrage', 'dracometeor'],
+    dark: ['bite', 'crunch', 'darkpulse', 'knockoff', 'suckerpunch'],
+    steel: ['metalclaw', 'ironhead', 'flashcannon', 'meteormash', 'bulletpunch'],
+    fairy: ['fairywind', 'moonblast', 'dazzlinggleam', 'playrough', 'drainingkiss']
+  };
+  
+  const defaultMoves = ['tackle', 'scratch', 'pound', 'quickattack'];
   const moves: string[] = [];
-  const learnset = dex.data.Learnsets[species.id];
   
-  if (!learnset || !learnset.learnset) {
-    // Fallback moves if no learnset
-    return ['tackle', 'scratch', 'pound', 'quickattack'].slice(0, count);
+  // Get moves based on Pokemon's types
+  if (species.types) {
+    for (const type of species.types) {
+      const typeMoves = movePool[type.toLowerCase()];
+      if (typeMoves) {
+        // Add up to 2 moves from each type
+        const shuffled = [...typeMoves].sort(() => Math.random() - 0.5);
+        moves.push(...shuffled.slice(0, 2));
+      }
+    }
   }
   
-  // Get all available moves
-  const availableMoves = Object.keys(learnset.learnset);
-  
-  // Shuffle and pick moves
-  const shuffled = availableMoves.sort(() => Math.random() - 0.5);
-  
-  for (let i = 0; i < Math.min(count, shuffled.length); i++) {
-    moves.push(shuffled[i]);
-  }
+  // Shuffle all collected moves and pick the required count
+  const allMoves = [...new Set(moves)]; // Remove duplicates
+  const shuffledMoves = allMoves.sort(() => Math.random() - 0.5);
+  const selectedMoves = shuffledMoves.slice(0, count);
   
   // Fill with default moves if needed
-  while (moves.length < count) {
-    moves.push('tackle');
+  while (selectedMoves.length < count) {
+    const defaultMove = defaultMoves[selectedMoves.length % defaultMoves.length];
+    if (!selectedMoves.includes(defaultMove)) {
+      selectedMoves.push(defaultMove);
+    } else {
+      selectedMoves.push('struggle');
+    }
   }
   
-  return moves;
+  return selectedMoves;
 }
 
 function createTeamString(species: any, level: number, dex: any): string {
