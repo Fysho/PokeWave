@@ -94,3 +94,12 @@
     color: hsl(222.2 84% 4.9%);
   }
 }
+
+/* Pixel art rendering for Pokemon sprites */
+.pokemon-sprite {
+  image-rendering: -moz-crisp-edges;
+  image-rendering: -webkit-crisp-edges;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+  -ms-interpolation-mode: nearest-neighbor;
+}

@@ -75,6 +75,7 @@ const PokemonBattleCard: React.FC<PokemonBattleCardProps> = ({
                 <img 
                   src={pokemon.sprites.front} 
                   alt={pokemon.name}
+                  className="pokemon-sprite"
                   style={{
                     width: '160px',
                     height: '160px',
