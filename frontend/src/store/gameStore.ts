@@ -3,6 +3,7 @@ import { devtools, persist } from 'zustand/middleware';
 import type { GameState, ApiError } from '../types/api';
 import ApiService from '../services/api';
 import { simulateMainBattle } from '../utils/mainBattleSimulation';
+import { evaluateGuess } from '../utils/guessEvaluation';
 
 interface BattleHistoryEntry {
   id: string;
@@ -135,10 +136,11 @@ export const useGameStore = create<GameStore>()(
           set({ isLoading: true, error: null });
 
           try {
-            const guessResult = await ApiService.submitGuess({
-              battleId: currentBattle.battleId,
-              guessPercentage: guessPercentage,
-            });
+            // Calculate the actual win rate from the battle results
+            const actualWinRate = currentBattle.winRate;
+            
+            // Evaluate the guess locally
+            const guessResult = evaluateGuess(guessPercentage, actualWinRate);
 
             const newTotalGuesses = totalGuesses + 1;
             const newCorrectGuesses = guessResult.isCorrect ? correctGuesses + 1 : correctGuesses;
