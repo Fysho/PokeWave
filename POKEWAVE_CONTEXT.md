@@ -5,10 +5,20 @@ PokeWave is a web-based Pokemon battle prediction game where users predict the w
 
 ## Implementation Status
 
-### ✅ Phase 4 Complete - UI Framework Migration (Current)
-**Status**: Successfully migrated to Mantine UI framework
-**Last Commit**: 3528b3d - "feat: migrate from shadcn/ui to Mantine UI framework"
+### ✅ Phase 5 - Data Source Optimization (Current)
+**Status**: Updated to use Pokemon Showdown as primary data source
+**Last Commit**: 46cec68 - "fix: Correct battle simulation count display from 1000 to 10"
 
+**Recent Updates**:
+- **Pokemon Data Sources**: 
+  - Pokemon Showdown (@pkmn packages) provides: stats, types, moves, abilities, battle mechanics
+  - PokeAPI only provides: sprite images (front, back, shiny)
+- **Battle Simulation**: Always simulates exactly 10 battles (not 1000 as originally planned)
+- **Performance**: Improved move selection with type-based move pools
+- **Bug Fixes**: Corrected UI display showing wrong battle count
+
+### ✅ Phase 4 Complete - UI Framework Migration
+**Status**: Successfully migrated to Mantine UI framework
 **Migration Details**:
 - **Replaced**: shadcn/ui + Tailwind CSS → Mantine UI + Tabler Icons
 - **Improved**: Theme system with Mantine's built-in dark/light mode
@@ -26,12 +36,12 @@ PokeWave is a web-based Pokemon battle prediction game where users predict the w
 **Last Commit**: fe71783 - "Complete game loop implementation with guess result feedback"
 
 ## Game Flow
-1. **Battle Generation**: System selects two random Pokemon (Gen 1-151)
-2. **Battle Simulation**: Pokemon Showdown engine simulates 10 battles
-3. **User Prediction**: User predicts win percentage using a slider (within 10% accuracy required)
-4. **Result Feedback**: System shows correct/incorrect with accuracy percentage and points
-5. **Score Tracking**: Points, streak, accuracy, and total battles are tracked
-6. **Auto-Continue**: New battle automatically generated after results
+1. **Battle Generation**: System selects two random Pokemon (default Gen 1-151, configurable up to Gen 9)
+2. **Battle Simulation**: Pokemon Showdown engine simulates exactly 10 battles (reduced from original 1000 for performance)
+3. **User Prediction**: User predicts win percentage using a slider (must be within 10% accuracy to score)
+4. **Result Feedback**: System shows correct/incorrect with accuracy percentage and points earned
+5. **Score Tracking**: Points, streak, accuracy percentage, and total battles are persistently tracked
+6. **Auto-Continue**: New battle automatically generated after results are shown
 
 ## Technical Architecture
 
@@ -51,11 +61,23 @@ PokeWave is a web-based Pokemon battle prediction game where users predict the w
 - **Logging**: Winston logger with structured logging
 
 #### Key Services
-- **Showdown Service**: Handles Pokemon Showdown integration and battle simulation with PokeAPI integration
-- **Battle Service**: Manages battle state, guess validation, and scoring
-- **Pokemon Service**: Fetches Pokemon data from PokeAPI for sprites and types
-- **Cache Service**: Redis caching with fallback to in-memory
-- **Logger**: Structured logging for debugging and monitoring
+- **Pokemon Showdown Service** (`pokemon-showdown.service.ts`): 
+  - Primary battle engine integration using @pkmn packages
+  - Provides Pokemon stats, types, moves, and abilities
+  - Handles all battle simulations (10 battles per request)
+  - Generates type-appropriate move pools for each Pokemon
+- **Battle Service** (`battle.service.ts`): 
+  - Orchestrates battle flow and game state
+  - Manages guess validation and scoring logic
+  - Handles battle result caching
+- **Pokemon Service** (`pokemon.service.ts`): 
+  - **ONLY** fetches sprite images from PokeAPI
+  - No longer provides stats, types, or moves (these come from Pokemon Showdown)
+  - Caches sprite URLs for 24 hours
+- **Showdown Service** (`showdown.service.ts`): 
+  - Simple wrapper that delegates to pokemon-showdown.service.ts
+- **Cache Service**: Redis caching with graceful fallback to in-memory
+- **Logger**: Winston structured logging for debugging and monitoring
 
 ### Frontend (React + Vite + TypeScript) - Port 4001
 **Status**: ✅ Fully functional with Mantine UI
@@ -84,13 +106,24 @@ PokeWave is a web-based Pokemon battle prediction game where users predict the w
 
 ### Data Flow
 ```
-User Interaction → Frontend (React) → API Service (Axios) → Backend (Express) 
-                                                              ↓
-Pokemon Showdown Simulation ← Battle Service ← API Controller
-                    ↓                              ↓
-10 Battle Results → Cache → Frontend Display → Pokemon Service → PokeAPI
-                    ↓                              ↓
-              Battle History → Streak Tracking → User Feedback + Celebrations
+User Interaction → Frontend (React) → API Service (Axios) → Backend (Express)
+                                                                ↓
+                                                         Battle Controller
+                                                                ↓
+                                                         Battle Service
+                                                           ↙        ↘
+                                         Pokemon Showdown Service    Pokemon Service
+                                          (stats, types, moves)      (sprites only)
+                                                    ↓                      ↓
+                                              @pkmn packages           PokeAPI
+                                                    ↓
+                                           10 Battle Simulations
+                                                    ↓
+                                              Cache (Redis)
+                                                    ↓
+                                             Frontend Display
+                                                    ↓
+                                    Score/Streak/History → User Feedback
 ```
 
 ## Project Structure
@@ -244,23 +277,26 @@ Response:
 - **Accuracy Calculation**: Percentage of correct guesses over time
 
 ## Known Working Features
-- ✅ Real Pokemon battle simulation with 10 battles
+- ✅ Real Pokemon battle simulation with exactly 10 battles (not 1000)
+- ✅ Pokemon data from authoritative sources:
+  - Stats, types, moves, abilities from Pokemon Showdown (@pkmn)
+  - Sprite images from PokeAPI
+- ✅ Type-appropriate move selection for each Pokemon
 - ✅ Interactive Pokemon cards with sprites and types
-- ✅ Percentage-based prediction system with slider
-- ✅ 10% accuracy requirement for scoring
-- ✅ Score tracking and persistence
+- ✅ Percentage-based prediction system with slider (0-100%)
+- ✅ 10% accuracy requirement for scoring points
+- ✅ Score tracking and persistence via Zustand
 - ✅ Dark/light theme support with Mantine theme system
 - ✅ Mobile-responsive design with Mantine Grid
-- ✅ Error handling and user feedback
-- ✅ Battle result caching
-- ✅ Automatic battle generation
-- ✅ Statistical battle modeling with type advantages
-- ✅ Pokemon sprites and type badges from PokeAPI
+- ✅ Comprehensive error handling and user feedback
+- ✅ Battle result caching (Redis with fallback)
+- ✅ Automatic battle generation after each guess
+- ✅ Accurate battle simulation with Pokemon Showdown engine
 - ✅ Streak tracking with visual indicators
 - ✅ Streak celebration animations with particles
-- ✅ Loading animations and smooth transitions
-- ✅ Comprehensive analytics and statistics
-- ✅ Modern Mantine UI component library integration
+- ✅ Loading animations with accurate battle count display
+- ✅ Comprehensive analytics and game statistics
+- ✅ 30-second timeout for API calls (sufficient for 10 battles)
 
 ## Testing Current State
 
@@ -306,31 +342,55 @@ curl -X POST http://localhost:4000/api/battle/simulate \
 ## AI Developer Notes
 
 ### Starting Development
-1. **Both servers work independently** - backend on 4000, frontend on 4001
+1. **Both servers must be running** - backend on port 4000, frontend on port 4001
 2. **Game loop is complete** - users can play immediately with percentage prediction system
-3. **Real Pokemon data** - battles use actual Pokemon stats, types, and sprites
-4. **Modular architecture** - easy to extend with new features
-5. **Phase 4 complete** - Successfully migrated to Mantine UI framework
-6. **Modern UI** - Mantine components provide better theming and responsiveness
+3. **Data sources are split**:
+   - Pokemon Showdown (@pkmn) provides all gameplay data (stats, types, moves)
+   - PokeAPI only provides sprite images
+4. **Battle count is fixed at 10** - NOT 1000 as mentioned in original specs
+5. **Modular architecture** - easy to extend with new features
+6. **Phase 5 complete** - Data sources optimized for performance and accuracy
+
+### Critical Implementation Details
+1. **Battle Simulation**:
+   - Always simulates exactly 10 battles (hardcoded in `NUM_BATTLES`)
+   - Each battle uses Pokemon Showdown's engine for accurate mechanics
+   - Type-based move pools ensure Pokemon use appropriate moves
+   - 30-second timeout is sufficient for 10 battles
+
+2. **Data Flow**:
+   - `pokemon-showdown.service.ts` is the primary service for Pokemon data
+   - `pokemon.service.ts` ONLY provides sprites (getPokemonSprites method)
+   - The old `getPokemonById` method is deprecated and returns 501 error
+
+3. **Caching Strategy**:
+   - Battle results cached for 1 hour
+   - Pokemon sprites cached for 24 hours
+   - Redis optional with graceful in-memory fallback
 
 ### Key Files to Understand
-- `backend/src/services/showdown.service.ts` - Pokemon Showdown integration with PokeAPI
-- `backend/src/services/battle.service.ts` - Game logic and scoring (handles percentage guesses)
-- `backend/src/services/pokemon.service.ts` - PokeAPI integration for sprites and types
-- `frontend/src/components/battle/BattleArena.tsx` - Main game interface with Mantine components
-- `frontend/src/components/layout/MainLayout.tsx` - Mantine AppShell layout with navigation
-- `frontend/src/components/game/GameDashboard.tsx` - Statistics dashboard with Mantine cards
-- `frontend/src/components/ui/streak-celebration.tsx` - Streak celebration animations
-- `frontend/src/store/gameStore.ts` - Game state management with battle history
-- `frontend/src/services/api.ts` - API communication layer
+- `backend/src/services/pokemon-showdown.service.ts` - Primary Pokemon data and battle engine
+- `backend/src/services/battle.service.ts` - Game orchestration and scoring logic
+- `backend/src/services/pokemon.service.ts` - Sprite fetching ONLY (not full Pokemon data)
+- `frontend/src/components/battle/BattleArena.tsx` - Main game UI with prediction slider
+- `frontend/src/components/ui/loading.tsx` - Loading states (check battle count display)
+- `frontend/src/store/gameStore.ts` - Persistent game state management
+- `frontend/src/services/api.ts` - API client with 30-second timeout
 
 ### Common Tasks
-- **Adding new Pokemon**: Update random generation range and validation
-- **Modifying scoring**: Update `battle.service.ts` point calculation for percentage accuracy
-- **UI changes**: Components use Mantine UI in `frontend/src/components/`
-- **New game modes**: Extend `BattleArena` and `gameStore`
-- **Adding animations**: Use Framer Motion components in `frontend/src/components/ui/`
-- **Rebuilding battle history**: Create new BattleHistory component with Mantine UI
-- **Theme customization**: Modify Mantine theme in `frontend/src/App.tsx`
+- **Adding new Pokemon generations**: Update `GENERATION_RANGES` in pokemon.service.ts
+- **Changing battle count**: Update `NUM_BATTLES` in pokemon-showdown.service.ts AND loading UI
+- **Modifying scoring**: Update battle.service.ts point calculation logic
+- **Improving move selection**: Enhance `getRandomMoves` and `getTypeBasedMoves` methods
+- **UI changes**: All components use Mantine UI (not Tailwind/shadcn)
+- **Performance issues**: Check if sprites are being cached properly
+- **Timeout issues**: Verify only 10 battles are being simulated
 
-The project is production-ready for core battle prediction gameplay with real Pokemon simulation data, modern Mantine UI components, and percentage-based prediction system.
+### Common Pitfalls to Avoid
+1. **Don't use getPokemonById** - it's deprecated, use Pokemon Showdown for data
+2. **Don't change battle count** without updating both backend AND frontend
+3. **Don't fetch full Pokemon data from PokeAPI** - only sprites
+4. **Don't skip caching** - it significantly improves performance
+5. **Remember Mantine UI** - project migrated from shadcn/Tailwind
+
+The project is production-ready with accurate Pokemon battle simulation, proper data sourcing, and a complete game loop.
