@@ -39,26 +39,26 @@ const PokemonBattleCard: React.FC<PokemonBattleCardProps> = ({
 }) => {
   const getTypeColor = (type: string): string => {
     const typeColors: { [key: string]: string } = {
-      normal: 'bg-gray-400',
-      fire: 'bg-red-500',
-      water: 'bg-blue-500',
-      electric: 'bg-yellow-400',
-      grass: 'bg-green-500',
-      ice: 'bg-blue-200',
-      fighting: 'bg-red-700',
-      poison: 'bg-purple-500',
-      ground: 'bg-yellow-600',
-      flying: 'bg-indigo-400',
-      psychic: 'bg-pink-500',
-      bug: 'bg-green-400',
-      rock: 'bg-yellow-800',
-      ghost: 'bg-purple-700',
-      dragon: 'bg-indigo-700',
-      dark: 'bg-gray-800',
-      steel: 'bg-gray-500',
-      fairy: 'bg-pink-300',
+      normal: 'bg-gray-500 dark:bg-gray-400',
+      fire: 'bg-red-500 dark:bg-red-400',
+      water: 'bg-blue-500 dark:bg-blue-400',
+      electric: 'bg-yellow-500 dark:bg-yellow-400',
+      grass: 'bg-green-500 dark:bg-green-400',
+      ice: 'bg-blue-300 dark:bg-blue-200',
+      fighting: 'bg-red-700 dark:bg-red-600',
+      poison: 'bg-purple-500 dark:bg-purple-400',
+      ground: 'bg-yellow-600 dark:bg-yellow-500',
+      flying: 'bg-indigo-400 dark:bg-indigo-300',
+      psychic: 'bg-pink-500 dark:bg-pink-400',
+      bug: 'bg-green-400 dark:bg-green-300',
+      rock: 'bg-yellow-700 dark:bg-yellow-600',
+      ghost: 'bg-purple-700 dark:bg-purple-600',
+      dragon: 'bg-indigo-700 dark:bg-indigo-600',
+      dark: 'bg-gray-800 dark:bg-gray-700',
+      steel: 'bg-gray-500 dark:bg-gray-400',
+      fairy: 'bg-pink-400 dark:bg-pink-300',
     };
-    return typeColors[type.toLowerCase()] || 'bg-gray-400';
+    return typeColors[type.toLowerCase()] || 'bg-gray-500 dark:bg-gray-400';
   };
 
   const winPercentage = showResults ? ((pokemon.wins / 1000) * 100).toFixed(1) : null;
@@ -72,7 +72,7 @@ const PokemonBattleCard: React.FC<PokemonBattleCardProps> = ({
       <Card 
         className={`
           relative transition-all duration-300 cursor-pointer group h-full
-          ${isSelected ? 'ring-4 ring-blue-500 bg-blue-50 dark:bg-blue-950 scale-105' : ''}
+          ${isSelected ? 'ring-4 ring-primary bg-primary/10 scale-105' : ''}
           ${disabled ? 'opacity-50 cursor-not-allowed' : 'hover:shadow-2xl hover:scale-[1.02]'}
           ${showResults && pokemon.wins > 500 ? 'ring-2 ring-green-500' : ''}
         `}
@@ -94,7 +94,7 @@ const PokemonBattleCard: React.FC<PokemonBattleCardProps> = ({
                 )}
               </div>
             ) : (
-              <div className="w-40 h-40 md:w-48 md:h-48 lg:w-56 lg:h-56 bg-gray-200 dark:bg-gray-700 rounded-lg flex items-center justify-center mx-auto">
+              <div className="w-40 h-40 md:w-48 md:h-48 lg:w-56 lg:h-56 bg-muted rounded-lg flex items-center justify-center mx-auto">
                 <span className="text-gray-500 dark:text-gray-400 text-sm">
                   No Image
                 </span>
@@ -103,7 +103,7 @@ const PokemonBattleCard: React.FC<PokemonBattleCardProps> = ({
             
             <Badge 
               variant="secondary" 
-              className="absolute -top-2 -left-2 bg-white dark:bg-gray-800 border-2 text-lg px-3 py-1"
+              className="absolute -top-2 -left-2 bg-background border-2 text-lg px-3 py-1"
             >
               Lv.{pokemon.level}
             </Badge>
@@ -132,7 +132,7 @@ const PokemonBattleCard: React.FC<PokemonBattleCardProps> = ({
           {/* Battle Results */}
           {showResults && (
             <ScaleIn delay={0.5}>
-              <div className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-700 rounded-lg p-4 text-center">
+              <div className="bg-muted/50 rounded-lg p-4 text-center">
                 <div className="text-sm text-muted-foreground mb-1">Battle Results</div>
                 <div className="text-3xl font-bold text-primary mb-1">
                   {winPercentage}%
@@ -153,7 +153,7 @@ const PokemonBattleCard: React.FC<PokemonBattleCardProps> = ({
               className={`w-full h-14 text-lg font-bold transition-all ${
                 isSelected 
                   ? 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700' 
-                  : 'hover:bg-gradient-to-r hover:from-blue-100 hover:to-purple-100 dark:hover:from-blue-900 dark:hover:to-purple-900'
+                  : 'hover:bg-primary/10'
               }`}
               size="lg"
             >
@@ -251,7 +251,7 @@ const BattleArena: React.FC = () => {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-6">
         <div className="text-center">
-          <div className="w-16 h-16 bg-red-100 dark:bg-red-900 rounded-full flex items-center justify-center mx-auto mb-4">
+          <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
             <Zap className="h-8 w-8 text-red-600" />
           </div>
           <h2 className="text-2xl font-bold text-red-600 mb-2">Battle Error</h2>
@@ -283,49 +283,49 @@ const BattleArena: React.FC = () => {
         {/* Stats Bar */}
         <FadeIn delay={0.2}>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-            <Card className="bg-gradient-to-r from-yellow-50 to-yellow-100 dark:from-yellow-900 dark:to-yellow-800">
+            <Card className="bg-yellow-500/10 border-yellow-500/20">
               <CardContent className="p-4 text-center">
-                <Trophy className="h-6 w-6 text-yellow-600 mx-auto mb-2" />
-                <div className="text-2xl font-bold text-yellow-700 dark:text-yellow-300">
+                <Trophy className="h-6 w-6 text-yellow-600 dark:text-yellow-400 mx-auto mb-2" />
+                <div className="text-2xl font-bold text-foreground">
                   {score}
                 </div>
-                <div className="text-sm text-yellow-600 dark:text-yellow-400">Score</div>
+                <div className="text-sm text-muted-foreground">Score</div>
               </CardContent>
             </Card>
 
-            <Card className={`transition-all ${streak > 0 ? 'bg-gradient-to-r from-red-50 to-red-100 dark:from-red-900 dark:to-red-800 ring-2 ring-red-300' : 'bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-700'}`}>
+            <Card className={`transition-all ${streak > 0 ? 'bg-red-500/10 border-red-500/20 ring-2 ring-red-500/30' : 'bg-muted/50'}`}>
               <CardContent className="p-4 text-center">
                 {streak > 0 ? (
-                  <Flame className="h-6 w-6 text-red-600 mx-auto mb-2" />
+                  <Flame className="h-6 w-6 text-red-600 dark:text-red-400 mx-auto mb-2" />
                 ) : (
-                  <Zap className="h-6 w-6 text-gray-600 mx-auto mb-2" />
+                  <Zap className="h-6 w-6 text-muted-foreground mx-auto mb-2" />
                 )}
-                <div className={`text-2xl font-bold ${streak > 0 ? 'text-red-700 dark:text-red-300' : 'text-gray-700 dark:text-gray-300'}`}>
+                <div className={`text-2xl font-bold ${streak > 0 ? 'text-red-600 dark:text-red-400' : 'text-foreground'}`}>
                   {streak}
                 </div>
-                <div className={`text-sm ${streak > 0 ? 'text-red-600 dark:text-red-400' : 'text-gray-600 dark:text-gray-400'}`}>
+                <div className={`text-sm ${streak > 0 ? 'text-red-600 dark:text-red-400' : 'text-muted-foreground'}`}>
                   {streak > 0 ? `🔥 Streak` : 'Streak'}
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900 dark:to-blue-800">
+            <Card className="bg-blue-500/10 border-blue-500/20">
               <CardContent className="p-4 text-center">
-                <Target className="h-6 w-6 text-blue-600 mx-auto mb-2" />
-                <div className="text-2xl font-bold text-blue-700 dark:text-blue-300">
+                <Target className="h-6 w-6 text-blue-600 dark:text-blue-400 mx-auto mb-2" />
+                <div className="text-2xl font-bold text-foreground">
                   {getAccuracy()}%
                 </div>
-                <div className="text-sm text-blue-600 dark:text-blue-400">Accuracy</div>
+                <div className="text-sm text-muted-foreground">Accuracy</div>
               </CardContent>
             </Card>
 
-            <Card className="bg-gradient-to-r from-purple-50 to-purple-100 dark:from-purple-900 dark:to-purple-800">
+            <Card className="bg-purple-500/10 border-purple-500/20">
               <CardContent className="p-4 text-center">
-                <Swords className="h-6 w-6 text-purple-600 mx-auto mb-2" />
-                <div className="text-2xl font-bold text-purple-700 dark:text-purple-300">
+                <Swords className="h-6 w-6 text-purple-600 dark:text-purple-400 mx-auto mb-2" />
+                <div className="text-2xl font-bold text-foreground">
                   {totalGuesses}
                 </div>
-                <div className="text-sm text-purple-600 dark:text-purple-400">Battles</div>
+                <div className="text-sm text-muted-foreground">Battles</div>
               </CardContent>
             </Card>
           </div>
@@ -333,8 +333,8 @@ const BattleArena: React.FC = () => {
 
         {/* Battle Arena */}
         <FadeIn delay={0.4}>
-          <Card className="bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 shadow-2xl overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-transparent to-purple-500/5 pointer-events-none" />
+          <Card className="bg-card shadow-2xl overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-primary/5 pointer-events-none" />
             <CardContent className="p-6 md:p-8 lg:p-12 relative">
               {isLoading ? (
                 <div className="py-16">
@@ -442,8 +442,8 @@ const BattleArena: React.FC = () => {
                           {guessResult && (
                             <Card className={`${
                               guessResult.isCorrect 
-                                ? 'bg-gradient-to-r from-green-50 to-green-100 dark:from-green-900 dark:to-green-800 border-green-300' 
-                                : 'bg-gradient-to-r from-red-50 to-red-100 dark:from-red-900 dark:to-red-800 border-red-300'
+                                ? 'bg-green-500/10 border-green-500/20' 
+                                : 'bg-red-500/10 border-red-500/20'
                             }`}>
                               <CardContent className="p-6 text-center">
                                 <div className={`text-2xl font-bold mb-2 ${
@@ -474,7 +474,7 @@ const BattleArena: React.FC = () => {
                 </div>
               ) : (
                 <div className="text-center py-16">
-                  <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
                     <Swords className="h-8 w-8 text-gray-600" />
                   </div>
                   <h3 className="text-xl font-semibold mb-2">No Battle Available</h3>

@@ -38,9 +38,12 @@ const MainLayout: React.FC<MainLayoutProps> = ({
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+    <div className="min-h-screen bg-background relative">
+      {/* Subtle background pattern */}
+      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-primary/5 pointer-events-none" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-primary/10 via-transparent to-transparent pointer-events-none" />
       {/* Header */}
-      <header className="sticky top-0 z-50 w-full border-b bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl supports-[backdrop-filter]:bg-white/60 dark:supports-[backdrop-filter]:bg-gray-900/60">
+      <header className="sticky top-0 z-50 w-full border-b bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60">
         <div className="container mx-auto px-6">
           <div className="flex h-16 items-center justify-between">
             <div className="flex items-center gap-8">
@@ -93,7 +96,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({
       </header>
 
       {/* Mobile Navigation */}
-      <div className="lg:hidden border-b bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl">
+      <div className="lg:hidden border-b bg-background/80 backdrop-blur-xl">
         <div className="container mx-auto px-6 py-3">
           <div className="flex items-center gap-2 overflow-x-auto">
             {navigationItems.map((item) => {
@@ -121,14 +124,14 @@ const MainLayout: React.FC<MainLayoutProps> = ({
       </div>
 
       {/* Main Content */}
-      <main className="container mx-auto px-6 py-8">
+      <main className="container mx-auto px-6 py-8 relative">
         <FadeIn>
           {children}
         </FadeIn>
       </main>
 
       {/* Footer */}
-      <footer className="border-t bg-white/50 dark:bg-gray-900/50 backdrop-blur-xl mt-auto">
+      <footer className="border-t bg-background/50 backdrop-blur-xl mt-auto">
         <div className="container mx-auto px-6 py-6">
           <div className="flex items-center justify-between">
             <div className="text-sm text-muted-foreground">

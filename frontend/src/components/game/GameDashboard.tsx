@@ -50,7 +50,7 @@ const GameDashboard: React.FC = () => {
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-              <Card className="bg-gradient-to-r from-yellow-50 to-yellow-100 dark:from-yellow-900 dark:to-yellow-800">
+              <Card className="bg-yellow-500/10 border-yellow-500/20">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-lg flex items-center">
                     <Trophy className="h-5 w-5 mr-2 text-yellow-600" />
@@ -58,13 +58,13 @@ const GameDashboard: React.FC = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold text-yellow-700 dark:text-yellow-300">
+                  <div className="text-3xl font-bold text-foreground">
                     {score}
                   </div>
                 </CardContent>
               </Card>
 
-              <Card className="bg-gradient-to-r from-red-50 to-red-100 dark:from-red-900 dark:to-red-800">
+              <Card className="bg-red-500/10 border-red-500/20">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-lg flex items-center">
                     <Trophy className="h-5 w-5 mr-2 text-red-600" />
@@ -72,13 +72,13 @@ const GameDashboard: React.FC = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold text-red-700 dark:text-red-300">
+                  <div className="text-3xl font-bold text-foreground">
                     {Math.max(streak, ...battleHistory.map(b => b.isCorrect ? 1 : 0))}
                   </div>
                 </CardContent>
               </Card>
 
-              <Card className="bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900 dark:to-blue-800">
+              <Card className="bg-blue-500/10 border-blue-500/20">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-lg flex items-center">
                     <Trophy className="h-5 w-5 mr-2 text-blue-600" />
@@ -86,13 +86,13 @@ const GameDashboard: React.FC = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold text-blue-700 dark:text-blue-300">
+                  <div className="text-3xl font-bold text-foreground">
                     {getAccuracy()}%
                   </div>
                 </CardContent>
               </Card>
 
-              <Card className="bg-gradient-to-r from-purple-50 to-purple-100 dark:from-purple-900 dark:to-purple-800">
+              <Card className="bg-purple-500/10 border-purple-500/20">
                 <CardHeader className="pb-2">
                   <CardTitle className="text-lg flex items-center">
                     <Trophy className="h-5 w-5 mr-2 text-purple-600" />
@@ -100,7 +100,7 @@ const GameDashboard: React.FC = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-bold text-purple-700 dark:text-purple-300">
+                  <div className="text-3xl font-bold text-foreground">
                     {totalGuesses}
                   </div>
                 </CardContent>
