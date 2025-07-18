@@ -18,6 +18,15 @@ body {
   min-height: 100vh;
 }
 
+/* Dark mode background colors */
+[data-mantine-color-scheme="dark"] {
+  background-color: var(--mantine-color-dark-8);
+}
+
+[data-mantine-color-scheme="dark"] body {
+  background-color: var(--mantine-color-dark-8);
+}
+
 /* Animation for the status indicator */
 @keyframes pulse {
   0%, 100% {

@@ -41,13 +41,6 @@ export const theme = createTheme({
         padding: 'lg',
         radius: 'md',
       },
-      styles: (theme) => ({
-        root: {
-          backgroundColor: theme.colorScheme === 'dark' 
-            ? theme.colors.dark[7] 
-            : theme.white,
-        }
-      })
     },
     Button: {
       defaultProps: {

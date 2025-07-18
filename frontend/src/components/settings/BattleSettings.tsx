@@ -11,7 +11,9 @@ import {
   Collapse,
   Group,
   Card,
-  Select
+  Select,
+  useMantineTheme,
+  useMantineColorScheme
 } from '@mantine/core';
 import { 
   IconChevronLeft, 
@@ -39,6 +41,8 @@ const BattleSettings: React.FC<BattleSettingsProps> = ({
   settings,
   onSettingsChange
 }) => {
+  const theme = useMantineTheme();
+  const { colorScheme } = useMantineColorScheme();
   const handleLevelModeChange = (checked: boolean) => {
     onSettingsChange({
       ...settings,
@@ -69,10 +73,10 @@ const BattleSettings: React.FC<BattleSettingsProps> = ({
       style={{
         width: isExpanded ? '320px' : '60px',
         transition: 'width 0.3s ease',
-        borderRight: '1px solid var(--mantine-color-gray-3)',
+        borderRight: `1px solid ${colorScheme === 'dark' ? theme.colors.dark[5] : theme.colors.gray[3]}`,
         zIndex: 999,
         boxShadow: 'var(--mantine-shadow-lg)',
-        backgroundColor: 'var(--mantine-color-body)'
+        backgroundColor: colorScheme === 'dark' ? theme.colors.dark[7] : theme.white
       }}
     >
       <Stack h="100%" gap={0}>
@@ -80,7 +84,7 @@ const BattleSettings: React.FC<BattleSettingsProps> = ({
         <Box
           p="md"
           style={{
-            borderBottom: '1px solid var(--mantine-color-gray-3)'
+            borderBottom: `1px solid ${colorScheme === 'dark' ? theme.colors.dark[5] : theme.colors.gray[3]}`
           }}
         >
           <Group justify="space-between" align="center">

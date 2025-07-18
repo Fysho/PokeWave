@@ -120,7 +120,12 @@ const MainLayout: React.FC<MainLayoutProps> = ({
           backgroundColor: colorScheme === 'dark' ? theme.colors.dark[8] : theme.colors.gray[0]
         }}
       >
-        <AppShell.Header>
+        <AppShell.Header
+          style={{
+            backgroundColor: colorScheme === 'dark' ? theme.colors.dark[7] : theme.white,
+            borderBottom: `1px solid ${colorScheme === 'dark' ? theme.colors.dark[5] : theme.colors.gray[3]}`
+          }}
+        >
           <Group h="100%" px="md" justify="space-between">
             <Group>
               <Group gap="sm">
