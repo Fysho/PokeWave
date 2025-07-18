@@ -31,6 +31,7 @@ export interface ShowdownBattleResult {
       back: string;
       shiny: string;
     };
+    moves: string[];
   };
   pokemon2: {
     id: number;
@@ -43,6 +44,7 @@ export interface ShowdownBattleResult {
       back: string;
       shiny: string;
     };
+    moves: string[];
   };
   totalBattles: number;
   winRate: number;
@@ -106,11 +108,16 @@ class ShowdownService {
           pokemonService.getPokemonById(config.pokemon1Id),
           pokemonService.getPokemonById(config.pokemon2Id)
         ]);
+        
+        logger.info(`Showdown service - Pokemon data fetched:`, {
+          pokemon1Moves: pokemon1Data.moves,
+          pokemon2Moves: pokemon2Data.moves
+        });
       } catch (pokemonError) {
         logger.error('Failed to fetch Pokemon data from PokeAPI:', pokemonError);
         // Fallback to basic Pokemon data without sprites and types
-        pokemon1Data = { types: [], sprites: { front: '', back: '', shiny: '' } };
-        pokemon2Data = { types: [], sprites: { front: '', back: '', shiny: '' } };
+        pokemon1Data = { types: [], sprites: { front: '', back: '', shiny: '' }, moves: [] };
+        pokemon2Data = { types: [], sprites: { front: '', back: '', shiny: '' }, moves: [] };
       }
 
       const pokemon1Level = config.options?.pokemon1Level || 50;
@@ -137,7 +144,8 @@ class ShowdownService {
           level: pokemon1Level,
           wins: battleResult.pokemon1Wins,
           types: pokemon1Data?.types || [],
-          sprites: pokemon1Data?.sprites || { front: '', back: '', shiny: '' }
+          sprites: pokemon1Data?.sprites || { front: '', back: '', shiny: '' },
+          moves: pokemon1Data?.moves || []
         },
         pokemon2: {
           id: config.pokemon2Id,
@@ -145,7 +153,8 @@ class ShowdownService {
           level: pokemon2Level,
           wins: battleResult.pokemon2Wins,
           types: pokemon2Data?.types || [],
-          sprites: pokemon2Data?.sprites || { front: '', back: '', shiny: '' }
+          sprites: pokemon2Data?.sprites || { front: '', back: '', shiny: '' },
+          moves: pokemon2Data?.moves || []
         },
         totalBattles: this.NUM_BATTLES,
         winRate,

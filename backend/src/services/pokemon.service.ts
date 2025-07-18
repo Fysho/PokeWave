@@ -21,6 +21,7 @@ interface Pokemon {
     back: string;
     shiny: string;
   };
+  moves: string[];
 }
 
 const GENERATION_RANGES = {
@@ -52,6 +53,15 @@ class PokemonService {
       const response = await axios.get(`${this.pokeApiUrl}/pokemon/${id}`);
       const data = response.data;
 
+      // Get first 4 moves from the Pokemon's moveset
+      const moves = data.moves
+        .slice(0, 4)
+        .map((m: any) => m.move.name)
+        .map((name: string) => name.replace('-', ' '))
+        .map((name: string) => name.replace(/\b\w/g, (l: string) => l.toUpperCase()));
+      
+      logger.info(`Pokemon ${data.name} moves:`, moves);
+
       const pokemon: Pokemon = {
         id: data.id,
         name: data.name,
@@ -69,7 +79,8 @@ class PokemonService {
           front: data.sprites.front_default,
           back: data.sprites.back_default,
           shiny: data.sprites.front_shiny
-        }
+        },
+        moves: moves
       };
 
       // Cache for 24 hours

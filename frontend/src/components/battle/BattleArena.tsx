@@ -170,6 +170,33 @@ const PokemonBattleCard: React.FC<PokemonBattleCardProps> = ({
               </Group>
             )}
 
+            {/* Moves */}
+            {pokemon.moves && pokemon.moves.length > 0 && (
+              <Box>
+                <Text size="sm" c="gray.6" ta="center" mb="xs">Moves</Text>
+                <Group justify="center" gap="xs">
+                  {pokemon.moves.slice(0, 4).map((move: string, index: number) => (
+                    <Badge
+                      key={index}
+                      size="sm"
+                      variant="outline"
+                      color="gray"
+                      tt="capitalize"
+                      style={{ 
+                        fontSize: '12px',
+                        fontWeight: 500,
+                        padding: '4px 8px',
+                        backgroundColor: 'var(--mantine-color-gray-0)',
+                        borderColor: 'var(--mantine-color-gray-3)'
+                      }}
+                    >
+                      {move}
+                    </Badge>
+                  ))}
+                </Group>
+              </Box>
+            )}
+
             {/* Battle Results */}
             {showResults && (
               <ScaleIn delay={0.5}>

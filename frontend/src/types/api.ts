@@ -28,6 +28,7 @@ export interface BattleResult {
       back: string;
       shiny: string;
     };
+    moves: string[];
   };
   pokemon2: {
     id: number;
@@ -40,6 +41,7 @@ export interface BattleResult {
       back: string;
       shiny: string;
     };
+    moves: string[];
   };
   totalBattles: number;
   winRate: number;
