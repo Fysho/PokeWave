@@ -1,6 +1,5 @@
-import { v4 as uuidv4 } from 'uuid';
 import { cacheService } from './cache.service';
-import { pokemonService } from './pokemon.service';
+import { showdownService } from './showdown.service';
 import logger from '../utils/logger';
 import { ApiError } from '../middleware/error.middleware';
 
@@ -48,50 +47,38 @@ class BattleService {
 
   async simulateBattle(config: BattleConfig): Promise<BattleResult> {
     try {
-      // For now, we'll create mock battle results
-      // In Phase 2, we'll integrate Pokemon Showdown for real battles
-      const battleId = uuidv4();
-      
-      // Fetch Pokemon data
-      const [pokemon1, pokemon2] = await Promise.all([
-        pokemonService.getPokemonById(config.pokemon1Id),
-        pokemonService.getPokemonById(config.pokemon2Id)
-      ]);
-
-      // Mock battle simulation (temporary)
-      // This will be replaced with actual Pokemon Showdown integration
-      const pokemon1Wins = Math.floor(Math.random() * 600) + 200; // 200-800 wins
-      const pokemon2Wins = 1000 - pokemon1Wins;
-      const winRate = (pokemon1Wins / 1000) * 100;
+      // Use Pokemon Showdown for real battle simulation
+      const showdownResult = await showdownService.simulateBattle(config);
 
       const result: BattleResult = {
-        battleId,
+        battleId: showdownResult.battleId,
         pokemon1: {
-          id: pokemon1.id,
-          name: pokemon1.name,
-          level: config.options?.pokemon1Level || 50,
-          wins: pokemon1Wins
+          id: showdownResult.pokemon1.id,
+          name: showdownResult.pokemon1.name,
+          level: showdownResult.pokemon1.level,
+          wins: showdownResult.pokemon1.wins
         },
         pokemon2: {
-          id: pokemon2.id,
-          name: pokemon2.name,
-          level: config.options?.pokemon2Level || 50,
-          wins: pokemon2Wins
+          id: showdownResult.pokemon2.id,
+          name: showdownResult.pokemon2.name,
+          level: showdownResult.pokemon2.level,
+          wins: showdownResult.pokemon2.wins
         },
-        totalBattles: 1000,
-        winRate
+        totalBattles: showdownResult.totalBattles,
+        winRate: showdownResult.winRate
       };
 
       // Store the battle result temporarily
-      this.activeBattles.set(battleId, result);
+      this.activeBattles.set(result.battleId, result);
 
       // Also cache it
-      await cacheService.set(`battle:${battleId}`, result, 3600); // 1 hour TTL
+      await cacheService.set(`battle:${result.battleId}`, result, 3600); // 1 hour TTL
 
-      logger.info(`Battle ${battleId} simulated`, {
-        pokemon1: pokemon1.name,
-        pokemon2: pokemon2.name,
-        winRate
+      logger.info(`Battle ${result.battleId} simulated with Showdown`, {
+        pokemon1: result.pokemon1.name,
+        pokemon2: result.pokemon2.name,
+        winRate: result.winRate,
+        executionTime: `${showdownResult.executionTime}ms`
       });
 
       return result;
