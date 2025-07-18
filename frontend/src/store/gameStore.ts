@@ -120,11 +120,24 @@ export const useGameStore = create<GameStore>()(
             const { Dex } = await import('@pkmn/dex');
             const dex = Dex.forGen(battleSettings?.generation || 9);
             
-            // Get species data for both Pokemon
-            const species1 = dex.species.get(String(pokemon1Id));
-            const species2 = dex.species.get(String(pokemon2Id));
+            // Get species data for both Pokemon (by national dex number)
+            const getSpeciesById = (id: number): any => {
+              const allSpecies = dex.species.all();
+              const found = allSpecies.find((s: any) => s.num === id);
+              if (found) return found;
+              
+              // Fallback to trying by ID string
+              const species = dex.species.get(String(id));
+              if (species && species.exists) return species;
+              
+              return null;
+            };
             
-            if (!species1 || !species1.exists || !species2 || !species2.exists) {
+            const species1 = getSpeciesById(pokemon1Id);
+            const species2 = getSpeciesById(pokemon2Id);
+            
+            if (!species1 || !species2) {
+              console.error('Invalid Pokemon species:', { species1, species2, pokemon1Id, pokemon2Id });
               throw new Error(`Invalid Pokemon IDs: ${pokemon1Id}, ${pokemon2Id}`);
             }
 
@@ -141,63 +154,62 @@ export const useGameStore = create<GameStore>()(
             const pokemon2Item = battleSettings?.withItems ? 
               commonItems[Math.floor(Math.random() * commonItems.length)] : '';
 
-            // Get and Set Valid Moves (using the latest 4 moves in its level up moveset)
-            const getLearnsetMoves = (species: any, level: number): string[] => {
-              const moves: string[] = [];
+            // Get and Set Valid Moves (for now, use type-based moves)
+            const getTypeMoves = (species: any): string[] => {
+              // Type-based move pools
+              const movePool: { [key: string]: string[] } = {
+                normal: ['tackle', 'scratch', 'pound', 'quickattack', 'slash', 'bodyslam'],
+                fire: ['ember', 'flamethrower', 'fireblast', 'flamecharge', 'firepunch'],
+                water: ['watergun', 'surf', 'hydropump', 'aquajet', 'bubblebeam'],
+                electric: ['thundershock', 'thunderbolt', 'thunder', 'thunderpunch', 'spark'],
+                grass: ['vinewhip', 'razorleaf', 'solarbeam', 'energyball', 'leafstorm'],
+                ice: ['icepunch', 'icebeam', 'blizzard', 'iceshard', 'aurorabeam'],
+                fighting: ['lowkick', 'brickbreak', 'closecombat', 'machpunch', 'crosschop'],
+                poison: ['poisonsting', 'sludgebomb', 'toxic', 'poisonjab', 'venoshock'],
+                ground: ['earthquake', 'dig', 'earthpower', 'mudshot', 'bulldoze'],
+                flying: ['gust', 'wingattack', 'airslash', 'hurricane', 'aerialace'],
+                psychic: ['confusion', 'psychic', 'psybeam', 'zenheadbutt', 'psychocut'],
+                bug: ['bugbite', 'signalbeam', 'bugbuzz', 'xscissor', 'uturn'],
+                rock: ['rockthrow', 'rockslide', 'stoneedge', 'powergem', 'rockblast'],
+                ghost: ['lick', 'shadowball', 'shadowclaw', 'hex', 'shadowsneak'],
+                dragon: ['dragonrage', 'dragonpulse', 'dragonclaw', 'outrage', 'dracometeor'],
+                dark: ['bite', 'crunch', 'darkpulse', 'knockoff', 'suckerpunch'],
+                steel: ['metalclaw', 'ironhead', 'flashcannon', 'meteormash', 'bulletpunch'],
+                fairy: ['fairywind', 'moonblast', 'dazzlinggleam', 'playrough', 'drainingkiss']
+              };
               
-              if (species.learnset) {
-                // Get all moves learnable by level up
-                const levelUpMoves: Array<[string, string[]]> = [];
-                
-                for (const [move, methods] of Object.entries(species.learnset)) {
-                  for (const method of methods as string[]) {
-                    // Check if it's a level-up move (format: "9L15" means Gen 9, Level 15)
-                    const levelMatch = method.match(/\d+L(\d+)/);
-                    if (levelMatch) {
-                      const learnLevel = parseInt(levelMatch[1]);
-                      if (learnLevel <= level) {
-                        levelUpMoves.push([move, [method]]);
-                      }
-                    }
+              const moves: string[] = [];
+              const defaultMoves = ['tackle', 'scratch', 'pound', 'quickattack'];
+              
+              // Get moves based on Pokemon's types
+              if (species.types) {
+                for (const type of species.types) {
+                  const typeMoves = movePool[type.toLowerCase()];
+                  if (typeMoves) {
+                    const shuffled = [...typeMoves].sort(() => Math.random() - 0.5);
+                    moves.push(...shuffled.slice(0, 2));
                   }
                 }
-                
-                // Sort by level (descending) to get the latest moves
-                levelUpMoves.sort((a, b) => {
-                  const levelA = parseInt(a[1][0].match(/\d+L(\d+)/)?.[1] || '0');
-                  const levelB = parseInt(b[1][0].match(/\d+L(\d+)/)?.[1] || '0');
-                  return levelB - levelA;
-                });
-                
-                // Get the last 4 unique moves
-                const uniqueMoves = new Set<string>();
-                for (const [move] of levelUpMoves) {
-                  uniqueMoves.add(move);
-                  if (uniqueMoves.size >= 4) break;
-                }
-                
-                moves.push(...uniqueMoves);
               }
               
-              // If we don't have 4 moves, add some defaults
-              const defaultMoves = ['tackle', 'scratch', 'pound', 'quickattack'];
-              while (moves.length < 4) {
-                const defaultMove = defaultMoves[moves.length % defaultMoves.length];
-                if (!moves.includes(defaultMove)) {
-                  moves.push(defaultMove);
+              // Remove duplicates and select required count
+              const allMoves = [...new Set(moves)];
+              const shuffledMoves = allMoves.sort(() => Math.random() - 0.5);
+              const selectedMoves = shuffledMoves.slice(0, 4);
+              
+              // Fill with default moves if needed
+              while (selectedMoves.length < 4) {
+                const defaultMove = defaultMoves[selectedMoves.length % defaultMoves.length];
+                if (!selectedMoves.includes(defaultMove)) {
+                  selectedMoves.push(defaultMove);
                 }
               }
               
-              return moves.slice(0, 4);
+              return selectedMoves;
             };
             
-            const pokemon1Moves = battleSettings?.movesetType === 'competitive' ? 
-              getLearnsetMoves(species1, pokemon1Level) :
-              getLearnsetMoves(species1, pokemon1Level); // For now, same logic
-              
-            const pokemon2Moves = battleSettings?.movesetType === 'competitive' ? 
-              getLearnsetMoves(species2, pokemon2Level) :
-              getLearnsetMoves(species2, pokemon2Level);
+            const pokemon1Moves = getTypeMoves(species1);
+            const pokemon2Moves = getTypeMoves(species2);
 
             // Get abilities
             const getValidAbility = (species: any): string => {
