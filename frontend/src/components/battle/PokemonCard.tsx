@@ -6,8 +6,6 @@ import type { BattleResult } from '../../types/api';
 
 interface PokemonCardProps {
   pokemon: BattleResult['pokemon1'] | BattleResult['pokemon2'];
-  types?: string[];
-  sprite?: string;
   onSelect?: () => void;
   isSelected?: boolean;
   disabled?: boolean;
@@ -16,8 +14,6 @@ interface PokemonCardProps {
 
 const PokemonCard: React.FC<PokemonCardProps> = ({
   pokemon,
-  types = [],
-  sprite,
   onSelect,
   isSelected = false,
   disabled = false,
@@ -61,9 +57,9 @@ const PokemonCard: React.FC<PokemonCardProps> = ({
         <div className="flex flex-col items-center space-y-3">
           {/* Pokemon Image */}
           <div className="relative">
-            {sprite ? (
+            {pokemon.sprites?.front ? (
               <img 
-                src={sprite} 
+                src={pokemon.sprites.front} 
                 alt={pokemon.name}
                 className="w-24 h-24 object-contain"
               />
@@ -90,9 +86,9 @@ const PokemonCard: React.FC<PokemonCardProps> = ({
           </h3>
 
           {/* Types */}
-          {types.length > 0 && (
+          {pokemon.types && pokemon.types.length > 0 && (
             <div className="flex gap-1 flex-wrap justify-center">
-              {types.map((type) => (
+              {pokemon.types.map((type) => (
                 <Badge
                   key={type}
                   className={`${getTypeColor(type)} text-white text-xs capitalize`}

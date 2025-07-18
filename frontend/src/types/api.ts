@@ -22,12 +22,24 @@ export interface BattleResult {
     name: string;
     level: number;
     wins: number;
+    types: string[];
+    sprites: {
+      front: string;
+      back: string;
+      shiny: string;
+    };
   };
   pokemon2: {
     id: number;
     name: string;
     level: number;
     wins: number;
+    types: string[];
+    sprites: {
+      front: string;
+      back: string;
+      shiny: string;
+    };
   };
   totalBattles: number;
   winRate: number;

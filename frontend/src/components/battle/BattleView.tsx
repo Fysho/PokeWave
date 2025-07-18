@@ -6,7 +6,8 @@ import PokemonCard from './PokemonCard';
 import { useGameStore } from '../../store/gameStore';
 import { BattleLoading } from '../ui/loading';
 import { FadeIn, SlideIn, ResultReveal, Countup, StaggeredFadeIn, BounceIn } from '../ui/transitions';
-import { Loader2, Swords, Trophy, Target, TrendingUp } from 'lucide-react';
+import StreakCelebration from '../ui/streak-celebration';
+import { Loader2, Swords, Trophy, Target, TrendingUp, Flame } from 'lucide-react';
 
 const BattleView: React.FC = () => {
   const {
@@ -25,6 +26,8 @@ const BattleView: React.FC = () => {
   const [selectedPokemon, setSelectedPokemon] = useState<number | null>(null);
   const [showResults, setShowResults] = useState(false);
   const [guessResult, setGuessResult] = useState<any>(null);
+  const [showStreakCelebration, setShowStreakCelebration] = useState(false);
+  const [lastStreakShown, setLastStreakShown] = useState(0);
 
   useEffect(() => {
     // Generate first battle on mount
@@ -39,6 +42,16 @@ const BattleView: React.FC = () => {
     setShowResults(false);
     setGuessResult(null);
   }, [currentBattle]);
+
+  useEffect(() => {
+    // Show streak celebration when streak increases
+    if (streak > lastStreakShown && streak >= 2) {
+      setShowStreakCelebration(true);
+      setLastStreakShown(streak);
+    } else if (streak === 0) {
+      setLastStreakShown(0);
+    }
+  }, [streak, lastStreakShown]);
 
   const handlePokemonSelect = (pokemonId: number) => {
     if (isLoading || showResults) return;
@@ -86,7 +99,8 @@ const BattleView: React.FC = () => {
   }
 
   return (
-    <FadeIn className="w-full max-w-4xl mx-auto space-y-6">
+    <>
+      <FadeIn className="w-full max-w-4xl mx-auto space-y-6">
       {/* Stats Header */}
       <StaggeredFadeIn staggerDelay={0.1}>
         {[
@@ -102,15 +116,24 @@ const BattleView: React.FC = () => {
             </CardContent>
           </Card>,
           
-          <Card key="streak">
+          <Card key="streak" className={`transition-all ${streak > 0 ? 'ring-2 ring-red-300 dark:ring-red-700' : ''}`}>
             <CardContent className="p-4 text-center">
               <div className="flex items-center justify-center space-x-2">
-                <TrendingUp className="h-4 w-4 text-green-500" />
+                {streak > 0 ? (
+                  <Flame className={`h-4 w-4 ${streak > 2 ? 'text-red-500' : 'text-red-600'}`} />
+                ) : (
+                  <TrendingUp className="h-4 w-4 text-green-500" />
+                )}
                 <span className="text-sm font-medium">Streak</span>
               </div>
-              <div className="text-2xl font-bold">
+              <div className={`text-2xl font-bold ${streak > 0 ? 'text-red-600' : ''}`}>
                 <Countup from={0} to={streak} duration={1} />
               </div>
+              {streak > 0 && (
+                <div className="text-xs text-red-600 dark:text-red-400 mt-1">
+                  🔥 {streak >= 5 ? 'Legendary!' : 'On fire!'}
+                </div>
+              )}
             </CardContent>
           </Card>,
           
@@ -163,7 +186,6 @@ const BattleView: React.FC = () => {
                 <SlideIn direction="left" delay={0.2}>
                   <PokemonCard
                     pokemon={currentBattle.pokemon1}
-                    types={[]} // We'll need to fetch this from API or include in response
                     onSelect={() => handlePokemonSelect(currentBattle.pokemon1.id)}
                     isSelected={selectedPokemon === currentBattle.pokemon1.id}
                     disabled={isLoading || showResults}
@@ -180,7 +202,6 @@ const BattleView: React.FC = () => {
                 <SlideIn direction="right" delay={0.2}>
                   <PokemonCard
                     pokemon={currentBattle.pokemon2}
-                    types={[]} // We'll need to fetch this from API or include in response
                     onSelect={() => handlePokemonSelect(currentBattle.pokemon2.id)}
                     isSelected={selectedPokemon === currentBattle.pokemon2.id}
                     disabled={isLoading || showResults}
@@ -267,6 +288,14 @@ const BattleView: React.FC = () => {
         </CardContent>
       </Card>
     </FadeIn>
+
+    {/* Streak Celebration */}
+    <StreakCelebration
+      streak={streak}
+      isVisible={showStreakCelebration}
+      onAnimationComplete={() => setShowStreakCelebration(false)}
+    />
+    </>
   );
 };
 

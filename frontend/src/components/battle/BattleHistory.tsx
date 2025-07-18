@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Badge } from '../ui/badge';
 import { ScrollArea } from '../ui/scroll-area';
 import { FadeIn, SlideIn } from '../ui/transitions';
-import { Trophy, Target, Clock, TrendingUp, TrendingDown } from 'lucide-react';
+import { Trophy, Target, Clock, TrendingUp, TrendingDown, Flame, Zap } from 'lucide-react';
 
 interface BattleHistoryEntry {
   id: string;
@@ -81,7 +81,7 @@ const BattleHistory: React.FC<BattleHistoryProps> = ({
   return (
     <FadeIn className={`space-y-4 ${className}`}>
       {/* Summary Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900">
           <CardContent className="p-4 text-center">
             <div className="flex items-center justify-center space-x-2 mb-2">
@@ -106,6 +106,35 @@ const BattleHistory: React.FC<BattleHistoryProps> = ({
           </CardContent>
         </Card>
 
+        <Card className={`bg-gradient-to-br transition-all ${
+          currentStreak > 0 
+            ? 'from-red-50 to-red-100 dark:from-red-950 dark:to-red-900' 
+            : 'from-gray-50 to-gray-100 dark:from-gray-950 dark:to-gray-900'
+        }`}>
+          <CardContent className="p-4 text-center">
+            <div className="flex items-center justify-center space-x-2 mb-2">
+              {currentStreak > 0 ? (
+                <Flame className={`h-4 w-4 ${currentStreak > 2 ? 'text-red-500' : 'text-red-600'}`} />
+              ) : (
+                <Zap className="h-4 w-4 text-gray-600" />
+              )}
+              <span className="text-sm font-medium">Current Streak</span>
+            </div>
+            <div className={`text-2xl font-bold ${
+              currentStreak > 0 
+                ? 'text-red-700 dark:text-red-300' 
+                : 'text-gray-700 dark:text-gray-300'
+            }`}>
+              {currentStreak}
+            </div>
+            {currentStreak > 0 && (
+              <div className="text-xs text-red-600 dark:text-red-400 mt-1">
+                🔥 On fire!
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
         <Card className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950 dark:to-purple-900">
           <CardContent className="p-4 text-center">
             <div className="flex items-center justify-center space-x-2 mb-2">
@@ -115,6 +144,11 @@ const BattleHistory: React.FC<BattleHistoryProps> = ({
             <div className="text-2xl font-bold text-purple-700 dark:text-purple-300">
               {maxStreak}
             </div>
+            {maxStreak >= 5 && (
+              <div className="text-xs text-purple-600 dark:text-purple-400 mt-1">
+                🏆 Legend!
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -150,17 +184,33 @@ const BattleHistory: React.FC<BattleHistoryProps> = ({
           ) : (
             <ScrollArea className="h-[400px] w-full">
               <div className="space-y-3">
-                {displayHistory.map((entry, index) => (
-                  <SlideIn
-                    key={entry.id}
-                    direction="up"
-                    delay={index * 0.05}
-                    className={`p-4 rounded-lg border-2 transition-all ${
-                      entry.isCorrect
-                        ? 'bg-green-50 border-green-200 dark:bg-green-950 dark:border-green-800'
-                        : 'bg-red-50 border-red-200 dark:bg-red-950 dark:border-red-800'
-                    }`}
-                  >
+                {displayHistory.map((entry, index) => {
+                  // Calculate streak position for this entry (from the end)
+                  const entryPosition = history.length - (maxEntries - index - 1) - 1;
+                  let streakAtThisPoint = 0;
+                  
+                  // Calculate streak at this point in history
+                  for (let i = entryPosition; i >= 0; i--) {
+                    if (history[i].isCorrect) {
+                      streakAtThisPoint++;
+                    } else {
+                      break;
+                    }
+                  }
+                  
+                  const isPartOfStreak = streakAtThisPoint > 1 && entry.isCorrect;
+                  
+                  return (
+                    <SlideIn
+                      key={entry.id}
+                      direction="up"
+                      delay={index * 0.05}
+                      className={`p-4 rounded-lg border-2 transition-all relative ${
+                        entry.isCorrect
+                          ? 'bg-green-50 border-green-200 dark:bg-green-950 dark:border-green-800'
+                          : 'bg-red-50 border-red-200 dark:bg-red-950 dark:border-red-800'
+                      } ${isPartOfStreak ? 'ring-2 ring-red-300 dark:ring-red-700' : ''}`}
+                    >
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center space-x-2">
                         {entry.isCorrect ? (
@@ -171,6 +221,11 @@ const BattleHistory: React.FC<BattleHistoryProps> = ({
                         <span className="font-medium">
                           {entry.pokemon1.name} vs {entry.pokemon2.name}
                         </span>
+                        {isPartOfStreak && (
+                          <Badge variant="secondary" className="text-xs bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300">
+                            🔥 Streak {streakAtThisPoint}
+                          </Badge>
+                        )}
                       </div>
                       <div className="flex items-center space-x-2">
                         <Badge 
@@ -205,7 +260,8 @@ const BattleHistory: React.FC<BattleHistoryProps> = ({
                       {new Date(entry.timestamp).toLocaleTimeString()}
                     </div>
                   </SlideIn>
-                ))}
+                  );
+                })}
               </div>
             </ScrollArea>
           )}

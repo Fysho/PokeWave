@@ -23,15 +23,28 @@ interface BattleResult {
     name: string;
     level: number;
     wins: number;
+    types: string[];
+    sprites: {
+      front: string;
+      back: string;
+      shiny: string;
+    };
   };
   pokemon2: {
     id: number;
     name: string;
     level: number;
     wins: number;
+    types: string[];
+    sprites: {
+      front: string;
+      back: string;
+      shiny: string;
+    };
   };
   totalBattles: number;
   winRate: number;
+  executionTime: number;
 }
 
 interface GuessResult {
@@ -58,16 +71,21 @@ class BattleService {
           id: showdownResult.pokemon1.id,
           name: showdownResult.pokemon1.name,
           level: showdownResult.pokemon1.level,
-          wins: showdownResult.pokemon1.wins
+          wins: showdownResult.pokemon1.wins,
+          types: showdownResult.pokemon1.types,
+          sprites: showdownResult.pokemon1.sprites
         },
         pokemon2: {
           id: showdownResult.pokemon2.id,
           name: showdownResult.pokemon2.name,
           level: showdownResult.pokemon2.level,
-          wins: showdownResult.pokemon2.wins
+          wins: showdownResult.pokemon2.wins,
+          types: showdownResult.pokemon2.types,
+          sprites: showdownResult.pokemon2.sprites
         },
         totalBattles: showdownResult.totalBattles,
-        winRate: showdownResult.winRate
+        winRate: showdownResult.winRate,
+        executionTime: showdownResult.executionTime
       };
 
       // Store the battle result temporarily

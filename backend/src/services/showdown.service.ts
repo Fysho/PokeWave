@@ -1,5 +1,6 @@
 import { Dex } from '@pkmn/dex';
 import { cacheService } from './cache.service';
+import { pokemonService } from './pokemon.service';
 import logger from '../utils/logger';
 import { ApiError } from '../middleware/error.middleware';
 import crypto from 'crypto';
@@ -24,12 +25,24 @@ export interface ShowdownBattleResult {
     name: string;
     level: number;
     wins: number;
+    types: string[];
+    sprites: {
+      front: string;
+      back: string;
+      shiny: string;
+    };
   };
   pokemon2: {
     id: number;
     name: string;
     level: number;
     wins: number;
+    types: string[];
+    sprites: {
+      front: string;
+      back: string;
+      shiny: string;
+    };
   };
   totalBattles: number;
   winRate: number;
@@ -57,7 +70,7 @@ class ShowdownService {
         return cachedResult;
       }
 
-      // Get Pokemon data from Dex
+      // Get Pokemon data from both Dex and PokeAPI
       const generation = config.options?.generation || 9;
       const dex = Dex.forGen(generation);
       
@@ -86,6 +99,20 @@ class ShowdownService {
         throw new ApiError(400, 'Invalid Pokemon IDs provided');
       }
 
+      // Fetch Pokemon data from PokeAPI for sprites and types
+      let pokemon1Data, pokemon2Data;
+      try {
+        [pokemon1Data, pokemon2Data] = await Promise.all([
+          pokemonService.getPokemonById(config.pokemon1Id),
+          pokemonService.getPokemonById(config.pokemon2Id)
+        ]);
+      } catch (pokemonError) {
+        logger.error('Failed to fetch Pokemon data from PokeAPI:', pokemonError);
+        // Fallback to basic Pokemon data without sprites and types
+        pokemon1Data = { types: [], sprites: { front: '', back: '', shiny: '' } };
+        pokemon2Data = { types: [], sprites: { front: '', back: '', shiny: '' } };
+      }
+
       const pokemon1Level = config.options?.pokemon1Level || 50;
       const pokemon2Level = config.options?.pokemon2Level || 50;
 
@@ -108,13 +135,17 @@ class ShowdownService {
           id: config.pokemon1Id,
           name: pokemon1.name,
           level: pokemon1Level,
-          wins: battleResult.pokemon1Wins
+          wins: battleResult.pokemon1Wins,
+          types: pokemon1Data?.types || [],
+          sprites: pokemon1Data?.sprites || { front: '', back: '', shiny: '' }
         },
         pokemon2: {
           id: config.pokemon2Id,
           name: pokemon2.name,
           level: pokemon2Level,
-          wins: battleResult.pokemon2Wins
+          wins: battleResult.pokemon2Wins,
+          types: pokemon2Data?.types || [],
+          sprites: pokemon2Data?.sprites || { front: '', back: '', shiny: '' }
         },
         totalBattles: this.NUM_BATTLES,
         winRate,
