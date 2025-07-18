@@ -1,11 +1,17 @@
 import React, { useState } from 'react';
 import BattleArena from '../battle/BattleArena';
-import BattleHistory from '../battle/BattleHistory';
 import MainLayout from '../layout/MainLayout';
 import { useGameStore } from '../../store/gameStore';
-import { BarChart3, Trophy, Calendar, Crown, Users, Construction, Settings } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
-import { Button } from '../ui/button';
+import { 
+  IconChartBar, 
+  IconTrophy, 
+  IconCalendar, 
+  IconCrown, 
+  IconUsers, 
+  IconTool,
+  IconClock
+} from '@tabler/icons-react';
+import { Card, Button, Stack, Title, Text, Grid, Group, Box, Center } from '@mantine/core';
 import { FadeIn } from '../ui/transitions';
 
 const GameDashboard: React.FC = () => {
@@ -24,164 +30,208 @@ const GameDashboard: React.FC = () => {
       
       case 'history':
         return (
-          <div className="max-w-6xl mx-auto">
-            <div className="text-center mb-8">
-              <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+          <Box maw={1200} mx="auto">
+            <Stack align="center" gap="md" mb="xl">
+              <Title 
+                order={1}
+                size="h1"
+                fw={700}
+                ta="center"
+                style={{
+                  background: 'linear-gradient(135deg, var(--mantine-color-blue-6), var(--mantine-color-grape-6))',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  backgroundClip: 'text'
+                }}
+              >
                 Battle History
-              </h1>
-              <p className="text-xl text-muted-foreground">
+              </Title>
+              <Text size="xl" c="dimmed" ta="center">
                 Review your Pokemon battle predictions and track your progress
-              </p>
-            </div>
-            <BattleHistory history={battleHistory} />
-          </div>
+              </Text>
+            </Stack>
+            <Card withBorder>
+              <Card.Section p="xl">
+                <Center>
+                  <Stack align="center" gap="md">
+                    <IconClock size={64} color="var(--mantine-color-gray-6)" />
+                    <Title order={3}>Battle History</Title>
+                    <Text c="dimmed" ta="center">
+                      Battle history feature is being rebuilt with Mantine components.
+                    </Text>
+                  </Stack>
+                </Center>
+              </Card.Section>
+            </Card>
+          </Box>
         );
       
       case 'stats':
         return (
-          <div className="max-w-4xl mx-auto">
-            <div className="text-center mb-8">
-              <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+          <Box maw={1000} mx="auto">
+            <Stack align="center" gap="md" mb="xl">
+              <Title 
+                order={1}
+                size="h1"
+                fw={700}
+                ta="center"
+                style={{
+                  background: 'linear-gradient(135deg, var(--mantine-color-blue-6), var(--mantine-color-grape-6))',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  backgroundClip: 'text'
+                }}
+              >
                 Statistics
-              </h1>
-              <p className="text-xl text-muted-foreground">
+              </Title>
+              <Text size="xl" c="dimmed" ta="center">
                 Detailed analytics and insights about your battle performance
-              </p>
-            </div>
+              </Text>
+            </Stack>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-              <Card className="bg-yellow-500/10 border-yellow-500/20">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-lg flex items-center">
-                    <Trophy className="h-5 w-5 mr-2 text-yellow-600" />
-                    Total Score
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold text-foreground">
-                    {score}
-                  </div>
-                </CardContent>
-              </Card>
+            <Grid gutter="lg" mb="xl">
+              <Grid.Col span={{ base: 12, sm: 6, lg: 3 }}>
+                <Card withBorder p="md" style={{ backgroundColor: 'var(--mantine-color-yellow-0)', borderColor: 'var(--mantine-color-yellow-3)' }}>
+                  <Group gap="xs" mb="xs">
+                    <IconTrophy size={20} color="var(--mantine-color-yellow-6)" />
+                    <Text size="lg" fw={600}>Total Score</Text>
+                  </Group>
+                  <Text size="xl" fw={700}>{score}</Text>
+                </Card>
+              </Grid.Col>
 
-              <Card className="bg-red-500/10 border-red-500/20">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-lg flex items-center">
-                    <Trophy className="h-5 w-5 mr-2 text-red-600" />
-                    Best Streak
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold text-foreground">
-                    {Math.max(streak, ...battleHistory.map(b => b.isCorrect ? 1 : 0))}
-                  </div>
-                </CardContent>
-              </Card>
+              <Grid.Col span={{ base: 12, sm: 6, lg: 3 }}>
+                <Card withBorder p="md" style={{ backgroundColor: 'var(--mantine-color-red-0)', borderColor: 'var(--mantine-color-red-3)' }}>
+                  <Group gap="xs" mb="xs">
+                    <IconTrophy size={20} color="var(--mantine-color-red-6)" />
+                    <Text size="lg" fw={600}>Best Streak</Text>
+                  </Group>
+                  <Text size="xl" fw={700}>{Math.max(streak, ...battleHistory.map(b => b.isCorrect ? 1 : 0))}</Text>
+                </Card>
+              </Grid.Col>
 
-              <Card className="bg-blue-500/10 border-blue-500/20">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-lg flex items-center">
-                    <Trophy className="h-5 w-5 mr-2 text-blue-600" />
-                    Accuracy
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold text-foreground">
-                    {getAccuracy()}%
-                  </div>
-                </CardContent>
-              </Card>
+              <Grid.Col span={{ base: 12, sm: 6, lg: 3 }}>
+                <Card withBorder p="md" style={{ backgroundColor: 'var(--mantine-color-blue-0)', borderColor: 'var(--mantine-color-blue-3)' }}>
+                  <Group gap="xs" mb="xs">
+                    <IconTrophy size={20} color="var(--mantine-color-blue-6)" />
+                    <Text size="lg" fw={600}>Accuracy</Text>
+                  </Group>
+                  <Text size="xl" fw={700}>{getAccuracy()}%</Text>
+                </Card>
+              </Grid.Col>
 
-              <Card className="bg-purple-500/10 border-purple-500/20">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-lg flex items-center">
-                    <Trophy className="h-5 w-5 mr-2 text-purple-600" />
-                    Total Battles
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-3xl font-bold text-foreground">
-                    {totalGuesses}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+              <Grid.Col span={{ base: 12, sm: 6, lg: 3 }}>
+                <Card withBorder p="md" style={{ backgroundColor: 'var(--mantine-color-grape-0)', borderColor: 'var(--mantine-color-grape-3)' }}>
+                  <Group gap="xs" mb="xs">
+                    <IconTrophy size={20} color="var(--mantine-color-grape-6)" />
+                    <Text size="lg" fw={600}>Total Battles</Text>
+                  </Group>
+                  <Text size="xl" fw={700}>{totalGuesses}</Text>
+                </Card>
+              </Grid.Col>
+            </Grid>
 
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-center">Performance Insights</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-8">
-                  <BarChart3 className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
-                  <h3 className="text-xl font-semibold mb-2">Advanced Analytics</h3>
-                  <p className="text-muted-foreground">
-                    Coming soon! Detailed charts, win rate trends, and Pokemon type analysis.
-                  </p>
-                </div>
-              </CardContent>
+            <Card withBorder>
+              <Card.Section p="md">
+                <Title order={3} ta="center">Performance Insights</Title>
+              </Card.Section>
+              <Card.Section p="xl">
+                <Center>
+                  <Stack align="center" gap="md">
+                    <IconChartBar size={64} color="var(--mantine-color-gray-6)" />
+                    <Title order={3}>Advanced Analytics</Title>
+                    <Text c="dimmed" ta="center">
+                      Coming soon! Detailed charts, win rate trends, and Pokemon type analysis.
+                    </Text>
+                  </Stack>
+                </Center>
+              </Card.Section>
             </Card>
-          </div>
+          </Box>
         );
       
       case 'leaderboard':
         return (
-          <div className="max-w-4xl mx-auto">
-            <div className="text-center mb-8">
-              <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+          <Box maw={1000} mx="auto">
+            <Stack align="center" gap="md" mb="xl">
+              <Title 
+                order={1}
+                size="h1"
+                fw={700}
+                ta="center"
+                style={{
+                  background: 'linear-gradient(135deg, var(--mantine-color-blue-6), var(--mantine-color-grape-6))',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  backgroundClip: 'text'
+                }}
+              >
                 Leaderboard
-              </h1>
-              <p className="text-xl text-muted-foreground">
+              </Title>
+              <Text size="xl" c="dimmed" ta="center">
                 Compete with players worldwide and climb the ranks
-              </p>
-            </div>
+              </Text>
+            </Stack>
             
-            <Card>
-              <CardContent className="py-16">
-                <div className="text-center">
-                  <Crown className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
-                  <h3 className="text-xl font-semibold mb-2">Global Rankings</h3>
-                  <p className="text-muted-foreground mb-6">
-                    Coming soon! Challenge other trainers and see how you rank globally.
-                  </p>
-                  <Button variant="outline" disabled>
-                    <Users className="mr-2 h-4 w-4" />
-                    Sign Up for Rankings
-                  </Button>
-                </div>
-              </CardContent>
+            <Card withBorder>
+              <Card.Section p="xl">
+                <Center>
+                  <Stack align="center" gap="md">
+                    <IconCrown size={64} color="var(--mantine-color-gray-6)" />
+                    <Title order={3}>Global Rankings</Title>
+                    <Text c="dimmed" ta="center" mb="md">
+                      Coming soon! Challenge other trainers and see how you rank globally.
+                    </Text>
+                    <Button variant="outline" disabled leftSection={<IconUsers size={16} />}>
+                      Sign Up for Rankings
+                    </Button>
+                  </Stack>
+                </Center>
+              </Card.Section>
             </Card>
-          </div>
+          </Box>
         );
       
       case 'daily':
         return (
-          <div className="max-w-4xl mx-auto">
-            <div className="text-center mb-8">
-              <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+          <Box maw={1000} mx="auto">
+            <Stack align="center" gap="md" mb="xl">
+              <Title 
+                order={1}
+                size="h1"
+                fw={700}
+                ta="center"
+                style={{
+                  background: 'linear-gradient(135deg, var(--mantine-color-blue-6), var(--mantine-color-grape-6))',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  backgroundClip: 'text'
+                }}
+              >
                 Daily Challenges
-              </h1>
-              <p className="text-xl text-muted-foreground">
+              </Title>
+              <Text size="xl" c="dimmed" ta="center">
                 Take on special challenges and earn exclusive rewards
-              </p>
-            </div>
+              </Text>
+            </Stack>
             
-            <Card>
-              <CardContent className="py-16">
-                <div className="text-center">
-                  <Calendar className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
-                  <h3 className="text-xl font-semibold mb-2">Daily Challenges</h3>
-                  <p className="text-muted-foreground mb-6">
-                    New challenges every day with unique Pokemon battles and bonus rewards.
-                  </p>
-                  <Button variant="outline" disabled>
-                    <Construction className="mr-2 h-4 w-4" />
-                    Coming Soon
-                  </Button>
-                </div>
-              </CardContent>
+            <Card withBorder>
+              <Card.Section p="xl">
+                <Center>
+                  <Stack align="center" gap="md">
+                    <IconCalendar size={64} color="var(--mantine-color-gray-6)" />
+                    <Title order={3}>Daily Challenges</Title>
+                    <Text c="dimmed" ta="center" mb="md">
+                      New challenges every day with unique Pokemon battles and bonus rewards.
+                    </Text>
+                    <Button variant="outline" disabled leftSection={<IconTool size={16} />}>
+                      Coming Soon
+                    </Button>
+                  </Stack>
+                </Center>
+              </Card.Section>
             </Card>
-          </div>
+          </Box>
         );
       
       default:

@@ -233,7 +233,7 @@ const Countup: React.FC<CountupProps> = ({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{
-        duration: 0.3,
+        duration: duration,
         onComplete: () => {
           // Animation completed
         }
@@ -243,7 +243,7 @@ const Countup: React.FC<CountupProps> = ({
         animate={{ scale: [1, 1.2, 1] }}
         transition={{ duration: 0.5, delay: 0.2 }}
       >
-        {to}
+        {from !== undefined ? from : to}
       </motion.span>
     </motion.span>
   );

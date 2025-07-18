@@ -1,25 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
-import { Button } from '../ui/button';
-import { Slider } from '../ui/slider';
-import { Badge } from '../ui/badge';
+import { Card, Button, Badge, Slider, Group, Text, Grid, Box, Stack, Title, Center, Loader } from '@mantine/core';
 import { useGameStore } from '../../store/gameStore';
 import { BattleLoading } from '../ui/loading';
 import { FadeIn, SlideIn, ResultReveal, BounceIn, ScaleIn } from '../ui/transitions';
 import StreakCelebration from '../ui/streak-celebration';
 import { 
-  Loader2, 
-  Swords, 
-  Trophy, 
-  Target, 
-  TrendingUp, 
-  Flame, 
-  Zap,
-  Crown,
-  Star,
-  Timer,
-  RotateCcw
-} from 'lucide-react';
+  IconSwords, 
+  IconTrophy, 
+  IconTarget, 
+  IconFlame, 
+  IconBolt,
+  IconCrown,
+  IconStar,
+  IconClock,
+  IconRotateClockwise2
+} from '@tabler/icons-react';
 
 interface PokemonBattleCardProps {
   pokemon: any;
@@ -36,26 +31,26 @@ const PokemonBattleCard: React.FC<PokemonBattleCardProps> = ({
 }) => {
   const getTypeColor = (type: string): string => {
     const typeColors: { [key: string]: string } = {
-      normal: 'bg-gray-500 dark:bg-gray-400',
-      fire: 'bg-red-500 dark:bg-red-400',
-      water: 'bg-blue-500 dark:bg-blue-400',
-      electric: 'bg-yellow-500 dark:bg-yellow-400',
-      grass: 'bg-green-500 dark:bg-green-400',
-      ice: 'bg-blue-300 dark:bg-blue-200',
-      fighting: 'bg-red-700 dark:bg-red-600',
-      poison: 'bg-purple-500 dark:bg-purple-400',
-      ground: 'bg-yellow-600 dark:bg-yellow-500',
-      flying: 'bg-indigo-400 dark:bg-indigo-300',
-      psychic: 'bg-pink-500 dark:bg-pink-400',
-      bug: 'bg-green-400 dark:bg-green-300',
-      rock: 'bg-yellow-700 dark:bg-yellow-600',
-      ghost: 'bg-purple-700 dark:bg-purple-600',
-      dragon: 'bg-indigo-700 dark:bg-indigo-600',
-      dark: 'bg-gray-800 dark:bg-gray-700',
-      steel: 'bg-gray-500 dark:bg-gray-400',
-      fairy: 'bg-pink-400 dark:bg-pink-300',
+      normal: 'gray',
+      fire: 'red',
+      water: 'blue',
+      electric: 'yellow',
+      grass: 'green',
+      ice: 'cyan',
+      fighting: 'red',
+      poison: 'grape',
+      ground: 'orange',
+      flying: 'indigo',
+      psychic: 'pink',
+      bug: 'lime',
+      rock: 'orange',
+      ghost: 'violet',
+      dragon: 'indigo',
+      dark: 'dark',
+      steel: 'gray',
+      fairy: 'pink',
     };
-    return typeColors[type.toLowerCase()] || 'bg-gray-500 dark:bg-gray-400';
+    return typeColors[type.toLowerCase()] || 'gray';
   };
 
   const displayWinPercentage = winPercentage !== undefined ? winPercentage.toFixed(1) : showResults ? ((pokemon.wins / 1000) * 100).toFixed(1) : null;
@@ -72,73 +67,125 @@ const PokemonBattleCard: React.FC<PokemonBattleCardProps> = ({
           ${showResults && pokemon.wins > 500 ? 'ring-2 ring-green-500' : ''}
         `}
       >
-        <CardHeader className="text-center pb-4">
-          <div className="relative mx-auto mb-4">
+        <Card.Section p="lg">
+          <Box pos="relative" ta="center" mb="md">
             {pokemon.sprites?.front ? (
-              <div className="relative">
+              <Box pos="relative">
                 <img 
                   src={pokemon.sprites.front} 
                   alt={pokemon.name}
-                  className="w-40 h-40 md:w-48 md:h-48 lg:w-56 lg:h-56 object-contain mx-auto drop-shadow-2xl hover:scale-110 transition-transform duration-300"
+                  style={{
+                    width: '160px',
+                    height: '160px',
+                    objectFit: 'contain',
+                    margin: '0 auto',
+                    filter: 'drop-shadow(0 25px 25px rgb(0 0 0 / 0.15))',
+                    transition: 'transform 0.3s ease',
+                    cursor: 'pointer'
+                  }}
+                  onMouseEnter={(e: React.MouseEvent<HTMLImageElement>) => (e.currentTarget.style.transform = 'scale(1.1)')}
+                  onMouseLeave={(e: React.MouseEvent<HTMLImageElement>) => (e.currentTarget.style.transform = 'scale(1)')}
                 />
                 {showResults && pokemon.wins > 500 && (
-                  <div className="absolute -top-2 -right-2 w-10 h-10 bg-green-500 rounded-full flex items-center justify-center animate-bounce">
-                    <Crown className="h-5 w-5 text-white" />
-                  </div>
+                  <Box 
+                    pos="absolute" 
+                    top={-8} 
+                    right={-8} 
+                    w={40} 
+                    h={40} 
+                    bg="green.5" 
+                    style={{ 
+                      borderRadius: '50%', 
+                      animation: 'bounce 1s infinite',
+                      display: 'flex',
+                      alignItems: 'center', 
+                      justifyContent: 'center'
+                    }}
+                  >
+                    <IconCrown size={20} color="white" />
+                  </Box>
                 )}
-              </div>
+              </Box>
             ) : (
-              <div className="w-40 h-40 md:w-48 md:h-48 lg:w-56 lg:h-56 bg-muted rounded-lg flex items-center justify-center mx-auto">
-                <span className="text-gray-500 dark:text-gray-400 text-sm">
+              <Box 
+                w={160} 
+                h={160} 
+                bg="gray.1" 
+                mx="auto"
+                style={{ 
+                  borderRadius: '8px',
+                  display: 'flex',
+                  alignItems: 'center', 
+                  justifyContent: 'center'
+                }}
+              >
+                <Text size="sm" c="gray.6">
                   No Image
-                </span>
-              </div>
+                </Text>
+              </Box>
             )}
             
             <Badge 
-              variant="secondary" 
-              className="absolute -top-2 -left-2 bg-background border-2 text-lg px-3 py-1"
+              variant="light" 
+              size="lg"
+              pos="absolute"
+              top={-8}
+              left={-8}
+              style={{ border: '2px solid var(--mantine-color-white)' }}
             >
               Lv.{pokemon.level}
             </Badge>
-          </div>
+          </Box>
           
-          <CardTitle className="text-3xl md:text-4xl font-bold capitalize text-center">
+          <Title order={2} size="h1" fw={700} tt="capitalize" ta="center">
             {pokemon.name}
-          </CardTitle>
-        </CardHeader>
+          </Title>
+        </Card.Section>
 
-        <CardContent className="space-y-4">
-          {/* Types */}
-          {pokemon.types && pokemon.types.length > 0 && (
-            <div className="flex gap-3 justify-center flex-wrap">
-              {pokemon.types.map((type) => (
-                <Badge
-                  key={type}
-                  className={`${getTypeColor(type)} text-white font-bold capitalize px-4 py-2 text-base shadow-lg hover:scale-110 transition-transform`}
-                >
-                  {type}
-                </Badge>
-              ))}
-            </div>
-          )}
+        <Card.Section p="lg">
+          <Stack gap="md">
+            {/* Types */}
+            {pokemon.types && pokemon.types.length > 0 && (
+              <Group justify="center" gap="sm">
+                {pokemon.types.map((type: string) => (
+                  <Badge
+                    key={type}
+                    size="lg"
+                    variant="filled"
+                    color={getTypeColor(type)}
+                    tt="capitalize"
+                    style={{ 
+                      fontSize: '14px',
+                      fontWeight: 700,
+                      padding: '8px 16px',
+                      cursor: 'pointer',
+                      transition: 'transform 0.2s ease'
+                    }}
+                    onMouseEnter={(e: React.MouseEvent<HTMLDivElement>) => (e.currentTarget.style.transform = 'scale(1.1)')}
+                    onMouseLeave={(e: React.MouseEvent<HTMLDivElement>) => (e.currentTarget.style.transform = 'scale(1)')}
+                  >
+                    {type}
+                  </Badge>
+                ))}
+              </Group>
+            )}
 
-          {/* Battle Results */}
-          {showResults && (
-            <ScaleIn delay={0.5}>
-              <div className="bg-muted/50 rounded-lg p-4 text-center">
-                <div className="text-sm text-muted-foreground mb-1">Battle Results</div>
-                <div className="text-3xl font-bold text-primary mb-1">
-                  {displayWinPercentage}%
-                </div>
-                <div className="text-sm text-muted-foreground">
-                  {pokemon.wins}/1000 wins
-                </div>
-              </div>
-            </ScaleIn>
-          )}
-
-        </CardContent>
+            {/* Battle Results */}
+            {showResults && (
+              <ScaleIn delay={0.5}>
+                <Box bg="gray.0" p="lg" style={{ borderRadius: '8px' }} ta="center">
+                  <Text size="sm" c="gray.6" mb="xs">Battle Results</Text>
+                  <Text size="xl" fw={700} c="blue.6" mb="xs">
+                    {displayWinPercentage}%
+                  </Text>
+                  <Text size="sm" c="gray.6">
+                    {pokemon.wins}/1000 wins
+                  </Text>
+                </Box>
+              </ScaleIn>
+            )}
+          </Stack>
+        </Card.Section>
       </Card>
     </SlideIn>
   );
@@ -217,93 +264,140 @@ const BattleArena: React.FC = () => {
 
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-6">
-        <div className="text-center">
-          <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Zap className="h-8 w-8 text-red-600" />
-          </div>
-          <h2 className="text-2xl font-bold text-red-600 mb-2">Battle Error</h2>
-          <p className="text-muted-foreground max-w-md">{error}</p>
-        </div>
-        <Button onClick={clearError} variant="outline" size="lg">
-          <RotateCcw className="mr-2 h-4 w-4" />
-          Try Again
-        </Button>
-      </div>
+      <Center mih="60vh">
+        <Stack align="center" gap="xl">
+          <Stack align="center" gap="md">
+            <Box 
+              w={64} 
+              h={64} 
+              bg="red.0" 
+              style={{ 
+                borderRadius: '50%',
+                display: 'flex',
+                alignItems: 'center', 
+                justifyContent: 'center'
+              }}
+            >
+              <IconBolt size={32} color="var(--mantine-color-red-6)" />
+            </Box>
+            <Title order={2} c="red.6">Battle Error</Title>
+            <Text c="dimmed" maw={400} ta="center">{error}</Text>
+          </Stack>
+          <Button onClick={clearError} variant="outline" size="lg" leftSection={<IconRotateClockwise2 size={16} />}>
+            Try Again
+          </Button>
+        </Stack>
+      </Center>
     );
   }
 
   return (
     <>
-      <div className="max-w-7xl mx-auto">
+      <Box maw={1400} mx="auto">
         {/* Title Section */}
         <FadeIn>
-          <div className="text-center mb-8">
-            <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+          <Stack align="center" gap="md" mb="xl">
+            <Title 
+              order={1} 
+              size="h1" 
+              fw={700} 
+              ta="center"
+              style={{
+                background: 'linear-gradient(135deg, var(--mantine-color-blue-6), var(--mantine-color-grape-6))',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                backgroundClip: 'text'
+              }}
+            >
               Battle Arena
-            </h1>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+            </Title>
+            <Text size="xl" c="dimmed" maw={800} ta="center">
               Choose your champion! Predict which Pokemon will dominate in an epic 1000-battle simulation.
-            </p>
-          </div>
+            </Text>
+          </Stack>
         </FadeIn>
 
         {/* Stats Bar */}
         <FadeIn delay={0.2}>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-            <Card className="bg-yellow-500/10 border-yellow-500/20">
-              <CardContent className="p-4 text-center">
-                <Trophy className="h-6 w-6 text-yellow-600 dark:text-yellow-400 mx-auto mb-2" />
-                <div className="text-2xl font-bold text-foreground">
-                  {score}
-                </div>
-                <div className="text-sm text-muted-foreground">Score</div>
-              </CardContent>
-            </Card>
+          <Grid gutter="md" mb="xl">
+            <Grid.Col span={{ base: 6, md: 3 }}>
+              <Card withBorder style={{ backgroundColor: 'var(--mantine-color-yellow-0)', borderColor: 'var(--mantine-color-yellow-3)' }}>
+                <Stack align="center" gap="xs" p="md">
+                  <IconTrophy size={24} color="var(--mantine-color-yellow-6)" />
+                  <Text size="xl" fw={700}>
+                    {score}
+                  </Text>
+                  <Text size="sm" c="dimmed">Score</Text>
+                </Stack>
+              </Card>
+            </Grid.Col>
 
-            <Card className={`transition-all ${streak > 0 ? 'bg-red-500/10 border-red-500/20 ring-2 ring-red-500/30' : 'bg-muted/50'}`}>
-              <CardContent className="p-4 text-center">
-                {streak > 0 ? (
-                  <Flame className="h-6 w-6 text-red-600 dark:text-red-400 mx-auto mb-2" />
-                ) : (
-                  <Zap className="h-6 w-6 text-muted-foreground mx-auto mb-2" />
-                )}
-                <div className={`text-2xl font-bold ${streak > 0 ? 'text-red-600 dark:text-red-400' : 'text-foreground'}`}>
-                  {streak}
-                </div>
-                <div className={`text-sm ${streak > 0 ? 'text-red-600 dark:text-red-400' : 'text-muted-foreground'}`}>
-                  {streak > 0 ? `🔥 Streak` : 'Streak'}
-                </div>
-              </CardContent>
-            </Card>
+            <Grid.Col span={{ base: 6, md: 3 }}>
+              <Card 
+                withBorder 
+                style={{ 
+                  backgroundColor: streak > 0 ? 'var(--mantine-color-red-0)' : 'var(--mantine-color-gray-0)',
+                  borderColor: streak > 0 ? 'var(--mantine-color-red-3)' : 'var(--mantine-color-gray-3)',
+                  transition: 'all 0.3s ease'
+                }}
+              >
+                <Stack align="center" gap="xs" p="md">
+                  {streak > 0 ? (
+                    <IconFlame size={24} color="var(--mantine-color-red-6)" />
+                  ) : (
+                    <IconBolt size={24} color="var(--mantine-color-gray-6)" />
+                  )}
+                  <Text size="xl" fw={700} c={streak > 0 ? 'red.6' : 'gray.9'}>
+                    {streak}
+                  </Text>
+                  <Text size="sm" c={streak > 0 ? 'red.6' : 'dimmed'}>
+                    {streak > 0 ? `🔥 Streak` : 'Streak'}
+                  </Text>
+                </Stack>
+              </Card>
+            </Grid.Col>
 
-            <Card className="bg-blue-500/10 border-blue-500/20">
-              <CardContent className="p-4 text-center">
-                <Target className="h-6 w-6 text-blue-600 dark:text-blue-400 mx-auto mb-2" />
-                <div className="text-2xl font-bold text-foreground">
-                  {getAccuracy()}%
-                </div>
-                <div className="text-sm text-muted-foreground">Accuracy</div>
-              </CardContent>
-            </Card>
+            <Grid.Col span={{ base: 6, md: 3 }}>
+              <Card withBorder style={{ backgroundColor: 'var(--mantine-color-blue-0)', borderColor: 'var(--mantine-color-blue-3)' }}>
+                <Stack align="center" gap="xs" p="md">
+                  <IconTarget size={24} color="var(--mantine-color-blue-6)" />
+                  <Text size="xl" fw={700}>
+                    {getAccuracy()}%
+                  </Text>
+                  <Text size="sm" c="dimmed">Accuracy</Text>
+                </Stack>
+              </Card>
+            </Grid.Col>
 
-            <Card className="bg-purple-500/10 border-purple-500/20">
-              <CardContent className="p-4 text-center">
-                <Swords className="h-6 w-6 text-purple-600 dark:text-purple-400 mx-auto mb-2" />
-                <div className="text-2xl font-bold text-foreground">
-                  {totalGuesses}
-                </div>
-                <div className="text-sm text-muted-foreground">Battles</div>
-              </CardContent>
-            </Card>
-          </div>
+            <Grid.Col span={{ base: 6, md: 3 }}>
+              <Card withBorder style={{ backgroundColor: 'var(--mantine-color-grape-0)', borderColor: 'var(--mantine-color-grape-3)' }}>
+                <Stack align="center" gap="xs" p="md">
+                  <IconSwords size={24} color="var(--mantine-color-grape-6)" />
+                  <Text size="xl" fw={700}>
+                    {totalGuesses}
+                  </Text>
+                  <Text size="sm" c="dimmed">Battles</Text>
+                </Stack>
+              </Card>
+            </Grid.Col>
+          </Grid>
         </FadeIn>
 
         {/* Battle Arena */}
         <FadeIn delay={0.4}>
-          <Card className="bg-card shadow-2xl overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-primary/5 pointer-events-none" />
-            <CardContent className="p-6 md:p-8 lg:p-12 relative">
+          <Card withBorder shadow="xl" style={{ overflow: 'hidden' }}>
+            <Box 
+              pos="absolute" 
+              top={0} 
+              left={0} 
+              right={0} 
+              bottom={0} 
+              style={{
+                background: 'linear-gradient(135deg, var(--mantine-color-blue-0) 0%, transparent 50%, var(--mantine-color-blue-0) 100%)',
+                pointerEvents: 'none'
+              }}
+            />
+            <Card.Section p={{ base: 'lg', md: 'xl' }} pos="relative">
               {isLoading ? (
                 <div className="py-16">
                   <BattleLoading 
@@ -317,201 +411,263 @@ const BattleArena: React.FC = () => {
                   {/* Pokemon Battle */}
                   <div className="relative">
                     {/* VS Badge for Mobile */}
-                    <div className="md:hidden text-center mb-4">
-                      <BounceIn delay={0.5}>
-                        <div className="bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-full w-16 h-16 flex items-center justify-center mx-auto shadow-lg">
-                          <span className="text-lg font-bold">VS</span>
-                        </div>
-                      </BounceIn>
-                      <div className="text-sm text-muted-foreground mt-2">
-                        {currentBattle.totalBattles} battle simulation
-                      </div>
-                    </div>
+                    <Center mb="md" hiddenFrom="md">
+                      <Stack align="center" gap="xs">
+                        <BounceIn delay={0.5}>
+                          <Box
+                            w={64}
+                            h={64}
+                            bg="linear-gradient(135deg, var(--mantine-color-blue-5), var(--mantine-color-grape-5))"
+                            c="white"
+                            style={{ 
+                              borderRadius: '50%',
+                              display: 'flex',
+                              alignItems: 'center', 
+                              justifyContent: 'center',
+                              boxShadow: 'var(--mantine-shadow-lg)'
+                            }}
+                          >
+                            <Text size="lg" fw={700}>VS</Text>
+                          </Box>
+                        </BounceIn>
+                        <Text size="sm" c="dimmed">
+                          {currentBattle.totalBattles} battle simulation
+                        </Text>
+                      </Stack>
+                    </Center>
                     
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 md:gap-12 lg:gap-16 items-start justify-center max-w-6xl mx-auto">
-                    {/* Pokemon 1 */}
-                    <PokemonBattleCard
-                      pokemon={currentBattle.pokemon1}
-                      showResults={showResults}
-                      position="left"
-                      winPercentage={showResults ? guessResult?.actualWinRate : undefined}
-                    />
+                    <Grid gutter={{ base: 'md', md: 'xl' }} align="flex-start" justify="center" maw={1200} mx="auto">
+                      <Grid.Col span={{ base: 12, sm: 6 }}>
+                        {/* Pokemon 1 */}
+                        <PokemonBattleCard
+                          pokemon={currentBattle.pokemon1}
+                          showResults={showResults}
+                          position="left"
+                          winPercentage={showResults ? guessResult?.actualWinRate : undefined}
+                        />
+                      </Grid.Col>
 
-                    {/* VS Badge - Positioned absolutely on larger screens */}
-                    <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 hidden md:block z-10">
-                      <BounceIn delay={0.5}>
-                        <div className="bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-full w-20 h-20 lg:w-24 lg:h-24 flex items-center justify-center shadow-2xl border-4 border-white dark:border-gray-800">
-                          <span className="text-xl lg:text-2xl font-bold">VS</span>
-                        </div>
-                      </BounceIn>
-                    </div>
+                      {/* VS Badge - Positioned absolutely on larger screens */}
+                      <Box 
+                        pos="absolute" 
+                        top="50%" 
+                        left="50%" 
+                        style={{ 
+                          transform: 'translate(-50%, -50%)',
+                          zIndex: 10
+                        }}
+                        visibleFrom="md"
+                      >
+                        <BounceIn delay={0.5}>
+                          <Box
+                            w={80}
+                            h={80}
+                            bg="linear-gradient(135deg, var(--mantine-color-blue-5), var(--mantine-color-grape-5))"
+                            c="white"
+                            style={{ 
+                              borderRadius: '50%',
+                              display: 'flex',
+                              alignItems: 'center', 
+                              justifyContent: 'center',
+                              boxShadow: 'var(--mantine-shadow-xl)',
+                              border: '4px solid white'
+                            }}
+                          >
+                            <Text size="xl" fw={700}>VS</Text>
+                          </Box>
+                        </BounceIn>
+                      </Box>
 
-                    {/* Pokemon 2 */}
-                    <PokemonBattleCard
-                      pokemon={currentBattle.pokemon2}
-                      showResults={showResults}
-                      position="right"
-                      winPercentage={showResults ? (100 - (guessResult?.actualWinRate || 0)) : undefined}
-                    />
-                  </div>
+                      <Grid.Col span={{ base: 12, sm: 6 }}>
+
+                        {/* Pokemon 2 */}
+                        <PokemonBattleCard
+                          pokemon={currentBattle.pokemon2}
+                          showResults={showResults}
+                          position="right"
+                          winPercentage={showResults ? (100 - (guessResult?.actualWinRate || 0)) : undefined}
+                        />
+                      </Grid.Col>
+                    </Grid>
                   
                   {/* Battle Info for Desktop */}
-                  <div className="hidden md:block text-center mt-4">
-                    <div className="text-sm text-muted-foreground">
+                  <Center mt="md" visibleFrom="md">
+                    <Text size="sm" c="dimmed">
                       {currentBattle.totalBattles} battle simulation
-                    </div>
-                  </div>
+                    </Text>
+                  </Center>
                   </div>
 
                   {/* Win Rate Prediction Slider */}
                   {!showResults && (
-                    <div className="max-w-2xl mx-auto space-y-4 mt-8">
-                      <div className="text-center">
-                        <h3 className="text-xl font-semibold mb-2">
+                    <Box maw={800} mx="auto" mt="xl">
+                      <Stack align="center" gap="md" mb="md">
+                        <Title order={3} size="h3" ta="center">
                           How many battles will {currentBattle.pokemon1.name} win?
-                        </h3>
-                        <p className="text-sm text-muted-foreground">
+                        </Title>
+                        <Text size="sm" c="dimmed" ta="center">
                           Drag the slider to predict the win percentage (you need to be within 10% to score points)
-                        </p>
-                      </div>
+                        </Text>
+                      </Stack>
                       
-                      <div className="bg-card rounded-lg p-6 space-y-6 border-2 border-primary/20 shadow-lg">
-                        <div className="flex justify-between items-center mb-4">
-                          <div className="text-left">
-                            <div className="font-semibold text-lg">{currentBattle.pokemon1.name}</div>
-                            <div className="text-4xl font-bold text-blue-600 dark:text-blue-400">{guessPercentage}%</div>
-                          </div>
-                          <div className="text-center">
-                            <div className="text-sm text-muted-foreground">Win Rate Prediction</div>
-                            <div className="text-2xl font-bold">VS</div>
-                          </div>
-                          <div className="text-right">
-                            <div className="font-semibold text-lg">{currentBattle.pokemon2.name}</div>
-                            <div className="text-4xl font-bold text-purple-600 dark:text-purple-400">{100 - guessPercentage}%</div>
-                          </div>
-                        </div>
+                      <Card withBorder p="xl" shadow="lg" style={{ borderColor: 'var(--mantine-color-blue-3)', borderWidth: '2px' }}>
+                        <Group justify="space-between" align="center" mb="xl">
+                          <Stack align="flex-start" gap="xs">
+                            <Text fw={600} size="lg">{currentBattle.pokemon1.name}</Text>
+                            <Text size="xl" fw={700} c="blue.6">{guessPercentage}%</Text>
+                          </Stack>
+                          <Stack align="center" gap="xs">
+                            <Text size="sm" c="dimmed">Win Rate Prediction</Text>
+                            <Text size="xl" fw={700}>VS</Text>
+                          </Stack>
+                          <Stack align="flex-end" gap="xs">
+                            <Text fw={600} size="lg">{currentBattle.pokemon2.name}</Text>
+                            <Text size="xl" fw={700} c="grape.6">{100 - guessPercentage}%</Text>
+                          </Stack>
+                        </Group>
                         
-                        <div className="space-y-3">
-                          <div className="text-center text-sm text-muted-foreground">
+                        <Stack gap="md">
+                          <Text ta="center" size="sm" c="dimmed">
                             Drag the slider to adjust your prediction
-                          </div>
+                          </Text>
                           
                           <Slider
-                            value={[guessPercentage]}
-                            onValueChange={handleSliderChange}
+                            value={guessPercentage}
+                            onChange={(value) => handleSliderChange([value])}
                             min={0}
                             max={100}
                             step={1}
-                            className="w-full py-2"
                             disabled={isLoading}
+                            color="blue"
+                            size="lg"
+                            style={{ padding: '8px 0' }}
                           />
                           
-                          <div className="flex justify-between text-sm text-muted-foreground">
-                            <span className="font-medium">0%</span>
-                            <span className="font-medium">50%</span>
-                            <span className="font-medium">100%</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
+                          <Group justify="space-between">
+                            <Text size="sm" c="dimmed" fw={500}>0%</Text>
+                            <Text size="sm" c="dimmed" fw={500}>50%</Text>
+                            <Text size="sm" c="dimmed" fw={500}>100%</Text>
+                          </Group>
+                        </Stack>
+                      </Card>
+                    </Box>
                   )}
 
                   {/* Action Buttons */}
-                  <div className="text-center space-y-4">
-                    {!showResults ? (
-                      <div className="flex justify-center gap-4">
-                        <Button
-                          onClick={handleSubmitGuess}
-                          disabled={isLoading}
-                          className="px-8 py-3 text-lg font-semibold"
-                          size="lg"
-                        >
-                          {isLoading ? (
-                            <>
-                              <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                              Simulating...
-                            </>
-                          ) : (
-                            <>
-                              <Swords className="mr-2 h-5 w-5" />
-                              Submit Prediction
-                            </>
-                          )}
-                        </Button>
-                        <Button
-                          onClick={handleNewBattle}
-                          variant="outline"
-                          disabled={isLoading}
-                          className="px-6 py-3"
-                          size="lg"
-                        >
-                          <RotateCcw className="mr-2 h-4 w-4" />
-                          New Battle
-                        </Button>
-                      </div>
-                    ) : (
-                      <div className="space-y-4">
-                        <ResultReveal 
-                          isVisible={!!guessResult} 
-                          isCorrect={guessResult?.isCorrect}
-                          className="max-w-md mx-auto"
-                        >
-                          {guessResult && (
-                            <Card className={`${
-                              guessResult.isCorrect 
-                                ? 'bg-green-500/10 border-green-500/20' 
-                                : 'bg-red-500/10 border-red-500/20'
-                            }`}>
-                              <CardContent className="p-6 text-center">
-                                <div className={`text-2xl font-bold mb-2 ${
-                                  guessResult.isCorrect ? 'text-green-700 dark:text-green-300' : 'text-red-700 dark:text-red-300'
-                                }`}>
-                                  {guessResult.isCorrect ? '🎉 Within 10%!' : '❌ Not close enough!'}
-                                </div>
-                                <div className="text-lg mb-2">
-                                  Your guess: <span className="font-bold">{guessResult.guessPercentage}%</span>
-                                </div>
-                                <div className="text-lg mb-2">
-                                  Actual win rate: <span className="font-bold text-primary">{guessResult.actualWinRate.toFixed(1)}%</span>
-                                </div>
-                                <div className="text-muted-foreground mb-2">
-                                  {guessResult.message}
-                                </div>
-                                {guessResult.isCorrect && (
-                                  <div className="text-lg font-bold text-green-600 dark:text-green-400">
-                                    +{guessResult.points} points earned!
-                                  </div>
-                                )}
-                              </CardContent>
-                            </Card>
-                          )}
-                        </ResultReveal>
+                  <Center>
+                    <Stack gap="lg">
+                      {!showResults ? (
+                        <Group justify="center" gap="md">
+                          <Button
+                            onClick={handleSubmitGuess}
+                            disabled={isLoading}
+                            size="lg"
+                            leftSection={isLoading ? <Loader size={20} /> : <IconSwords size={20} />}
+                            loading={isLoading}
+                            loaderProps={{ size: 20 }}
+                          >
+                            {isLoading ? 'Simulating...' : 'Submit Prediction'}
+                          </Button>
+                          <Button
+                            onClick={handleNewBattle}
+                            variant="outline"
+                            disabled={isLoading}
+                            size="lg"
+                            leftSection={<IconRotateClockwise2 size={16} />}
+                          >
+                            New Battle
+                          </Button>
+                        </Group>
+                      ) : (
+                        <Stack gap="lg">
+                          <ResultReveal 
+                            isVisible={!!guessResult} 
+                            isCorrect={guessResult?.isCorrect}
+                          >
+                            {guessResult && (
+                              <Card 
+                                withBorder 
+                                maw={400} 
+                                mx="auto"
+                                style={{
+                                  backgroundColor: guessResult.isCorrect 
+                                    ? 'var(--mantine-color-green-0)' 
+                                    : 'var(--mantine-color-red-0)',
+                                  borderColor: guessResult.isCorrect 
+                                    ? 'var(--mantine-color-green-3)' 
+                                    : 'var(--mantine-color-red-3)'
+                                }}
+                              >
+                                <Card.Section p="xl">
+                                  <Stack align="center" gap="md">
+                                    <Text 
+                                      size="xl" 
+                                      fw={700} 
+                                      c={guessResult.isCorrect ? 'green.7' : 'red.7'}
+                                    >
+                                      {guessResult.isCorrect ? '🎉 Within 10%!' : '❌ Not close enough!'}
+                                    </Text>
+                                    <Text size="lg">
+                                      Your guess: <Text component="span" fw={700}>{guessResult.guessPercentage}%</Text>
+                                    </Text>
+                                    <Text size="lg">
+                                      Actual win rate: <Text component="span" fw={700} c="blue.6">{guessResult.actualWinRate.toFixed(1)}%</Text>
+                                    </Text>
+                                    <Text c="dimmed">
+                                      {guessResult.message}
+                                    </Text>
+                                    {guessResult.isCorrect && (
+                                      <Text size="lg" fw={700} c="green.6">
+                                        +{guessResult.points} points earned!
+                                      </Text>
+                                    )}
+                                  </Stack>
+                                </Card.Section>
+                              </Card>
+                            )}
+                          </ResultReveal>
 
-                        <div className="text-sm text-muted-foreground">
-                          <Timer className="inline h-4 w-4 mr-1" />
-                          Simulation completed in {currentBattle.executionTime}ms
-                        </div>
-                      </div>
-                    )}
-                  </div>
+                          <Group justify="center" gap="xs">
+                            <IconClock size={16} />
+                            <Text size="sm" c="dimmed">
+                              Simulation completed in {currentBattle.executionTime}ms
+                            </Text>
+                          </Group>
+                        </Stack>
+                      )}
+                    </Stack>
+                  </Center>
                 </div>
               ) : (
-                <div className="text-center py-16">
-                  <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Swords className="h-8 w-8 text-gray-600" />
-                  </div>
-                  <h3 className="text-xl font-semibold mb-2">No Battle Available</h3>
-                  <p className="text-muted-foreground mb-4">Ready to start your Pokemon battle prediction journey?</p>
-                  <Button onClick={handleNewBattle} size="lg">
-                    <Star className="mr-2 h-5 w-5" />
-                    Start First Battle
-                  </Button>
-                </div>
+                <Center py="xl">
+                  <Stack align="center" gap="md">
+                    <Box 
+                      w={64} 
+                      h={64} 
+                      bg="gray.1" 
+                      style={{ 
+                        borderRadius: '50%',
+                        display: 'flex',
+                        alignItems: 'center', 
+                        justifyContent: 'center'
+                      }}
+                    >
+                      <IconSwords size={32} color="var(--mantine-color-gray-6)" />
+                    </Box>
+                    <Title order={3} size="h3">No Battle Available</Title>
+                    <Text c="dimmed" ta="center" mb="md">
+                      Ready to start your Pokemon battle prediction journey?
+                    </Text>
+                    <Button onClick={handleNewBattle} size="lg" leftSection={<IconStar size={20} />}>
+                      Start First Battle
+                    </Button>
+                  </Stack>
+                </Center>
               )}
-            </CardContent>
+            </Card.Section>
           </Card>
         </FadeIn>
-      </div>
+      </Box>
 
       {/* Streak Celebration */}
       <StreakCelebration
