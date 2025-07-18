@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Button, Badge, Slider, Group, Text, Grid, Box, Stack, Title, Center, Loader } from '@mantine/core';
+import { Card, Button, Badge, Slider, Group, Text, Grid, Box, Stack, Title, Center, Loader, useMantineTheme, useMantineColorScheme } from '@mantine/core';
 import { useGameStore } from '../../store/gameStore';
 import { useSettingsStore } from '../../store/settingsStore';
 import { BattleLoading } from '../ui/loading';
@@ -32,6 +32,8 @@ const PokemonBattleCard: React.FC<PokemonBattleCardProps> = ({
   winPercentage,
   guessPercentage
 }) => {
+  const theme = useMantineTheme();
+  const { colorScheme } = useMantineColorScheme();
   const getTypeColor = (type: string): string => {
     const typeColors: { [key: string]: string } = {
       normal: 'gray',
@@ -148,7 +150,7 @@ const PokemonBattleCard: React.FC<PokemonBattleCardProps> = ({
               <Box 
                 w={spriteSize} 
                 h={spriteSize} 
-                bg="gray.1" 
+                bg={colorScheme === 'dark' ? 'dark.6' : 'gray.1'} 
                 mx="auto"
                 style={{ 
                   borderRadius: '8px',
@@ -225,8 +227,8 @@ const PokemonBattleCard: React.FC<PokemonBattleCardProps> = ({
                         fontSize: '12px',
                         fontWeight: 500,
                         padding: '4px 8px',
-                        backgroundColor: 'var(--mantine-color-gray-0)',
-                        borderColor: 'var(--mantine-color-gray-3)'
+                        backgroundColor: colorScheme === 'dark' ? theme.colors.dark[6] : theme.colors.gray[0],
+                        borderColor: colorScheme === 'dark' ? theme.colors.dark[4] : theme.colors.gray[3]
                       }}
                     >
                       {move}
@@ -242,37 +244,37 @@ const PokemonBattleCard: React.FC<PokemonBattleCardProps> = ({
                 <Text size="sm" c="gray.6" ta="center" mb="xs">Stats (Level {pokemon.level})</Text>
                 <Grid gutter="xs">
                   <Grid.Col span={6}>
-                    <Box ta="center" p="xs" style={{ backgroundColor: 'var(--mantine-color-red-0)', borderRadius: '4px' }}>
+                    <Box ta="center" p="xs" style={{ backgroundColor: colorScheme === 'dark' ? theme.colors.red[9] : theme.colors.red[0], borderRadius: '4px' }}>
                       <Text size="xs" fw={600} c="red.7">HP</Text>
                       <Text size="sm" fw={700}>{pokemon.stats.hp}</Text>
                     </Box>
                   </Grid.Col>
                   <Grid.Col span={6}>
-                    <Box ta="center" p="xs" style={{ backgroundColor: 'var(--mantine-color-orange-0)', borderRadius: '4px' }}>
+                    <Box ta="center" p="xs" style={{ backgroundColor: colorScheme === 'dark' ? theme.colors.orange[9] : theme.colors.orange[0], borderRadius: '4px' }}>
                       <Text size="xs" fw={600} c="orange.7">ATK</Text>
                       <Text size="sm" fw={700}>{pokemon.stats.attack}</Text>
                     </Box>
                   </Grid.Col>
                   <Grid.Col span={6}>
-                    <Box ta="center" p="xs" style={{ backgroundColor: 'var(--mantine-color-yellow-0)', borderRadius: '4px' }}>
+                    <Box ta="center" p="xs" style={{ backgroundColor: colorScheme === 'dark' ? theme.colors.yellow[9] : theme.colors.yellow[0], borderRadius: '4px' }}>
                       <Text size="xs" fw={600} c="yellow.7">DEF</Text>
                       <Text size="sm" fw={700}>{pokemon.stats.defense}</Text>
                     </Box>
                   </Grid.Col>
                   <Grid.Col span={6}>
-                    <Box ta="center" p="xs" style={{ backgroundColor: 'var(--mantine-color-blue-0)', borderRadius: '4px' }}>
+                    <Box ta="center" p="xs" style={{ backgroundColor: colorScheme === 'dark' ? theme.colors.blue[9] : theme.colors.blue[0], borderRadius: '4px' }}>
                       <Text size="xs" fw={600} c="blue.7">SPA</Text>
                       <Text size="sm" fw={700}>{pokemon.stats.specialAttack}</Text>
                     </Box>
                   </Grid.Col>
                   <Grid.Col span={6}>
-                    <Box ta="center" p="xs" style={{ backgroundColor: 'var(--mantine-color-teal-0)', borderRadius: '4px' }}>
+                    <Box ta="center" p="xs" style={{ backgroundColor: colorScheme === 'dark' ? theme.colors.teal[9] : theme.colors.teal[0], borderRadius: '4px' }}>
                       <Text size="xs" fw={600} c="teal.7">SPD</Text>
                       <Text size="sm" fw={700}>{pokemon.stats.specialDefense}</Text>
                     </Box>
                   </Grid.Col>
                   <Grid.Col span={6}>
-                    <Box ta="center" p="xs" style={{ backgroundColor: 'var(--mantine-color-pink-0)', borderRadius: '4px' }}>
+                    <Box ta="center" p="xs" style={{ backgroundColor: colorScheme === 'dark' ? theme.colors.pink[9] : theme.colors.pink[0], borderRadius: '4px' }}>
                       <Text size="xs" fw={600} c="pink.7">SPE</Text>
                       <Text size="sm" fw={700}>{pokemon.stats.speed}</Text>
                     </Box>
@@ -284,7 +286,7 @@ const PokemonBattleCard: React.FC<PokemonBattleCardProps> = ({
             {/* Battle Results */}
             {showResults && (
               <ScaleIn delay={0.5}>
-                <Box bg="gray.0" p="lg" style={{ borderRadius: '8px' }} ta="center">
+                <Box bg={colorScheme === 'dark' ? 'dark.6' : 'gray.0'} p="lg" style={{ borderRadius: '8px' }} ta="center">
                   <Text size="sm" c="gray.6" mb="xs">Battle Results</Text>
                   <Text size="xl" fw={700} c="blue.6" mb="xs">
                     {displayWinPercentage}%
@@ -303,6 +305,9 @@ const PokemonBattleCard: React.FC<PokemonBattleCardProps> = ({
 };
 
 const BattleArena: React.FC = () => {
+  const theme = useMantineTheme();
+  const { colorScheme } = useMantineColorScheme();
+  
   const {
     currentBattle,
     isLoading,
@@ -412,7 +417,9 @@ const BattleArena: React.FC = () => {
               fw={700} 
               ta="center"
               style={{
-                background: 'linear-gradient(135deg, var(--mantine-color-blue-6), var(--mantine-color-grape-6))',
+                background: colorScheme === 'dark'
+                  ? 'linear-gradient(135deg, var(--mantine-color-blue-4), var(--mantine-color-grape-4))'
+                  : 'linear-gradient(135deg, var(--mantine-color-blue-6), var(--mantine-color-grape-6))',
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
                 backgroundClip: 'text'
@@ -434,7 +441,9 @@ const BattleArena: React.FC = () => {
               right={0} 
               bottom={0} 
               style={{
-                background: 'linear-gradient(135deg, var(--mantine-color-blue-0) 0%, transparent 50%, var(--mantine-color-blue-0) 100%)',
+                background: colorScheme === 'dark' 
+                  ? 'linear-gradient(135deg, rgba(31, 41, 55, 0.3) 0%, transparent 50%, rgba(31, 41, 55, 0.3) 100%)'
+                  : 'linear-gradient(135deg, var(--mantine-color-blue-0) 0%, transparent 50%, var(--mantine-color-blue-0) 100%)',
                 pointerEvents: 'none'
               }}
             />
@@ -553,7 +562,7 @@ const BattleArena: React.FC = () => {
                         </Text>
                       </Stack>
                       
-                      <Card withBorder p="xl" shadow="lg" style={{ borderColor: 'var(--mantine-color-blue-3)', borderWidth: '2px' }}>
+                      <Card withBorder p="xl" shadow="lg" style={{ borderColor: colorScheme === 'dark' ? theme.colors.blue[7] : theme.colors.blue[3], borderWidth: '2px' }}>
                         <Group justify="space-between" align="center" mb="xl">
                           <Stack align="flex-start" gap="xs">
                             <Text fw={600} size="lg">{currentBattle.pokemon1.name}</Text>
@@ -634,11 +643,11 @@ const BattleArena: React.FC = () => {
                                 mx="auto"
                                 style={{
                                   backgroundColor: guessResult.isCorrect 
-                                    ? 'var(--mantine-color-green-0)' 
-                                    : 'var(--mantine-color-red-0)',
+                                    ? colorScheme === 'dark' ? theme.colors.green[9] : theme.colors.green[0]
+                                    : colorScheme === 'dark' ? theme.colors.red[9] : theme.colors.red[0],
                                   borderColor: guessResult.isCorrect 
-                                    ? 'var(--mantine-color-green-3)' 
-                                    : 'var(--mantine-color-red-3)'
+                                    ? colorScheme === 'dark' ? theme.colors.green[7] : theme.colors.green[3]
+                                    : colorScheme === 'dark' ? theme.colors.red[7] : theme.colors.red[3]
                                 }}
                               >
                                 <Card.Section p="xl">
@@ -697,7 +706,7 @@ const BattleArena: React.FC = () => {
                     <Box 
                       w={64} 
                       h={64} 
-                      bg="gray.1" 
+                      bg={colorScheme === 'dark' ? 'dark.6' : 'gray.1'} 
                       style={{ 
                         borderRadius: '50%',
                         display: 'flex',

@@ -1,5 +1,5 @@
 import React from 'react';
-import { AppShell, Container, Group, Button, Badge, ActionIcon, useMantineColorScheme, Box } from '@mantine/core';
+import { AppShell, Container, Group, Button, Badge, ActionIcon, useMantineColorScheme, Box, useMantineTheme, Text } from '@mantine/core';
 import { 
   IconHistory, 
   IconChartBar, 
@@ -30,6 +30,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({
   battleCount = 0 
 }) => {
   const { colorScheme, toggleColorScheme } = useMantineColorScheme();
+  const theme = useMantineTheme();
   const { 
     battleSettings, 
     isSettingsPanelExpanded, 
@@ -115,21 +116,54 @@ const MainLayout: React.FC<MainLayoutProps> = ({
         header={{ height: 60 }}
         navbar={{ width: 0, breakpoint: 'sm' }}
         padding="md"
+        style={{
+          backgroundColor: colorScheme === 'dark' ? theme.colors.dark[8] : theme.colors.gray[0]
+        }}
       >
         <AppShell.Header>
           <Group h="100%" px="md" justify="space-between">
             <Group>
-              <div className="flex items-center space-x-3">
-                <div className="relative">
-                  <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
+              <Group gap="sm">
+                <Box pos="relative">
+                  <Box 
+                    w={32} 
+                    h={32} 
+                    style={{ 
+                      background: 'linear-gradient(135deg, var(--mantine-color-blue-6), var(--mantine-color-grape-6))',
+                      borderRadius: '8px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                  >
                     <IconDeviceGamepad2 size={20} color="white" />
-                  </div>
-                  <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-                </div>
-                <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                  </Box>
+                  <Box 
+                    pos="absolute"
+                    top={-4}
+                    right={-4}
+                    w={12}
+                    h={12}
+                    bg="green.5"
+                    style={{ 
+                      borderRadius: '50%',
+                      animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite'
+                    }}
+                  />
+                </Box>
+                <Text 
+                  size="xl"
+                  fw={700}
+                  style={{
+                    background: 'linear-gradient(135deg, var(--mantine-color-blue-6), var(--mantine-color-grape-6))',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    backgroundClip: 'text'
+                  }}
+                >
                   PokeWave
-                </span>
-              </div>
+                </Text>
+              </Group>
               
               {/* Navigation */}
               <Group gap="xs" visibleFrom="lg">
@@ -172,7 +206,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({
           </Group>
 
           {/* Mobile Navigation */}
-          <Group gap="xs" p="md" hiddenFrom="lg" style={{ borderTop: '1px solid var(--mantine-color-gray-3)' }}>
+          <Group gap="xs" p="md" hiddenFrom="lg" style={{ borderTop: `1px solid ${colorScheme === 'dark' ? theme.colors.dark[5] : theme.colors.gray[3]}` }}>
             {navigationItems.map((item) => {
               const Icon = item.icon;
               return (
@@ -197,7 +231,11 @@ const MainLayout: React.FC<MainLayoutProps> = ({
           </Group>
         </AppShell.Header>
 
-        <AppShell.Main>
+        <AppShell.Main
+          style={{
+            backgroundColor: colorScheme === 'dark' ? theme.colors.dark[8] : theme.colors.gray[0]
+          }}
+        >
           <Container 
             size="xl"
             style={{
