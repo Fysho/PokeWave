@@ -91,7 +91,7 @@ export class ApiService {
         pokemon1Id,
         pokemon2Id,
         options: {
-          generation: options?.generation || 9,
+          generation: options?.generation || 1,
           pokemon1Level,
           pokemon2Level,
           withItems: options?.withItems || false,
@@ -195,7 +195,7 @@ export class ApiService {
         pokemon1Id,
         pokemon2Id,
         options: {
-          generation: options?.generation || 9,
+          generation: options?.generation || 1,
           pokemon1Level,
           pokemon2Level,
           withItems: options?.withItems || false,

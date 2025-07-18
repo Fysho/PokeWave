@@ -49,6 +49,12 @@ export const useSettingsStore = create<SettingsState>()(
         isSettingsPanelExpanded: state.isSettingsPanelExpanded,
         isSimulationPanelExpanded: state.isSimulationPanelExpanded,
       }),
+      // Handle migration for existing users without generation field
+      onRehydrateStorage: () => (state) => {
+        if (state && state.battleSettings && !state.battleSettings.generation) {
+          state.battleSettings.generation = 1;
+        }
+      },
     }
   )
 );

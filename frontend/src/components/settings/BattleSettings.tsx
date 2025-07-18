@@ -172,7 +172,7 @@ const BattleSettings: React.FC<BattleSettingsProps> = ({
                   <Select
                     label="Generation"
                     description="Select which generation of Pokemon and battle mechanics to use"
-                    value={settings.generation.toString()}
+                    value={(settings.generation || 1).toString()}
                     onChange={handleGenerationChange}
                     data={[
                       { value: '1', label: 'Generation 1 (Red/Blue/Yellow)' },
