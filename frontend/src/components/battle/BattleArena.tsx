@@ -418,79 +418,11 @@ const BattleArena: React.FC = () => {
                 backgroundClip: 'text'
               }}
             >
-              Battle Arena
+              PokeWave
             </Title>
-            <Text size="xl" c="dimmed" maw={800} ta="center">
-              Choose your champion! Predict which Pokemon will dominate in an epic 1000-battle simulation.
-            </Text>
           </Stack>
         </FadeIn>
 
-        {/* Stats Bar */}
-        <FadeIn delay={0.2}>
-          <Grid gutter="md" mb="xl">
-            <Grid.Col span={{ base: 6, md: 3 }}>
-              <Card withBorder style={{ backgroundColor: 'var(--mantine-color-yellow-0)', borderColor: 'var(--mantine-color-yellow-3)' }}>
-                <Stack align="center" gap="xs" p="md">
-                  <IconTrophy size={24} color="var(--mantine-color-yellow-6)" />
-                  <Text size="xl" fw={700}>
-                    {score}
-                  </Text>
-                  <Text size="sm" c="dimmed">Score</Text>
-                </Stack>
-              </Card>
-            </Grid.Col>
-
-            <Grid.Col span={{ base: 6, md: 3 }}>
-              <Card 
-                withBorder 
-                style={{ 
-                  backgroundColor: streak > 0 ? 'var(--mantine-color-red-0)' : 'var(--mantine-color-gray-0)',
-                  borderColor: streak > 0 ? 'var(--mantine-color-red-3)' : 'var(--mantine-color-gray-3)',
-                  transition: 'all 0.3s ease'
-                }}
-              >
-                <Stack align="center" gap="xs" p="md">
-                  {streak > 0 ? (
-                    <IconFlame size={24} color="var(--mantine-color-red-6)" />
-                  ) : (
-                    <IconBolt size={24} color="var(--mantine-color-gray-6)" />
-                  )}
-                  <Text size="xl" fw={700} c={streak > 0 ? 'red.6' : 'gray.9'}>
-                    {streak}
-                  </Text>
-                  <Text size="sm" c={streak > 0 ? 'red.6' : 'dimmed'}>
-                    {streak > 0 ? `🔥 Streak` : 'Streak'}
-                  </Text>
-                </Stack>
-              </Card>
-            </Grid.Col>
-
-            <Grid.Col span={{ base: 6, md: 3 }}>
-              <Card withBorder style={{ backgroundColor: 'var(--mantine-color-blue-0)', borderColor: 'var(--mantine-color-blue-3)' }}>
-                <Stack align="center" gap="xs" p="md">
-                  <IconTarget size={24} color="var(--mantine-color-blue-6)" />
-                  <Text size="xl" fw={700}>
-                    {getAccuracy()}%
-                  </Text>
-                  <Text size="sm" c="dimmed">Accuracy</Text>
-                </Stack>
-              </Card>
-            </Grid.Col>
-
-            <Grid.Col span={{ base: 6, md: 3 }}>
-              <Card withBorder style={{ backgroundColor: 'var(--mantine-color-grape-0)', borderColor: 'var(--mantine-color-grape-3)' }}>
-                <Stack align="center" gap="xs" p="md">
-                  <IconSwords size={24} color="var(--mantine-color-grape-6)" />
-                  <Text size="xl" fw={700}>
-                    {totalGuesses}
-                  </Text>
-                  <Text size="sm" c="dimmed">Battles</Text>
-                </Stack>
-              </Card>
-            </Grid.Col>
-          </Grid>
-        </FadeIn>
 
         {/* Battle Arena */}
         <FadeIn delay={0.4}>
@@ -796,6 +728,70 @@ const BattleArena: React.FC = () => {
         isVisible={showStreakCelebration}
         onAnimationComplete={() => setShowStreakCelebration(false)}
       />
+
+      {/* Stats Bar */}
+      <FadeIn delay={0.2}>
+        <Grid gutter="md" mt="xl">
+          <Grid.Col span={{ base: 6, md: 3 }}>
+            <Card withBorder>
+              <Stack align="center" gap="xs" p="md">
+                <IconTrophy size={24} color="var(--mantine-color-yellow-6)" />
+                <Text size="xl" fw={700}>
+                  {score}
+                </Text>
+                <Text size="sm" c="dimmed">Score</Text>
+              </Stack>
+            </Card>
+          </Grid.Col>
+
+          <Grid.Col span={{ base: 6, md: 3 }}>
+            <Card 
+              withBorder 
+              style={{ 
+                transition: 'all 0.3s ease'
+              }}
+            >
+              <Stack align="center" gap="xs" p="md">
+                {streak > 0 ? (
+                  <IconFlame size={24} color="var(--mantine-color-red-6)" />
+                ) : (
+                  <IconBolt size={24} color="var(--mantine-color-gray-6)" />
+                )}
+                <Text size="xl" fw={700} c={streak > 0 ? 'red.6' : undefined}>
+                  {streak}
+                </Text>
+                <Text size="sm" c={streak > 0 ? 'red.6' : 'dimmed'}>
+                  {streak > 0 ? `🔥 Streak` : 'Streak'}
+                </Text>
+              </Stack>
+            </Card>
+          </Grid.Col>
+
+          <Grid.Col span={{ base: 6, md: 3 }}>
+            <Card withBorder>
+              <Stack align="center" gap="xs" p="md">
+                <IconTarget size={24} color="var(--mantine-color-blue-6)" />
+                <Text size="xl" fw={700}>
+                  {getAccuracy()}%
+                </Text>
+                <Text size="sm" c="dimmed">Accuracy</Text>
+              </Stack>
+            </Card>
+          </Grid.Col>
+
+          <Grid.Col span={{ base: 6, md: 3 }}>
+            <Card withBorder>
+              <Stack align="center" gap="xs" p="md">
+                <IconSwords size={24} color="var(--mantine-color-grape-6)" />
+                <Text size="xl" fw={700}>
+                  {totalGuesses}
+                </Text>
+                <Text size="sm" c="dimmed">Battles</Text>
+              </Stack>
+            </Card>
+          </Grid.Col>
+        </Grid>
+      </FadeIn>
     </>
   );
 };
