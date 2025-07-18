@@ -1,5 +1,5 @@
 import { Dex } from '@pkmn/dex';
-import { BattleStreams, Battle, Teams } from '@pkmn/sim';
+import { Battle } from '@pkmn/sim';
 
 interface BattleTurn {
   turn: number;
@@ -348,19 +348,47 @@ export async function simulateSingleBattle(
     const battle = new Battle({ formatid: `gen${generation}customgame` });
     const outputs: string[] = [];
     
-    // Create team strings
-    const p1moves = getRandomMoves(species1, dex, 4).join(',');
-    const p2moves = getRandomMoves(species2, dex, 4).join(',');
+    // Get moves and abilities
+    const p1moves = getRandomMoves(species1, dex, 4);
+    const p2moves = getRandomMoves(species2, dex, 4);
     
-    // Simple team format for setPlayer - note the lowercase name and empty slots
-    const p1team = `${species1.name.toLowerCase().replace(/[^a-z0-9]/g, '')}||${species1.abilities ? (species1.abilities[0] || 'pressure') : 'pressure'}||${p1moves}||`;
-    const p2team = `${species2.name.toLowerCase().replace(/[^a-z0-9]/g, '')}||${species2.abilities ? (species2.abilities[0] || 'pressure') : 'pressure'}||${p2moves}||`;
+    const p1ability = species1.abilities ? 
+      (species1.abilities['0'] || species1.abilities['1'] || species1.abilities['H'] || 'Pressure') : 
+      'Pressure';
+    const p2ability = species2.abilities ? 
+      (species2.abilities['0'] || species2.abilities['1'] || species2.abilities['H'] || 'Pressure') : 
+      'Pressure';
+    
+    // Create teams in the packed format
+    const p1team = [{
+      name: species1.name,
+      species: species1.name,
+      item: '',
+      ability: p1ability,
+      moves: p1moves,
+      nature: 'Hardy',
+      evs: { hp: 0, atk: 0, def: 0, spa: 0, spd: 0, spe: 0 },
+      ivs: { hp: 31, atk: 31, def: 31, spa: 31, spd: 31, spe: 31 },
+      level: pokemon1Level
+    }];
+    
+    const p2team = [{
+      name: species2.name,
+      species: species2.name,
+      item: '',
+      ability: p2ability,
+      moves: p2moves,
+      nature: 'Hardy',
+      evs: { hp: 0, atk: 0, def: 0, spa: 0, spd: 0, spe: 0 },
+      ivs: { hp: 31, atk: 31, def: 31, spa: 31, spd: 31, spe: 31 },
+      level: pokemon2Level
+    }];
     
     console.log('Starting battle:', {
       pokemon1: species1.name,
       pokemon2: species2.name,
-      p1team,
-      p2team
+      p1moves,
+      p2moves
     });
     
     // Set players and teams

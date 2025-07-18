@@ -65,11 +65,18 @@ export class ApiService {
     }
   }
 
-  // Get Pokemon sprites
+  // Get Pokemon sprites from PokeAPI
   static async getPokemonSprites(pokemonId: number): Promise<{ front: string; back: string; shiny: string }> {
     try {
-      const response = await api.get(`/pokemon/${pokemonId}/sprites`);
-      return response.data;
+      // Use PokeAPI directly for sprites
+      const response = await axios.get(`https://pokeapi.co/api/v2/pokemon/${pokemonId}`);
+      const sprites = response.data.sprites;
+      
+      return {
+        front: sprites.front_default || '',
+        back: sprites.back_default || '',
+        shiny: sprites.front_shiny || ''
+      };
     } catch (error) {
       // Return default empty sprites on error
       console.warn(`Failed to fetch sprites for Pokemon ${pokemonId}:`, error);
