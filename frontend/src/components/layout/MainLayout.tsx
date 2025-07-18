@@ -11,7 +11,10 @@ import {
   IconMoon
 } from '@tabler/icons-react';
 import BattleSettings from '../settings/BattleSettings';
+import BattleSimulation from '../battle/BattleSimulation';
 import { useSettingsStore } from '../../store/settingsStore';
+import { useGameStore } from '../../store/gameStore';
+import ApiService from '../../services/api';
 
 interface MainLayoutProps {
   children: React.ReactNode;
@@ -30,9 +33,35 @@ const MainLayout: React.FC<MainLayoutProps> = ({
   const { 
     battleSettings, 
     isSettingsPanelExpanded, 
+    isSimulationPanelExpanded,
+    battleSimulation,
+    isSimulating,
     setBattleSettings, 
-    toggleSettingsPanel 
+    toggleSettingsPanel,
+    toggleSimulationPanel,
+    setBattleSimulation,
+    setIsSimulating
   } = useSettingsStore();
+  
+  const { currentBattle } = useGameStore();
+
+  const handleSimulateBattle = async () => {
+    if (!currentBattle) return;
+    
+    setIsSimulating(true);
+    try {
+      const result = await ApiService.simulateSingleBattle(
+        currentBattle.pokemon1.id,
+        currentBattle.pokemon2.id,
+        battleSettings
+      );
+      setBattleSimulation(result);
+    } catch (error) {
+      console.error('Error simulating battle:', error);
+    } finally {
+      setIsSimulating(false);
+    }
+  };
 
   const navigationItems = [
     { id: 'battle', label: 'Battle', icon: IconDeviceGamepad2, description: 'Predict Pokemon battles' },
@@ -51,6 +80,19 @@ const MainLayout: React.FC<MainLayoutProps> = ({
           onToggleExpanded={toggleSettingsPanel}
           settings={battleSettings}
           onSettingsChange={setBattleSettings}
+        />
+      )}
+
+      {/* Battle Simulation Panel */}
+      {activeTab === 'battle' && (
+        <BattleSimulation
+          isExpanded={isSimulationPanelExpanded}
+          onToggleExpanded={toggleSimulationPanel}
+          pokemon1={currentBattle?.pokemon1}
+          pokemon2={currentBattle?.pokemon2}
+          onSimulateBattle={handleSimulateBattle}
+          simulation={battleSimulation}
+          isSimulating={isSimulating}
         />
       )}
 
@@ -145,8 +187,11 @@ const MainLayout: React.FC<MainLayoutProps> = ({
             size="xl"
             style={{
               marginLeft: activeTab === 'battle' ? (isSettingsPanelExpanded ? '320px' : '60px') : '0',
-              transition: 'margin-left 0.3s ease',
-              maxWidth: activeTab === 'battle' ? `calc(100% - ${isSettingsPanelExpanded ? '320px' : '60px'})` : '100%'
+              marginRight: activeTab === 'battle' ? (isSimulationPanelExpanded ? '400px' : '60px') : '0',
+              transition: 'margin-left 0.3s ease, margin-right 0.3s ease',
+              maxWidth: activeTab === 'battle' ? 
+                `calc(100% - ${isSettingsPanelExpanded ? '320px' : '60px'} - ${isSimulationPanelExpanded ? '400px' : '60px'})` : 
+                '100%'
             }}
           >
             {children}

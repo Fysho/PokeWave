@@ -48,3 +48,27 @@ export const submitGuess = async (
     next(error);
   }
 };
+
+export const simulateSingleBattle = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { pokemon1Id, pokemon2Id, options } = req.body;
+
+    if (!pokemon1Id || !pokemon2Id) {
+      throw new ApiError(400, 'Both pokemon1Id and pokemon2Id are required');
+    }
+
+    const result = await battleService.simulateSingleBattle({
+      pokemon1Id,
+      pokemon2Id,
+      options
+    });
+
+    res.json(result);
+  } catch (error) {
+    next(error);
+  }
+};

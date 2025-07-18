@@ -9,9 +9,16 @@ interface BattleSettings {
 interface SettingsState {
   battleSettings: BattleSettings;
   isSettingsPanelExpanded: boolean;
+  isSimulationPanelExpanded: boolean;
+  battleSimulation: any;
+  isSimulating: boolean;
   setBattleSettings: (settings: BattleSettings) => void;
   toggleSettingsPanel: () => void;
   setSettingsPanelExpanded: (expanded: boolean) => void;
+  toggleSimulationPanel: () => void;
+  setSimulationPanelExpanded: (expanded: boolean) => void;
+  setBattleSimulation: (simulation: any) => void;
+  setIsSimulating: (isSimulating: boolean) => void;
 }
 
 export const useSettingsStore = create<SettingsState>()(
@@ -22,12 +29,24 @@ export const useSettingsStore = create<SettingsState>()(
         setLevel: 50,
       },
       isSettingsPanelExpanded: false,
+      isSimulationPanelExpanded: false,
+      battleSimulation: null,
+      isSimulating: false,
       setBattleSettings: (settings) => set({ battleSettings: settings }),
       toggleSettingsPanel: () => set((state) => ({ isSettingsPanelExpanded: !state.isSettingsPanelExpanded })),
       setSettingsPanelExpanded: (expanded) => set({ isSettingsPanelExpanded: expanded }),
+      toggleSimulationPanel: () => set((state) => ({ isSimulationPanelExpanded: !state.isSimulationPanelExpanded })),
+      setSimulationPanelExpanded: (expanded) => set({ isSimulationPanelExpanded: expanded }),
+      setBattleSimulation: (simulation) => set({ battleSimulation: simulation }),
+      setIsSimulating: (isSimulating) => set({ isSimulating: isSimulating }),
     }),
     {
       name: 'pokewave-settings',
+      partialize: (state) => ({
+        battleSettings: state.battleSettings,
+        isSettingsPanelExpanded: state.isSettingsPanelExpanded,
+        isSimulationPanelExpanded: state.isSimulationPanelExpanded,
+      }),
     }
   )
 );

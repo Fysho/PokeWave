@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { simulateBattle, submitGuess } from '../controllers/battle.controller';
+import { simulateBattle, submitGuess, simulateSingleBattle } from '../controllers/battle.controller';
 
 const router = Router();
 
@@ -8,5 +8,8 @@ router.post('/simulate', simulateBattle);
 
 // Submit a guess for battle outcome
 router.post('/guess', submitGuess);
+
+// Simulate a single battle with turn-by-turn details
+router.post('/simulate-single', simulateSingleBattle);
 
 export default router;

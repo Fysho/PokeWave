@@ -147,6 +147,46 @@ export class ApiService {
       throw error;
     }
   }
+
+  // Simulate a single battle with turn-by-turn details
+  static async simulateSingleBattle(pokemon1Id: number, pokemon2Id: number, options?: {
+    levelMode?: 'random' | 'set';
+    setLevel?: number;
+    generation?: number;
+    withItems?: boolean;
+    movesetType?: 'random' | 'competitive';
+    aiDifficulty?: 'random' | 'elite';
+  }): Promise<any> {
+    try {
+      // Generate levels based on settings
+      let pokemon1Level = 50;
+      let pokemon2Level = 50;
+      
+      if (options?.levelMode === 'set' && options.setLevel) {
+        pokemon1Level = options.setLevel;
+        pokemon2Level = options.setLevel;
+      } else if (options?.levelMode === 'random') {
+        pokemon1Level = Math.floor(Math.random() * 100) + 1;
+        pokemon2Level = Math.floor(Math.random() * 100) + 1;
+      }
+
+      const response = await api.post('/battle/simulate-single', {
+        pokemon1Id,
+        pokemon2Id,
+        options: {
+          generation: options?.generation || 9,
+          pokemon1Level,
+          pokemon2Level,
+          withItems: options?.withItems || false,
+          movesetType: options?.movesetType || 'random',
+          aiDifficulty: options?.aiDifficulty || 'random'
+        }
+      });
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  }
 }
 
 export default ApiService;

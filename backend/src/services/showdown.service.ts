@@ -316,6 +316,255 @@ class ShowdownService {
       .update(JSON.stringify(keyData))
       .digest('hex');
   }
+
+  async simulateSingleBattle(config: ShowdownBattleConfig): Promise<any> {
+    const startTime = Date.now();
+    
+    try {
+      // Get Pokemon data
+      const generation = config.options?.generation || 9;
+      const dex = Dex.forGen(generation);
+      
+      let pokemon1 = dex.species.get(config.pokemon1Id.toString());
+      let pokemon2 = dex.species.get(config.pokemon2Id.toString());
+
+      if (!pokemon1?.exists) {
+        const allPokemon = dex.species.all();
+        const found = allPokemon.find(p => p.num === config.pokemon1Id);
+        if (found) pokemon1 = found;
+      }
+      if (!pokemon2?.exists) {
+        const allPokemon = dex.species.all();
+        const found = allPokemon.find(p => p.num === config.pokemon2Id);
+        if (found) pokemon2 = found;
+      }
+
+      if (!pokemon1?.exists || !pokemon2?.exists) {
+        throw new ApiError(400, 'Invalid Pokemon IDs provided');
+      }
+
+      // Fetch Pokemon data from PokeAPI for moves
+      let pokemon1Data, pokemon2Data;
+      try {
+        [pokemon1Data, pokemon2Data] = await Promise.all([
+          pokemonService.getPokemonById(config.pokemon1Id),
+          pokemonService.getPokemonById(config.pokemon2Id)
+        ]);
+      } catch (pokemonError) {
+        logger.error('Failed to fetch Pokemon data from PokeAPI:', pokemonError);
+        pokemon1Data = { moves: [] };
+        pokemon2Data = { moves: [] };
+      }
+
+      const pokemon1Level = config.options?.pokemon1Level || 50;
+      const pokemon2Level = config.options?.pokemon2Level || 50;
+
+      // Calculate actual stats at current level
+      const pokemon1Stats = this.calculateEffectiveStats(pokemon1, pokemon1Level);
+      const pokemon2Stats = this.calculateEffectiveStats(pokemon2, pokemon2Level);
+
+      // Simulate a single battle
+      const battleResult = this.simulateSingleBattleDetailed(
+        pokemon1,
+        pokemon2,
+        pokemon1Stats,
+        pokemon2Stats,
+        pokemon1Data,
+        pokemon2Data,
+        pokemon1Level,
+        pokemon2Level
+      );
+
+      const executionTime = Date.now() - startTime;
+
+      return {
+        ...battleResult,
+        executionTime,
+        pokemon1: {
+          name: pokemon1.name,
+          level: pokemon1Level,
+          stats: pokemon1Stats
+        },
+        pokemon2: {
+          name: pokemon2.name,
+          level: pokemon2Level,
+          stats: pokemon2Stats
+        }
+      };
+    } catch (error) {
+      logger.error('Failed to simulate single battle:', error);
+      throw error instanceof ApiError ? error : new ApiError(500, 'Failed to simulate single battle');
+    }
+  }
+
+  private simulateSingleBattleDetailed(
+    pokemon1: any,
+    pokemon2: any,
+    pokemon1Stats: any,
+    pokemon2Stats: any,
+    pokemon1Data: any,
+    pokemon2Data: any,
+    pokemon1Level: number,
+    pokemon2Level: number
+  ): any {
+    const turns: any[] = [];
+    let currentHP1 = pokemon1Stats.hp;
+    let currentHP2 = pokemon2Stats.hp;
+    let turnNumber = 1;
+
+    // Get random moves for each Pokemon
+    const getMoves = (pokemonData: any) => {
+      const moves = pokemonData.moves || [];
+      return moves.length > 0 ? moves : ['Tackle', 'Scratch'];
+    };
+
+    const pokemon1Moves = getMoves(pokemon1Data);
+    const pokemon2Moves = getMoves(pokemon2Data);
+
+    // Simple battle simulation
+    while (currentHP1 > 0 && currentHP2 > 0 && turnNumber <= 50) {
+      // Determine who goes first (higher speed)
+      const pokemon1GoesFirst = pokemon1Stats.speed >= pokemon2Stats.speed;
+      
+      if (pokemon1GoesFirst) {
+        // Pokemon 1 attacks
+        const result1 = this.simulateAttack(pokemon1, pokemon2, pokemon1Stats, pokemon2Stats, pokemon1Moves, pokemon1Level, pokemon2Level);
+        currentHP2 -= result1.damage;
+        
+        turns.push({
+          turn: turnNumber,
+          attacker: pokemon1.name,
+          defender: pokemon2.name,
+          move: result1.move,
+          damage: result1.damage,
+          remainingHP: Math.max(0, currentHP2),
+          critical: result1.critical,
+          effectiveness: result1.effectiveness
+        });
+
+        if (currentHP2 <= 0) break;
+
+        // Pokemon 2 attacks
+        const result2 = this.simulateAttack(pokemon2, pokemon1, pokemon2Stats, pokemon1Stats, pokemon2Moves, pokemon2Level, pokemon1Level);
+        currentHP1 -= result2.damage;
+        
+        turns.push({
+          turn: turnNumber,
+          attacker: pokemon2.name,
+          defender: pokemon1.name,
+          move: result2.move,
+          damage: result2.damage,
+          remainingHP: Math.max(0, currentHP1),
+          critical: result2.critical,
+          effectiveness: result2.effectiveness
+        });
+      } else {
+        // Pokemon 2 attacks first
+        const result2 = this.simulateAttack(pokemon2, pokemon1, pokemon2Stats, pokemon1Stats, pokemon2Moves, pokemon2Level, pokemon1Level);
+        currentHP1 -= result2.damage;
+        
+        turns.push({
+          turn: turnNumber,
+          attacker: pokemon2.name,
+          defender: pokemon1.name,
+          move: result2.move,
+          damage: result2.damage,
+          remainingHP: Math.max(0, currentHP1),
+          critical: result2.critical,
+          effectiveness: result2.effectiveness
+        });
+
+        if (currentHP1 <= 0) break;
+
+        // Pokemon 1 attacks
+        const result1 = this.simulateAttack(pokemon1, pokemon2, pokemon1Stats, pokemon2Stats, pokemon1Moves, pokemon1Level, pokemon2Level);
+        currentHP2 -= result1.damage;
+        
+        turns.push({
+          turn: turnNumber,
+          attacker: pokemon1.name,
+          defender: pokemon2.name,
+          move: result1.move,
+          damage: result1.damage,
+          remainingHP: Math.max(0, currentHP2),
+          critical: result1.critical,
+          effectiveness: result1.effectiveness
+        });
+      }
+
+      turnNumber++;
+    }
+
+    return {
+      winner: currentHP1 > 0 ? pokemon1.name : pokemon2.name,
+      turns,
+      totalTurns: turnNumber - 1,
+      finalHP1: Math.max(0, currentHP1),
+      finalHP2: Math.max(0, currentHP2)
+    };
+  }
+
+  private simulateAttack(
+    attacker: any,
+    defender: any,
+    attackerStats: any,
+    defenderStats: any,
+    moves: string[],
+    attackerLevel: number,
+    defenderLevel: number
+  ): any {
+    // Pick a random move
+    const move = moves[Math.floor(Math.random() * moves.length)];
+    
+    // Simple damage calculation (simplified Pokemon damage formula)
+    const attackStat = Math.random() > 0.5 ? attackerStats.attack : attackerStats.specialAttack;
+    const defenseStat = Math.random() > 0.5 ? defenderStats.defense : defenderStats.specialDefense;
+    
+    // Critical hit chance (6.25% chance)
+    const critical = Math.random() < 0.0625;
+    const criticalMultiplier = critical ? 2 : 1;
+    
+    // Random damage roll (85-100% of calculated damage)
+    const randomFactor = (Math.random() * 0.15) + 0.85;
+    
+    // Type effectiveness (simplified)
+    const effectiveness = this.getRandomEffectiveness();
+    const effectivenessMultiplier = this.getEffectivenessMultiplier(effectiveness);
+    
+    // Basic damage formula (simplified)
+    const baseDamage = Math.floor(
+      ((((2 * attackerLevel / 5 + 2) * 50 * attackStat / defenseStat) / 50) + 2) * 
+      criticalMultiplier * 
+      effectivenessMultiplier * 
+      randomFactor
+    );
+    
+    const damage = Math.max(1, baseDamage);
+    
+    return {
+      move,
+      damage,
+      critical,
+      effectiveness
+    };
+  }
+
+  private getRandomEffectiveness(): string {
+    const rand = Math.random();
+    if (rand < 0.1) return 'super';
+    if (rand < 0.2) return 'not very';
+    if (rand < 0.05) return 'no';
+    return 'normal';
+  }
+
+  private getEffectivenessMultiplier(effectiveness: string): number {
+    switch (effectiveness) {
+      case 'super': return 2;
+      case 'not very': return 0.5;
+      case 'no': return 0;
+      default: return 1;
+    }
+  }
 }
 
 export const showdownService = new ShowdownService();

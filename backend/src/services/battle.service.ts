@@ -212,6 +212,16 @@ class BattleService {
       throw new ApiError(500, 'Failed to submit guess');
     }
   }
+
+  async simulateSingleBattle(config: BattleConfig): Promise<any> {
+    try {
+      const result = await showdownService.simulateSingleBattle(config);
+      return result;
+    } catch (error) {
+      logger.error('Failed to simulate single battle:', error);
+      throw new ApiError(500, 'Failed to simulate single battle');
+    }
+  }
 }
 
 export const battleService = new BattleService();
