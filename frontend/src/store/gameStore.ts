@@ -114,12 +114,123 @@ export const useGameStore = create<GameStore>()(
             const pokemon2Level = battleSettings?.levelMode === 'set' ? 
               (battleSettings.setLevel || 50) : 
               Math.floor(Math.random() * 100) + 1;
+
+            // Get and Set Valid Abilities
+            // Import Dex to access Pokemon data
+            const { Dex } = await import('@pkmn/dex');
+            const dex = Dex.forGen(battleSettings?.generation || 9);
             
+            // Get species data for both Pokemon
+            const species1 = dex.species.get(String(pokemon1Id));
+            const species2 = dex.species.get(String(pokemon2Id));
+            
+            if (!species1 || !species1.exists || !species2 || !species2.exists) {
+              throw new Error(`Invalid Pokemon IDs: ${pokemon1Id}, ${pokemon2Id}`);
+            }
+
+            // Get and Set Held Item
+            // For now, we'll randomly assign common competitive items
+            const commonItems = [
+              'leftovers', 'choiceband', 'choicescarf', 'choicespecs',
+              'lifeorb', 'focussash', 'assaultvest', 'eviolite',
+              'blacksludge', 'rockyhelmet', 'lightclay', 'sitrusberry'
+            ];
+            
+            const pokemon1Item = battleSettings?.withItems ? 
+              commonItems[Math.floor(Math.random() * commonItems.length)] : '';
+            const pokemon2Item = battleSettings?.withItems ? 
+              commonItems[Math.floor(Math.random() * commonItems.length)] : '';
+
+            // Get and Set Valid Moves (using the latest 4 moves in its level up moveset)
+            const getLearnsetMoves = (species: any, level: number): string[] => {
+              const moves: string[] = [];
+              
+              if (species.learnset) {
+                // Get all moves learnable by level up
+                const levelUpMoves: Array<[string, string[]]> = [];
+                
+                for (const [move, methods] of Object.entries(species.learnset)) {
+                  for (const method of methods as string[]) {
+                    // Check if it's a level-up move (format: "9L15" means Gen 9, Level 15)
+                    const levelMatch = method.match(/\d+L(\d+)/);
+                    if (levelMatch) {
+                      const learnLevel = parseInt(levelMatch[1]);
+                      if (learnLevel <= level) {
+                        levelUpMoves.push([move, [method]]);
+                      }
+                    }
+                  }
+                }
+                
+                // Sort by level (descending) to get the latest moves
+                levelUpMoves.sort((a, b) => {
+                  const levelA = parseInt(a[1][0].match(/\d+L(\d+)/)?.[1] || '0');
+                  const levelB = parseInt(b[1][0].match(/\d+L(\d+)/)?.[1] || '0');
+                  return levelB - levelA;
+                });
+                
+                // Get the last 4 unique moves
+                const uniqueMoves = new Set<string>();
+                for (const [move] of levelUpMoves) {
+                  uniqueMoves.add(move);
+                  if (uniqueMoves.size >= 4) break;
+                }
+                
+                moves.push(...uniqueMoves);
+              }
+              
+              // If we don't have 4 moves, add some defaults
+              const defaultMoves = ['tackle', 'scratch', 'pound', 'quickattack'];
+              while (moves.length < 4) {
+                const defaultMove = defaultMoves[moves.length % defaultMoves.length];
+                if (!moves.includes(defaultMove)) {
+                  moves.push(defaultMove);
+                }
+              }
+              
+              return moves.slice(0, 4);
+            };
+            
+            const pokemon1Moves = battleSettings?.movesetType === 'competitive' ? 
+              getLearnsetMoves(species1, pokemon1Level) :
+              getLearnsetMoves(species1, pokemon1Level); // For now, same logic
+              
+            const pokemon2Moves = battleSettings?.movesetType === 'competitive' ? 
+              getLearnsetMoves(species2, pokemon2Level) :
+              getLearnsetMoves(species2, pokemon2Level);
+
+            // Get abilities
+            const getValidAbility = (species: any): string => {
+              const abilities = [];
+              
+              if (species.abilities) {
+                if (species.abilities['0']) abilities.push(species.abilities['0']);
+                if (species.abilities['1']) abilities.push(species.abilities['1']);
+                if (species.abilities['H']) abilities.push(species.abilities['H']); // Hidden ability
+              }
+              
+              if (abilities.length === 0) {
+                return 'Pressure'; // Default ability
+              }
+              
+              // Randomly select one ability
+              return abilities[Math.floor(Math.random() * abilities.length)];
+            };
+            
+            const pokemon1Ability = getValidAbility(species1);
+            const pokemon2Ability = getValidAbility(species2);
+
             // Use local simulation instead of API
             const battleResult = await simulateMainBattle(pokemon1Id, pokemon2Id, {
               generation: battleSettings?.generation || 9,
               pokemon1Level,
-              pokemon2Level
+              pokemon2Level,
+              pokemon1Moves,
+              pokemon2Moves,
+              pokemon1Ability,
+              pokemon2Ability,
+              pokemon1Item,
+              pokemon2Item
             });
             
             // Fetch sprites from API for the UI

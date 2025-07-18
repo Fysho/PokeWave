@@ -24,6 +24,7 @@ interface BattleResult {
       speed: number;
     };
     ability?: string;
+    item?: string;
   };
   pokemon2: {
     id: number;
@@ -46,6 +47,7 @@ interface BattleResult {
       speed: number;
     };
     ability?: string;
+    item?: string;
   };
   totalBattles: number;
   winRate: number;
@@ -169,20 +171,26 @@ async function simulateSingleBattle(
   species2: any,
   level1: number,
   level2: number,
-  generation: number
+  generation: number,
+  p1moves?: string[],
+  p2moves?: string[],
+  p1ability?: string,
+  p2ability?: string,
+  p1item?: string,
+  p2item?: string
 ): Promise<1 | 2> {
   try {
     const battle = new Battle({ formatid: `gen${generation}customgame` });
     
     // Create team strings
-    const p1moves = getRandomMoves(species1, null, 4).join(',');
-    const p2moves = getRandomMoves(species2, null, 4).join(',');
+    const p1movesStr = p1moves ? p1moves.join(',') : getRandomMoves(species1, null, 4).join(',');
+    const p2movesStr = p2moves ? p2moves.join(',') : getRandomMoves(species2, null, 4).join(',');
     
-    const p1ability = getRandomAbility(species1);
-    const p2ability = getRandomAbility(species2);
+    const p1abilityStr = p1ability || getRandomAbility(species1);
+    const p2abilityStr = p2ability || getRandomAbility(species2);
     
-    const p1team = `${species1.name.toLowerCase().replace(/[^a-z0-9]/g, '')}||${p1ability}||${p1moves}||`;
-    const p2team = `${species2.name.toLowerCase().replace(/[^a-z0-9]/g, '')}||${p2ability}||${p2moves}||`;
+    const p1team = `${species1.name.toLowerCase().replace(/[^a-z0-9]/g, '')}|${p1item || ''}|${p1abilityStr}||${p1movesStr}||`;
+    const p2team = `${species2.name.toLowerCase().replace(/[^a-z0-9]/g, '')}|${p2item || ''}|${p2abilityStr}||${p2movesStr}||`;
     
     try {
       battle.setPlayer('p1', { team: p1team });
@@ -247,6 +255,12 @@ export async function simulateMainBattle(
     generation?: number;
     pokemon1Level?: number;
     pokemon2Level?: number;
+    pokemon1Moves?: string[];
+    pokemon2Moves?: string[];
+    pokemon1Ability?: string;
+    pokemon2Ability?: string;
+    pokemon1Item?: string;
+    pokemon2Item?: string;
   }
 ): Promise<BattleResult> {
   const startTime = Date.now();
@@ -278,7 +292,19 @@ export async function simulateMainBattle(
     
     for (let j = 0; j < batchSize && i + j < NUM_BATTLES; j++) {
       batchPromises.push(
-        simulateSingleBattle(species1, species2, pokemon1Level, pokemon2Level, generation)
+        simulateSingleBattle(
+          species1, 
+          species2, 
+          pokemon1Level, 
+          pokemon2Level, 
+          generation,
+          options?.pokemon1Moves,
+          options?.pokemon2Moves,
+          options?.pokemon1Ability,
+          options?.pokemon2Ability,
+          options?.pokemon1Item,
+          options?.pokemon2Item
+        )
       );
     }
     
@@ -308,13 +334,17 @@ export async function simulateMainBattle(
   const pokemon1Types = species1.types.map((t: string) => t.toLowerCase());
   const pokemon2Types = species2.types.map((t: string) => t.toLowerCase());
   
-  // Get moves
-  const pokemon1Moves = getRandomMoves(species1, dex, 4).map(formatMoveName);
-  const pokemon2Moves = getRandomMoves(species2, dex, 4).map(formatMoveName);
+  // Get moves (use provided or generate random)
+  const pokemon1Moves = options?.pokemon1Moves ? 
+    options.pokemon1Moves.map(formatMoveName) : 
+    getRandomMoves(species1, dex, 4).map(formatMoveName);
+  const pokemon2Moves = options?.pokemon2Moves ? 
+    options.pokemon2Moves.map(formatMoveName) : 
+    getRandomMoves(species2, dex, 4).map(formatMoveName);
   
-  // Get abilities
-  const pokemon1Ability = getRandomAbility(species1);
-  const pokemon2Ability = getRandomAbility(species2);
+  // Get abilities (use provided or generate random)
+  const pokemon1Ability = options?.pokemon1Ability || getRandomAbility(species1);
+  const pokemon2Ability = options?.pokemon2Ability || getRandomAbility(species2);
   
   // Calculate stats
   const pokemon1Stats = calculateStats(species1, pokemon1Level);
@@ -334,7 +364,8 @@ export async function simulateMainBattle(
       sprites: sprites,
       moves: pokemon1Moves,
       stats: pokemon1Stats,
-      ability: pokemon1Ability
+      ability: pokemon1Ability,
+      item: options?.pokemon1Item
     },
     pokemon2: {
       id: pokemon2Id,
@@ -345,7 +376,8 @@ export async function simulateMainBattle(
       sprites: sprites,
       moves: pokemon2Moves,
       stats: pokemon2Stats,
-      ability: pokemon2Ability
+      ability: pokemon2Ability,
+      item: options?.pokemon2Item
     },
     totalBattles: NUM_BATTLES,
     winRate,
