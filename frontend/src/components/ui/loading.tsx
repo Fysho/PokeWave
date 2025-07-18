@@ -222,7 +222,7 @@ const BattleLoading: React.FC<BattleLoadingProps> = ({
           ))}
         </div>
         <p className="text-sm text-muted-foreground">
-          Simulating 1000 battles...
+          Simulating 10 battles...
         </p>
       </motion.div>
     </div>
