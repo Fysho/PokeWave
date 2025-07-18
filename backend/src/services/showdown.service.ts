@@ -139,6 +139,10 @@ class ShowdownService {
       const pokemon1Level = config.options?.pokemon1Level || 50;
       const pokemon2Level = config.options?.pokemon2Level || 50;
 
+      // Calculate actual stats at current level for both Pokemon
+      const pokemon1ActualStats = this.calculateEffectiveStats(pokemon1, pokemon1Level);
+      const pokemon2ActualStats = this.calculateEffectiveStats(pokemon2, pokemon2Level);
+
       // For now, use a statistical simulation based on Pokemon stats
       // This is a simplified version - in a full implementation we'd use the actual battle engine
       const battleResult = this.simulateStatisticalBattle(
@@ -162,14 +166,7 @@ class ShowdownService {
           types: pokemon1Data?.types || [],
           sprites: pokemon1Data?.sprites || { front: '', back: '', shiny: '' },
           moves: pokemon1Data?.moves || [],
-          stats: pokemon1Data?.stats || {
-            hp: 0,
-            attack: 0,
-            defense: 0,
-            specialAttack: 0,
-            specialDefense: 0,
-            speed: 0
-          }
+          stats: pokemon1ActualStats
         },
         pokemon2: {
           id: config.pokemon2Id,
@@ -179,14 +176,7 @@ class ShowdownService {
           types: pokemon2Data?.types || [],
           sprites: pokemon2Data?.sprites || { front: '', back: '', shiny: '' },
           moves: pokemon2Data?.moves || [],
-          stats: pokemon2Data?.stats || {
-            hp: 0,
-            attack: 0,
-            defense: 0,
-            specialAttack: 0,
-            specialDefense: 0,
-            speed: 0
-          }
+          stats: pokemon2ActualStats
         },
         totalBattles: this.NUM_BATTLES,
         winRate,

@@ -201,7 +201,7 @@ const PokemonBattleCard: React.FC<PokemonBattleCardProps> = ({
             {/* Stats */}
             {pokemon.stats && (
               <Box>
-                <Text size="sm" c="gray.6" ta="center" mb="xs">Stats</Text>
+                <Text size="sm" c="gray.6" ta="center" mb="xs">Stats (Level {pokemon.level})</Text>
                 <Grid gutter="xs">
                   <Grid.Col span={6}>
                     <Box ta="center" p="xs" style={{ backgroundColor: 'var(--mantine-color-red-0)', borderRadius: '4px' }}>
