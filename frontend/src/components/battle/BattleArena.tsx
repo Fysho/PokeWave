@@ -60,7 +60,7 @@ const PokemonBattleCard: React.FC<PokemonBattleCardProps> = ({
 
   // Calculate dynamic sprite size based on guess percentage
   const calculateSpriteSize = () => {
-    if (!guessPercentage || showResults) return 160; // Default size when not guessing or showing results
+    if (guessPercentage === undefined || guessPercentage === null || showResults) return 160; // Default size when showing results
     
     const baseSize = 160;
     const minSize = 120;
@@ -95,7 +95,17 @@ const PokemonBattleCard: React.FC<PokemonBattleCardProps> = ({
         `}
       >
         <Card.Section p="lg">
-          <Box pos="relative" ta="center" mb="md">
+          <Box 
+            pos="relative" 
+            ta="center" 
+            mb="md"
+            style={{
+              height: '220px', // Fixed height container to prevent UI shifting
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}
+          >
             {pokemon.sprites?.front ? (
               <Box pos="relative">
                 <img 
