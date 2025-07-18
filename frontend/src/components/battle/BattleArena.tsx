@@ -397,7 +397,7 @@ const BattleArena: React.FC = () => {
                       {currentBattle.totalBattles} battle simulation
                     </div>
                   </div>
-                </div>
+                  </div>
 
                   {/* Action Buttons */}
                   <div className="text-center space-y-4">
