@@ -80,9 +80,32 @@ export const useGameStore = create<GameStore>()(
           set({ isLoading: true, error: null });
           
           try {
-            // Generate random Pokemon IDs
-            const pokemon1Id = Math.floor(Math.random() * 1010) + 1;
-            const pokemon2Id = Math.floor(Math.random() * 1010) + 1;
+            // Determine the generation and range
+            const generation = battleSettings?.generation || 1;
+            
+            // Generation ranges for Pokemon IDs
+            const generationRanges: { [key: number]: { start: number; end: number } } = {
+              1: { start: 1, end: 151 },     // Gen 1
+              2: { start: 1, end: 251 },     // Gen 1-2
+              3: { start: 1, end: 386 },     // Gen 1-3
+              4: { start: 1, end: 493 },     // Gen 1-4
+              5: { start: 1, end: 649 },     // Gen 1-5
+              6: { start: 1, end: 721 },     // Gen 1-6
+              7: { start: 1, end: 809 },     // Gen 1-7
+              8: { start: 1, end: 905 },     // Gen 1-8
+              9: { start: 1, end: 1025 }     // Gen 1-9
+            };
+            
+            const range = generationRanges[generation] || generationRanges[1];
+            
+            // Generate random Pokemon IDs from the selected generation range
+            const pokemon1Id = Math.floor(Math.random() * (range.end - range.start + 1)) + range.start;
+            let pokemon2Id = Math.floor(Math.random() * (range.end - range.start + 1)) + range.start;
+            
+            // Ensure they're different
+            while (pokemon2Id === pokemon1Id) {
+              pokemon2Id = Math.floor(Math.random() * (range.end - range.start + 1)) + range.start;
+            }
             
             // Calculate levels based on settings
             const pokemon1Level = battleSettings?.levelMode === 'set' ? 
