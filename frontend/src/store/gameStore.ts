@@ -6,7 +6,7 @@ import ApiService from '../services/api';
 interface GameStore extends GameState {
   // Actions
   generateNewBattle: () => Promise<void>;
-  submitGuess: (pokemonId: number) => Promise<void>;
+  submitGuess: (pokemonId: number) => Promise<any>;
   resetGame: () => void;
   clearError: () => void;
   setLoading: (loading: boolean) => void;
@@ -78,10 +78,7 @@ export const useGameStore = create<GameStore>()(
               error: null,
             });
 
-            // Auto-generate new battle after a short delay
-            setTimeout(() => {
-              get().generateNewBattle();
-            }, 2000);
+            return guessResult;
 
           } catch (error) {
             const apiError = error as ApiError;
@@ -89,6 +86,7 @@ export const useGameStore = create<GameStore>()(
               isLoading: false,
               error: apiError.message || 'Failed to submit guess' 
             });
+            throw error;
           }
         },
 

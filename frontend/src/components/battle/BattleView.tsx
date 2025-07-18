@@ -22,6 +22,7 @@ const BattleView: React.FC = () => {
 
   const [selectedPokemon, setSelectedPokemon] = useState<number | null>(null);
   const [showResults, setShowResults] = useState(false);
+  const [guessResult, setGuessResult] = useState<any>(null);
 
   useEffect(() => {
     // Generate first battle on mount
@@ -34,6 +35,7 @@ const BattleView: React.FC = () => {
     // Reset selection when new battle is generated
     setSelectedPokemon(null);
     setShowResults(false);
+    setGuessResult(null);
   }, [currentBattle]);
 
   const handlePokemonSelect = (pokemonId: number) => {
@@ -45,13 +47,14 @@ const BattleView: React.FC = () => {
     if (!selectedPokemon || !currentBattle) return;
     
     try {
-      await submitGuess(selectedPokemon);
+      const result = await submitGuess(selectedPokemon);
+      setGuessResult(result);
       setShowResults(true);
       
       // Auto-generate new battle after showing results
       setTimeout(() => {
         generateNewBattle();
-      }, 3000);
+      }, 4000);
     } catch (error) {
       console.error('Error submitting guess:', error);
     }
@@ -191,10 +194,33 @@ const BattleView: React.FC = () => {
                     </Button>
                   </>
                 ) : (
-                  <div className="text-center space-y-2">
+                  <div className="text-center space-y-4">
                     <div className="text-lg font-semibold">
                       Battle Results
                     </div>
+                    
+                    {guessResult && (
+                      <div className={`p-4 rounded-lg border ${
+                        guessResult.isCorrect 
+                          ? 'bg-green-50 border-green-200 dark:bg-green-950 dark:border-green-800' 
+                          : 'bg-red-50 border-red-200 dark:bg-red-950 dark:border-red-800'
+                      }`}>
+                        <div className={`text-lg font-semibold ${
+                          guessResult.isCorrect ? 'text-green-700 dark:text-green-400' : 'text-red-700 dark:text-red-400'
+                        }`}>
+                          {guessResult.isCorrect ? '✅ Correct!' : '❌ Wrong!'}
+                        </div>
+                        <div className="text-sm mt-2">
+                          {guessResult.message}
+                        </div>
+                        {guessResult.isCorrect && (
+                          <div className="text-sm font-medium mt-2">
+                            Points earned: +{guessResult.points}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    
                     <div className="text-sm text-muted-foreground">
                       Simulation completed in {currentBattle.executionTime}ms
                     </div>
