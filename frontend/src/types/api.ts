@@ -29,6 +29,14 @@ export interface BattleResult {
       shiny: string;
     };
     moves: string[];
+    stats: {
+      hp: number;
+      attack: number;
+      defense: number;
+      specialAttack: number;
+      specialDefense: number;
+      speed: number;
+    };
   };
   pokemon2: {
     id: number;
@@ -42,6 +50,14 @@ export interface BattleResult {
       shiny: string;
     };
     moves: string[];
+    stats: {
+      hp: number;
+      attack: number;
+      defense: number;
+      specialAttack: number;
+      specialDefense: number;
+      speed: number;
+    };
   };
   totalBattles: number;
   winRate: number;

@@ -198,6 +198,51 @@ const PokemonBattleCard: React.FC<PokemonBattleCardProps> = ({
               </Box>
             )}
 
+            {/* Stats */}
+            {pokemon.stats && (
+              <Box>
+                <Text size="sm" c="gray.6" ta="center" mb="xs">Stats</Text>
+                <Grid gutter="xs">
+                  <Grid.Col span={6}>
+                    <Box ta="center" p="xs" style={{ backgroundColor: 'var(--mantine-color-red-0)', borderRadius: '4px' }}>
+                      <Text size="xs" fw={600} c="red.7">HP</Text>
+                      <Text size="sm" fw={700}>{pokemon.stats.hp}</Text>
+                    </Box>
+                  </Grid.Col>
+                  <Grid.Col span={6}>
+                    <Box ta="center" p="xs" style={{ backgroundColor: 'var(--mantine-color-orange-0)', borderRadius: '4px' }}>
+                      <Text size="xs" fw={600} c="orange.7">ATK</Text>
+                      <Text size="sm" fw={700}>{pokemon.stats.attack}</Text>
+                    </Box>
+                  </Grid.Col>
+                  <Grid.Col span={6}>
+                    <Box ta="center" p="xs" style={{ backgroundColor: 'var(--mantine-color-yellow-0)', borderRadius: '4px' }}>
+                      <Text size="xs" fw={600} c="yellow.7">DEF</Text>
+                      <Text size="sm" fw={700}>{pokemon.stats.defense}</Text>
+                    </Box>
+                  </Grid.Col>
+                  <Grid.Col span={6}>
+                    <Box ta="center" p="xs" style={{ backgroundColor: 'var(--mantine-color-blue-0)', borderRadius: '4px' }}>
+                      <Text size="xs" fw={600} c="blue.7">SPA</Text>
+                      <Text size="sm" fw={700}>{pokemon.stats.specialAttack}</Text>
+                    </Box>
+                  </Grid.Col>
+                  <Grid.Col span={6}>
+                    <Box ta="center" p="xs" style={{ backgroundColor: 'var(--mantine-color-teal-0)', borderRadius: '4px' }}>
+                      <Text size="xs" fw={600} c="teal.7">SPD</Text>
+                      <Text size="sm" fw={700}>{pokemon.stats.specialDefense}</Text>
+                    </Box>
+                  </Grid.Col>
+                  <Grid.Col span={6}>
+                    <Box ta="center" p="xs" style={{ backgroundColor: 'var(--mantine-color-pink-0)', borderRadius: '4px' }}>
+                      <Text size="xs" fw={600} c="pink.7">SPE</Text>
+                      <Text size="sm" fw={700}>{pokemon.stats.speed}</Text>
+                    </Box>
+                  </Grid.Col>
+                </Grid>
+              </Box>
+            )}
+
             {/* Battle Results */}
             {showResults && (
               <ScaleIn delay={0.5}>

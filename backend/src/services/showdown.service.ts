@@ -32,6 +32,14 @@ export interface ShowdownBattleResult {
       shiny: string;
     };
     moves: string[];
+    stats: {
+      hp: number;
+      attack: number;
+      defense: number;
+      specialAttack: number;
+      specialDefense: number;
+      speed: number;
+    };
   };
   pokemon2: {
     id: number;
@@ -45,6 +53,14 @@ export interface ShowdownBattleResult {
       shiny: string;
     };
     moves: string[];
+    stats: {
+      hp: number;
+      attack: number;
+      defense: number;
+      specialAttack: number;
+      specialDefense: number;
+      speed: number;
+    };
   };
   totalBattles: number;
   winRate: number;
@@ -145,7 +161,15 @@ class ShowdownService {
           wins: battleResult.pokemon1Wins,
           types: pokemon1Data?.types || [],
           sprites: pokemon1Data?.sprites || { front: '', back: '', shiny: '' },
-          moves: pokemon1Data?.moves || []
+          moves: pokemon1Data?.moves || [],
+          stats: pokemon1Data?.stats || {
+            hp: 0,
+            attack: 0,
+            defense: 0,
+            specialAttack: 0,
+            specialDefense: 0,
+            speed: 0
+          }
         },
         pokemon2: {
           id: config.pokemon2Id,
@@ -154,7 +178,15 @@ class ShowdownService {
           wins: battleResult.pokemon2Wins,
           types: pokemon2Data?.types || [],
           sprites: pokemon2Data?.sprites || { front: '', back: '', shiny: '' },
-          moves: pokemon2Data?.moves || []
+          moves: pokemon2Data?.moves || [],
+          stats: pokemon2Data?.stats || {
+            hp: 0,
+            attack: 0,
+            defense: 0,
+            specialAttack: 0,
+            specialDefense: 0,
+            speed: 0
+          }
         },
         totalBattles: this.NUM_BATTLES,
         winRate,

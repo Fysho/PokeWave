@@ -30,6 +30,14 @@ interface BattleResult {
       shiny: string;
     };
     moves: string[];
+    stats: {
+      hp: number;
+      attack: number;
+      defense: number;
+      specialAttack: number;
+      specialDefense: number;
+      speed: number;
+    };
   };
   pokemon2: {
     id: number;
@@ -43,6 +51,14 @@ interface BattleResult {
       shiny: string;
     };
     moves: string[];
+    stats: {
+      hp: number;
+      attack: number;
+      defense: number;
+      specialAttack: number;
+      specialDefense: number;
+      speed: number;
+    };
   };
   totalBattles: number;
   winRate: number;
@@ -77,7 +93,8 @@ class BattleService {
           wins: showdownResult.pokemon1.wins,
           types: showdownResult.pokemon1.types,
           sprites: showdownResult.pokemon1.sprites,
-          moves: showdownResult.pokemon1.moves
+          moves: showdownResult.pokemon1.moves,
+          stats: showdownResult.pokemon1.stats
         },
         pokemon2: {
           id: showdownResult.pokemon2.id,
@@ -86,7 +103,8 @@ class BattleService {
           wins: showdownResult.pokemon2.wins,
           types: showdownResult.pokemon2.types,
           sprites: showdownResult.pokemon2.sprites,
-          moves: showdownResult.pokemon2.moves
+          moves: showdownResult.pokemon2.moves,
+          stats: showdownResult.pokemon2.stats
         },
         totalBattles: showdownResult.totalBattles,
         winRate: showdownResult.winRate,
