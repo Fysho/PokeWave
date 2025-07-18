@@ -21,18 +21,28 @@ app.use(loggerMiddleware);
 // Routes
 app.use('/api', routes);
 
+// Test endpoint to verify routing is working
+app.get('/api/test', (_req: Request, res: Response) => {
+  res.json({ message: 'Test endpoint working' });
+});
+
+// Direct Pokemon endpoint for testing
+app.get('/api/pokemon/random', (_req: Request, res: Response) => {
+  res.json({ pokemon1Id: 1, pokemon2Id: 2, generation: 9 });
+});
+
 // Health check endpoint
 app.get('/health', (_req: Request, res: Response) => {
   res.status(200).json({ status: 'OK', timestamp: new Date().toISOString() });
 });
 
-// Error handling middleware (must be last)
-app.use(errorMiddleware);
-
-// 404 handler
+// 404 handler (must be before error middleware)
 app.use((_req: Request, res: Response) => {
   res.status(404).json({ error: 'Not found' });
 });
+
+// Error handling middleware (must be last)
+app.use(errorMiddleware);
 
 // Start server
 const PORT = process.env.PORT || 3001;
