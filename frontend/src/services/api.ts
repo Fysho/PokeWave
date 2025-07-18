@@ -66,18 +66,37 @@ export class ApiService {
   }
 
   // Simulate battle between two Pokemon
-  static async simulateBattle(pokemon1Id: number, pokemon2Id: number): Promise<BattleResult> {
+  static async simulateBattle(pokemon1Id: number, pokemon2Id: number, options?: {
+    levelMode?: 'random' | 'set';
+    setLevel?: number;
+    generation?: number;
+    withItems?: boolean;
+    movesetType?: 'random' | 'competitive';
+    aiDifficulty?: 'random' | 'elite';
+  }): Promise<BattleResult> {
     try {
+      // Generate levels based on settings
+      let pokemon1Level = 50;
+      let pokemon2Level = 50;
+      
+      if (options?.levelMode === 'set' && options.setLevel) {
+        pokemon1Level = options.setLevel;
+        pokemon2Level = options.setLevel;
+      } else if (options?.levelMode === 'random') {
+        pokemon1Level = Math.floor(Math.random() * 100) + 1;
+        pokemon2Level = Math.floor(Math.random() * 100) + 1;
+      }
+
       const response = await api.post<BattleResult>('/battle/simulate', {
         pokemon1Id,
         pokemon2Id,
         options: {
-          generation: 9,
-          pokemon1Level: 50,
-          pokemon2Level: 50,
-          withItems: false,
-          movesetType: 'random',
-          aiDifficulty: 'random'
+          generation: options?.generation || 9,
+          pokemon1Level,
+          pokemon2Level,
+          withItems: options?.withItems || false,
+          movesetType: options?.movesetType || 'random',
+          aiDifficulty: options?.aiDifficulty || 'random'
         }
       });
       return response.data;
@@ -107,7 +126,14 @@ export class ApiService {
   }
 
   // Generate new battle with random Pokemon
-  static async generateRandomBattle(): Promise<BattleResult> {
+  static async generateRandomBattle(battleSettings?: {
+    levelMode?: 'random' | 'set';
+    setLevel?: number;
+    generation?: number;
+    withItems?: boolean;
+    movesetType?: 'random' | 'competitive';
+    aiDifficulty?: 'random' | 'elite';
+  }): Promise<BattleResult> {
     try {
       // Get two random Pokemon IDs (simplified - in real app you'd have better random selection)
       const pokemon1Id = Math.floor(Math.random() * 151) + 1; // Gen 1 Pokemon
@@ -116,7 +142,7 @@ export class ApiService {
       // Ensure they're different
       const finalPokemon2Id = pokemon1Id === pokemon2Id ? (pokemon2Id % 151) + 1 : pokemon2Id;
       
-      return await this.simulateBattle(pokemon1Id, finalPokemon2Id);
+      return await this.simulateBattle(pokemon1Id, finalPokemon2Id, battleSettings);
     } catch (error) {
       throw error;
     }

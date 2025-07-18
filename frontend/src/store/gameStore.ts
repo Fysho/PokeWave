@@ -29,7 +29,14 @@ interface GameStore extends GameState {
   battleHistory: BattleHistoryEntry[];
   
   // Actions
-  generateNewBattle: () => Promise<void>;
+  generateNewBattle: (battleSettings?: {
+    levelMode?: 'random' | 'set';
+    setLevel?: number;
+    generation?: number;
+    withItems?: boolean;
+    movesetType?: 'random' | 'competitive';
+    aiDifficulty?: 'random' | 'elite';
+  }) => Promise<void>;
   submitGuess: (guessPercentage: number) => Promise<any>;
   resetGame: () => void;
   clearError: () => void;
@@ -60,11 +67,18 @@ export const useGameStore = create<GameStore>()(
       (set, get) => ({
         ...initialGameStore,
 
-        generateNewBattle: async () => {
+        generateNewBattle: async (battleSettings?: {
+          levelMode?: 'random' | 'set';
+          setLevel?: number;
+          generation?: number;
+          withItems?: boolean;
+          movesetType?: 'random' | 'competitive';
+          aiDifficulty?: 'random' | 'elite';
+        }) => {
           set({ isLoading: true, error: null });
           
           try {
-            const battleResult = await ApiService.generateRandomBattle();
+            const battleResult = await ApiService.generateRandomBattle(battleSettings);
             set({ 
               currentBattle: battleResult,
               isLoading: false,

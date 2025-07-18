@@ -1,5 +1,5 @@
 import React from 'react';
-import { AppShell, Container, Group, Button, Badge, ActionIcon, useMantineColorScheme } from '@mantine/core';
+import { AppShell, Container, Group, Button, Badge, ActionIcon, useMantineColorScheme, Box } from '@mantine/core';
 import { 
   IconHistory, 
   IconChartBar, 
@@ -10,6 +10,8 @@ import {
   IconSun,
   IconMoon
 } from '@tabler/icons-react';
+import BattleSettings from '../settings/BattleSettings';
+import { useSettingsStore } from '../../store/settingsStore';
 
 interface MainLayoutProps {
   children: React.ReactNode;
@@ -25,6 +27,12 @@ const MainLayout: React.FC<MainLayoutProps> = ({
   battleCount = 0 
 }) => {
   const { colorScheme, toggleColorScheme } = useMantineColorScheme();
+  const { 
+    battleSettings, 
+    isSettingsPanelExpanded, 
+    setBattleSettings, 
+    toggleSettingsPanel 
+  } = useSettingsStore();
 
   const navigationItems = [
     { id: 'battle', label: 'Battle', icon: IconDeviceGamepad2, description: 'Predict Pokemon battles' },
@@ -35,98 +43,117 @@ const MainLayout: React.FC<MainLayoutProps> = ({
   ];
 
   return (
-    <AppShell
-      header={{ height: 60 }}
-      navbar={{ width: 0, breakpoint: 'sm' }}
-      padding="md"
-    >
-      <AppShell.Header>
-        <Group h="100%" px="md" justify="space-between">
-          <Group>
-            <div className="flex items-center space-x-3">
-              <div className="relative">
-                <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
-                  <IconDeviceGamepad2 size={20} color="white" />
+    <Box>
+      {/* Settings Panel */}
+      {activeTab === 'battle' && (
+        <BattleSettings
+          isExpanded={isSettingsPanelExpanded}
+          onToggleExpanded={toggleSettingsPanel}
+          settings={battleSettings}
+          onSettingsChange={setBattleSettings}
+        />
+      )}
+
+      <AppShell
+        header={{ height: 60 }}
+        navbar={{ width: 0, breakpoint: 'sm' }}
+        padding="md"
+      >
+        <AppShell.Header>
+          <Group h="100%" px="md" justify="space-between">
+            <Group>
+              <div className="flex items-center space-x-3">
+                <div className="relative">
+                  <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
+                    <IconDeviceGamepad2 size={20} color="white" />
+                  </div>
+                  <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
                 </div>
-                <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                  PokeWave
+                </span>
               </div>
-              <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                PokeWave
-              </span>
-            </div>
+              
+              {/* Navigation */}
+              <Group gap="xs" visibleFrom="lg">
+                {navigationItems.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <Button
+                      key={item.id}
+                      onClick={() => onTabChange(item.id)}
+                      variant={activeTab === item.id ? "filled" : "subtle"}
+                      size="sm"
+                      leftSection={<Icon size={16} />}
+                      rightSection={
+                        item.badge && item.badge > 0 ? (
+                          <Badge size="xs" variant="light">
+                            {item.badge}
+                          </Badge>
+                        ) : null
+                      }
+                    >
+                      {item.label}
+                    </Button>
+                  );
+                })}
+              </Group>
+            </Group>
             
-            {/* Navigation */}
-            <Group gap="xs" visibleFrom="lg">
-              {navigationItems.map((item) => {
-                const Icon = item.icon;
-                return (
-                  <Button
-                    key={item.id}
-                    onClick={() => onTabChange(item.id)}
-                    variant={activeTab === item.id ? "filled" : "subtle"}
-                    size="sm"
-                    leftSection={<Icon size={16} />}
-                    rightSection={
-                      item.badge && item.badge > 0 ? (
-                        <Badge size="xs" variant="light">
-                          {item.badge}
-                        </Badge>
-                      ) : null
-                    }
-                  >
-                    {item.label}
-                  </Button>
-                );
-              })}
+            <Group>
+              <ActionIcon 
+                onClick={() => toggleColorScheme()}
+                variant="default"
+                size="lg"
+              >
+                {colorScheme === 'dark' ? <IconSun size={20} /> : <IconMoon size={20} />}
+              </ActionIcon>
+              <Button variant="outline" size="sm" leftSection={<IconUsers size={16} />}>
+                Sign In
+              </Button>
             </Group>
           </Group>
-          
-          <Group>
-            <ActionIcon 
-              onClick={() => toggleColorScheme()}
-              variant="default"
-              size="lg"
-            >
-              {colorScheme === 'dark' ? <IconSun size={20} /> : <IconMoon size={20} />}
-            </ActionIcon>
-            <Button variant="outline" size="sm" leftSection={<IconUsers size={16} />}>
-              Sign In
-            </Button>
+
+          {/* Mobile Navigation */}
+          <Group gap="xs" p="md" hiddenFrom="lg" style={{ borderTop: '1px solid var(--mantine-color-gray-3)' }}>
+            {navigationItems.map((item) => {
+              const Icon = item.icon;
+              return (
+                <Button
+                  key={item.id}
+                  onClick={() => onTabChange(item.id)}
+                  variant={activeTab === item.id ? "filled" : "subtle"}
+                  size="xs"
+                  leftSection={<Icon size={14} />}
+                  rightSection={
+                    item.badge && item.badge > 0 ? (
+                      <Badge size="xs" variant="light">
+                        {item.badge}
+                      </Badge>
+                    ) : null
+                  }
+                >
+                  {item.label}
+                </Button>
+              );
+            })}
           </Group>
-        </Group>
+        </AppShell.Header>
 
-        {/* Mobile Navigation */}
-        <Group gap="xs" p="md" hiddenFrom="lg" style={{ borderTop: '1px solid var(--mantine-color-gray-3)' }}>
-          {navigationItems.map((item) => {
-            const Icon = item.icon;
-            return (
-              <Button
-                key={item.id}
-                onClick={() => onTabChange(item.id)}
-                variant={activeTab === item.id ? "filled" : "subtle"}
-                size="xs"
-                leftSection={<Icon size={14} />}
-                rightSection={
-                  item.badge && item.badge > 0 ? (
-                    <Badge size="xs" variant="light">
-                      {item.badge}
-                    </Badge>
-                  ) : null
-                }
-              >
-                {item.label}
-              </Button>
-            );
-          })}
-        </Group>
-      </AppShell.Header>
-
-      <AppShell.Main>
-        <Container size="xl">
-          {children}
-        </Container>
-      </AppShell.Main>
-    </AppShell>
+        <AppShell.Main>
+          <Container 
+            size="xl"
+            style={{
+              marginLeft: activeTab === 'battle' ? (isSettingsPanelExpanded ? '320px' : '60px') : '0',
+              transition: 'margin-left 0.3s ease',
+              maxWidth: activeTab === 'battle' ? `calc(100% - ${isSettingsPanelExpanded ? '320px' : '60px'})` : '100%'
+            }}
+          >
+            {children}
+          </Container>
+        </AppShell.Main>
+      </AppShell>
+    </Box>
   );
 };
 

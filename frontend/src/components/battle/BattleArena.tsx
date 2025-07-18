@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, Button, Badge, Slider, Group, Text, Grid, Box, Stack, Title, Center, Loader } from '@mantine/core';
 import { useGameStore } from '../../store/gameStore';
+import { useSettingsStore } from '../../store/settingsStore';
 import { BattleLoading } from '../ui/loading';
 import { FadeIn, SlideIn, ResultReveal, BounceIn, ScaleIn } from '../ui/transitions';
 import StreakCelebration from '../ui/streak-celebration';
@@ -231,6 +232,8 @@ const BattleArena: React.FC = () => {
     submitGuess,
     clearError,
   } = useGameStore();
+  
+  const { battleSettings } = useSettingsStore();
 
   const [guessPercentage, setGuessPercentage] = useState<number>(50);
   const [showResults, setShowResults] = useState(false);
@@ -240,9 +243,9 @@ const BattleArena: React.FC = () => {
 
   useEffect(() => {
     if (!currentBattle && !isLoading) {
-      generateNewBattle();
+      generateNewBattle(battleSettings);
     }
-  }, [currentBattle, isLoading, generateNewBattle]);
+  }, [currentBattle, isLoading, generateNewBattle, battleSettings]);
 
   useEffect(() => {
     setGuessPercentage(50);
@@ -277,7 +280,7 @@ const BattleArena: React.FC = () => {
   };
 
   const handleNewBattle = () => {
-    generateNewBattle();
+    generateNewBattle(battleSettings);
   };
 
   const getAccuracy = () => {
