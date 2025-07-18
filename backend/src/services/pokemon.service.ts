@@ -3,25 +3,10 @@ import { cacheService } from './cache.service';
 import logger from '../utils/logger';
 import { ApiError } from '../middleware/error.middleware';
 
-interface Pokemon {
-  id: number;
-  name: string;
-  types: string[];
-  stats: {
-    hp: number;
-    attack: number;
-    defense: number;
-    specialAttack: number;
-    specialDefense: number;
-    speed: number;
-  };
-  abilities: string[];
-  sprites: {
-    front: string;
-    back: string;
-    shiny: string;
-  };
-  moves: string[];
+interface PokemonSprites {
+  front: string;
+  back: string;
+  shiny: string;
 }
 
 const GENERATION_RANGES = {
@@ -39,57 +24,33 @@ const GENERATION_RANGES = {
 class PokemonService {
   private pokeApiUrl = 'https://pokeapi.co/api/v2';
 
-  async getPokemonById(id: number): Promise<Pokemon> {
+  async getPokemonSprites(id: number): Promise<PokemonSprites> {
     try {
       // Check cache first
-      const cached = await cacheService.get<Pokemon>(`pokemon:${id}`);
+      const cached = await cacheService.get<PokemonSprites>(`pokemon-sprites:${id}`);
       if (cached) {
-        logger.info(`Pokemon ${id} found in cache`);
+        logger.info(`Pokemon sprites ${id} found in cache`);
         return cached;
       }
 
-      // Fetch from PokeAPI
-      logger.info(`Fetching Pokemon ${id} from PokeAPI`);
+      // Fetch sprites only from PokeAPI
+      logger.info(`Fetching Pokemon sprites ${id} from PokeAPI`);
       const response = await axios.get(`${this.pokeApiUrl}/pokemon/${id}`);
       const data = response.data;
 
-      // Get first 4 moves from the Pokemon's moveset
-      const moves = data.moves
-        .slice(0, 4)
-        .map((m: any) => m.move.name)
-        .map((name: string) => name.replace('-', ' '))
-        .map((name: string) => name.replace(/\b\w/g, (l: string) => l.toUpperCase()));
-      
-      logger.info(`Pokemon ${data.name} moves:`, moves);
-
-      const pokemon: Pokemon = {
-        id: data.id,
-        name: data.name,
-        types: data.types.map((t: any) => t.type.name),
-        stats: {
-          hp: data.stats[0].base_stat,
-          attack: data.stats[1].base_stat,
-          defense: data.stats[2].base_stat,
-          specialAttack: data.stats[3].base_stat,
-          specialDefense: data.stats[4].base_stat,
-          speed: data.stats[5].base_stat
-        },
-        abilities: data.abilities.map((a: any) => a.ability.name),
-        sprites: {
-          front: data.sprites.front_default,
-          back: data.sprites.back_default,
-          shiny: data.sprites.front_shiny
-        },
-        moves: moves
+      const sprites: PokemonSprites = {
+        front: data.sprites.front_default,
+        back: data.sprites.back_default,
+        shiny: data.sprites.front_shiny
       };
 
       // Cache for 24 hours
-      await cacheService.set(`pokemon:${id}`, pokemon, 86400);
+      await cacheService.set(`pokemon-sprites:${id}`, sprites, 86400);
 
-      return pokemon;
+      return sprites;
     } catch (error) {
-      logger.error('Failed to fetch Pokemon:', error);
-      throw new ApiError(500, 'Failed to fetch Pokemon data');
+      logger.error('Failed to fetch Pokemon sprites:', error);
+      throw new ApiError(500, 'Failed to fetch Pokemon sprites');
     }
   }
 

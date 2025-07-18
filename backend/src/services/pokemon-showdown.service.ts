@@ -137,8 +137,8 @@ class PokemonShowdownService {
         species2: species2.name
       });
 
-      // Fetch additional Pokemon data
-      const [pokemon1Data, pokemon2Data] = await this.fetchPokemonData(
+      // Fetch Pokemon sprites from PokeAPI
+      const [pokemon1Sprites, pokemon2Sprites] = await this.fetchPokemonSprites(
         config.pokemon1Id,
         config.pokemon2Id
       );
@@ -179,6 +179,14 @@ class PokemonShowdownService {
       const pokemon1Stats = this.calculateStats(species1, pokemon1Level);
       const pokemon2Stats = this.calculateStats(species2, pokemon2Level);
 
+      // Get types from Pokemon Showdown
+      const pokemon1Types = species1.types.map(t => t.toLowerCase());
+      const pokemon2Types = species2.types.map(t => t.toLowerCase());
+
+      // Get moves from Pokemon Showdown
+      const pokemon1Moves = this.getRandomMoves(species1, dex, 4);
+      const pokemon2Moves = this.getRandomMoves(species2, dex, 4);
+
       const result: ShowdownBattleResult = {
         battleId: crypto.randomUUID(),
         pokemon1: {
@@ -186,9 +194,9 @@ class PokemonShowdownService {
           name: species1.name,
           level: pokemon1Level,
           wins: pokemon1Wins,
-          types: pokemon1Data?.types || [],
-          sprites: pokemon1Data?.sprites || { front: '', back: '', shiny: '' },
-          moves: pokemon1Data?.moves || [],
+          types: pokemon1Types,
+          sprites: pokemon1Sprites || { front: '', back: '', shiny: '' },
+          moves: pokemon1Moves.map(move => this.formatMoveName(move)),
           stats: pokemon1Stats
         },
         pokemon2: {
@@ -196,9 +204,9 @@ class PokemonShowdownService {
           name: species2.name,
           level: pokemon2Level,
           wins: pokemon2Wins,
-          types: pokemon2Data?.types || [],
-          sprites: pokemon2Data?.sprites || { front: '', back: '', shiny: '' },
-          moves: pokemon2Data?.moves || [],
+          types: pokemon2Types,
+          sprites: pokemon2Sprites || { front: '', back: '', shiny: '' },
+          moves: pokemon2Moves.map(move => this.formatMoveName(move)),
           stats: pokemon2Stats
         },
         totalBattles: this.NUM_BATTLES,
@@ -260,15 +268,9 @@ class PokemonShowdownService {
       const stream = new BattleStreams.BattleStream();
       const outputs: string[] = [];
       
-      // Fetch additional Pokemon data for moves
-      const [pokemon1Data, pokemon2Data] = await this.fetchPokemonData(
-        config.pokemon1Id,
-        config.pokemon2Id
-      );
-
-      // Create teams with actual moves
-      const p1team = await this.createTeam(species1, pokemon1Level, generation, pokemon1Data?.moves || []);
-      const p2team = await this.createTeam(species2, pokemon2Level, generation, pokemon2Data?.moves || []);
+      // Create teams with moves from Pokemon Showdown
+      const p1team = await this.createTeam(species1, pokemon1Level, generation);
+      const p2team = await this.createTeam(species2, pokemon2Level, generation);
 
       // Run battle and collect outputs
       const battleResult = await new Promise<{ outputs: string[], winner: string }>(async (resolve) => {
@@ -523,22 +525,12 @@ class PokemonShowdownService {
     }
   }
 
-  private async createTeam(species: Species, level: number, generation: number, pokemonMoves: string[] = []): Promise<string> {
+  private async createTeam(species: Species, level: number, generation: number): Promise<string> {
     const dex = Dex.forGen(generation);
     
-    // Use the provided moves if available, otherwise fall back to random moves
-    let moves: string[] = [];
-    if (pokemonMoves.length > 0) {
-      // Convert move names from display format to Pokemon Showdown format
-      // e.g., "Thunder Shock" -> "thundershock"
-      moves = pokemonMoves.slice(0, 4).map(move => 
-        move.toLowerCase().replace(/\s+/g, '')
-      );
-      logger.info(`Using provided moves for ${species.name}:`, moves);
-    } else {
-      moves = this.getRandomMoves(species, dex, 4);
-      logger.info(`Using random moves for ${species.name}:`, moves);
-    }
+    // Get random moves from Pokemon Showdown
+    const moves = this.getRandomMoves(species, dex, 4);
+    logger.info(`Using moves for ${species.name}:`, moves);
     
     // Create a simple set
     const set = {
@@ -563,36 +555,48 @@ class PokemonShowdownService {
   private getRandomMoves(species: Species, dex: any, count: number): string[] {
     const moves: string[] = [];
     
-    // Try to get random moves from the species' movepool
     try {
-      // Get all moves that this Pokemon can learn
-      // const allMoves = dex.moves.all()
-      //   .filter((move: any) => move.exists && !move.isZ && !move.isMax)
-      //   .map((move: any) => move.name);
+      // First, try to get type-based moves which is more reliable
+      const typeBasedMoves = this.getTypeBasedMoves(species.types, dex);
+      const shuffledTypeMoves = [...typeBasedMoves].sort(() => Math.random() - 0.5);
       
-      // For now, just pick random moves from the general movepool
-      // In a real implementation, you'd check the species' actual learnset
-      const commonMoves = ['Tackle', 'Quick Attack', 'Bite', 'Scratch', 
-                          'Ember', 'Water Gun', 'Vine Whip', 'Thunder Shock',
-                          'Psychic', 'Ice Beam', 'Earthquake', 'Rock Slide'];
+      // Add type-based moves first
+      for (const moveName of shuffledTypeMoves) {
+        if (moves.length >= count) break;
+        if (!moves.includes(moveName)) {
+          moves.push(moveName);
+        }
+      }
       
-      // Pick random moves from common moves
-      const availableMoves = commonMoves.filter(move => {
-        const moveData = dex.moves.get(move);
-        return moveData && moveData.exists;
-      });
-      
-      // Shuffle and pick
-      const shuffled = [...availableMoves].sort(() => Math.random() - 0.5);
-      for (let i = 0; i < count && i < shuffled.length; i++) {
-        moves.push(shuffled[i]);
+      // If we still need moves, try learnset (though it may not work with @pkmn/dex)
+      if (moves.length < count) {
+        try {
+          // Try to get some common moves that most Pokemon can learn
+          const commonMoves = ['Return', 'Frustration', 'Hidden Power', 'Protect', 'Rest', 'Sleep Talk', 
+                              'Substitute', 'Swagger', 'Toxic', 'Double Team', 'Facade'];
+          
+          const availableCommon = commonMoves.filter(moveName => {
+            const move = dex.moves.get(moveName);
+            return move && move.exists && !move.isZ && !move.isMax;
+          });
+          
+          const shuffledCommon = [...availableCommon].sort(() => Math.random() - 0.5);
+          for (const moveName of shuffledCommon) {
+            if (moves.length >= count) break;
+            if (!moves.includes(moveName)) {
+              moves.push(moveName);
+            }
+          }
+        } catch (error) {
+          logger.debug('Could not get additional moves from learnset', { species: species.name });
+        }
       }
     } catch (error) {
       logger.warn('Failed to get moves for species', { species: species.name, error });
     }
 
-    // Fill with default moves if needed
-    const defaultMoves = ['Tackle', 'Scratch', 'Growl', 'Leer'];
+    // Fill with default moves if still needed
+    const defaultMoves = ['Tackle', 'Scratch', 'Pound', 'Quick Attack'];
     while (moves.length < count) {
       const defaultMove = defaultMoves[moves.length % defaultMoves.length];
       if (!moves.includes(defaultMove)) {
@@ -602,7 +606,43 @@ class PokemonShowdownService {
       }
     }
 
+    logger.debug(`Selected moves for ${species.name}:`, moves);
     return moves;
+  }
+
+  private getTypeBasedMoves(types: string[], dex: any): string[] {
+    const typeMoveSets: { [key: string]: string[] } = {
+      'Normal': ['Tackle', 'Quick Attack', 'Scratch', 'Take Down', 'Hyper Beam'],
+      'Fire': ['Ember', 'Flamethrower', 'Fire Blast', 'Fire Punch', 'Flame Wheel'],
+      'Water': ['Water Gun', 'Hydro Pump', 'Surf', 'Bubble Beam', 'Aqua Tail'],
+      'Electric': ['Thunder Shock', 'Thunderbolt', 'Thunder', 'Thunder Punch', 'Discharge'],
+      'Grass': ['Vine Whip', 'Razor Leaf', 'Solar Beam', 'Energy Ball', 'Leaf Blade'],
+      'Ice': ['Ice Beam', 'Blizzard', 'Ice Punch', 'Aurora Beam', 'Ice Shard'],
+      'Fighting': ['Karate Chop', 'Close Combat', 'Cross Chop', 'Dynamic Punch', 'Mach Punch'],
+      'Poison': ['Poison Sting', 'Sludge Bomb', 'Toxic', 'Poison Jab', 'Sludge'],
+      'Ground': ['Earthquake', 'Dig', 'Mud Slap', 'Earth Power', 'Bulldoze'],
+      'Flying': ['Wing Attack', 'Air Slash', 'Hurricane', 'Aerial Ace', 'Fly'],
+      'Psychic': ['Psychic', 'Psybeam', 'Confusion', 'Psycho Cut', 'Zen Headbutt'],
+      'Bug': ['Bug Bite', 'Signal Beam', 'X-Scissor', 'U-turn', 'Bug Buzz'],
+      'Rock': ['Rock Throw', 'Rock Slide', 'Stone Edge', 'Rock Tomb', 'Power Gem'],
+      'Ghost': ['Shadow Ball', 'Shadow Claw', 'Night Shade', 'Hex', 'Shadow Sneak'],
+      'Dragon': ['Dragon Claw', 'Dragon Pulse', 'Outrage', 'Dragon Rush', 'Draco Meteor'],
+      'Dark': ['Bite', 'Crunch', 'Dark Pulse', 'Foul Play', 'Night Slash'],
+      'Steel': ['Metal Claw', 'Iron Tail', 'Flash Cannon', 'Iron Head', 'Steel Wing'],
+      'Fairy': ['Dazzling Gleam', 'Moonblast', 'Play Rough', 'Fairy Wind', 'Draining Kiss']
+    };
+
+    const moves: string[] = [];
+    for (const type of types) {
+      const typeMoves = typeMoveSets[type] || [];
+      moves.push(...typeMoves);
+    }
+    
+    // Filter to only include moves that exist in the current generation
+    return moves.filter(moveName => {
+      const move = dex.moves.get(moveName);
+      return move && move.exists;
+    });
   }
 
   private makeRandomChoice(request: any): string {
@@ -753,20 +793,30 @@ class PokemonShowdownService {
     return null;
   }
 
-  private async fetchPokemonData(id1: number, id2: number) {
+  private async fetchPokemonSprites(id1: number, id2: number) {
     try {
-      const [pokemon1Data, pokemon2Data] = await Promise.all([
-        pokemonService.getPokemonById(id1),
-        pokemonService.getPokemonById(id2)
+      const [pokemon1Sprites, pokemon2Sprites] = await Promise.all([
+        pokemonService.getPokemonSprites(id1),
+        pokemonService.getPokemonSprites(id2)
       ]);
-      return [pokemon1Data, pokemon2Data];
+      return [pokemon1Sprites, pokemon2Sprites];
     } catch (error) {
-      logger.error('Failed to fetch Pokemon data:', error);
+      logger.error('Failed to fetch Pokemon sprites:', error);
       return [
-        { types: [], sprites: { front: '', back: '', shiny: '' }, moves: [] },
-        { types: [], sprites: { front: '', back: '', shiny: '' }, moves: [] }
+        { front: '', back: '', shiny: '' },
+        { front: '', back: '', shiny: '' }
       ];
     }
+  }
+
+  private formatMoveName(move: string): string {
+    // Convert from camelCase or lowercase to Title Case
+    // e.g., "thundershock" -> "Thunder Shock", "quickAttack" -> "Quick Attack"
+    return move
+      .replace(/([A-Z])/g, ' $1')
+      .replace(/^./, str => str.toUpperCase())
+      .trim()
+      .replace(/\s+/g, ' '); // Replace multiple spaces with single space
   }
 
   private generateBattleKey(config: ShowdownBattleConfig): string {

@@ -14,8 +14,9 @@ export const getPokemon = async (
       throw new ApiError(400, 'Invalid Pokemon ID');
     }
 
-    const pokemon = await pokemonService.getPokemonById(id);
-    res.json(pokemon);
+    // This endpoint is not currently used by the frontend
+    // Returning a placeholder response
+    throw new ApiError(501, 'This endpoint is not implemented. Pokemon data is now fetched through the battle simulation endpoints.');
   } catch (error) {
     next(error);
   }
