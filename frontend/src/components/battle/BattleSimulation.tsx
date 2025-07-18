@@ -148,9 +148,9 @@ const BattleSimulation: React.FC<BattleSimulationProps> = ({
         </Box>
 
         {/* Content */}
-        <Collapse in={isExpanded} transitionDuration={300}>
-          <Box p="md" style={{ overflowY: 'auto', flex: 1 }}>
-            <Stack gap="md">
+        <Collapse in={isExpanded} transitionDuration={300} style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+          <Box p="md" style={{ overflowY: 'auto', flex: 1, height: '100%', display: 'flex', flexDirection: 'column' }}>
+            <Stack gap="md" style={{ flex: 1, minHeight: 0 }}>
               {/* Battle Setup */}
               {pokemon1 && pokemon2 && (
                 <Card withBorder p="md">
@@ -196,8 +196,8 @@ const BattleSimulation: React.FC<BattleSimulationProps> = ({
 
               {/* Battle Results */}
               {simulation && (
-                <Card withBorder p="md">
-                  <Stack gap="md">
+                <Card withBorder p="md" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                  <Stack gap="md" style={{ flex: 1, minHeight: 0 }}>
                     <Group justify="space-between" align="center">
                       <Text fw={600} size="sm">
                         Battle Result
@@ -243,7 +243,7 @@ const BattleSimulation: React.FC<BattleSimulationProps> = ({
                     <Divider />
 
                     {/* Turn-by-turn breakdown */}
-                    <ScrollArea h={300}>
+                    <ScrollArea style={{ flex: 1, minHeight: '400px', maxHeight: 'calc(100vh - 400px)' }}>
                       <Stack gap="xs">
                         {simulation.turns?.map((turn: BattleTurn, index: number) => (
                           <Card key={index} withBorder p="sm">
