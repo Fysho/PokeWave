@@ -129,7 +129,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({
                     w={32} 
                     h={32} 
                     style={{ 
-                      background: 'linear-gradient(135deg, var(--mantine-color-blue-6), var(--mantine-color-grape-6))',
+                      backgroundImage: 'linear-gradient(135deg, var(--mantine-color-blue-6), var(--mantine-color-grape-6))',
                       borderRadius: '8px',
                       display: 'flex',
                       alignItems: 'center',
@@ -155,7 +155,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({
                   size="xl"
                   fw={700}
                   style={{
-                    background: 'linear-gradient(135deg, var(--mantine-color-blue-6), var(--mantine-color-grape-6))',
+                    backgroundImage: 'linear-gradient(135deg, var(--mantine-color-blue-6), var(--mantine-color-grape-6))',
                     WebkitBackgroundClip: 'text',
                     WebkitTextFillColor: 'transparent',
                     backgroundClip: 'text'

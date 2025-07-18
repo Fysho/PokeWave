@@ -186,8 +186,6 @@ const BattleSettings: React.FC<BattleSettingsProps> = ({
                     ]}
                     size="sm"
                     leftSection={<IconPokeball size={16} />}
-                    withinPortal={true}
-                    dropdownPosition="bottom"
                     styles={{
                       dropdown: {
                         zIndex: 2000

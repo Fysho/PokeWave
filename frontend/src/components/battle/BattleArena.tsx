@@ -417,7 +417,7 @@ const BattleArena: React.FC = () => {
               fw={700} 
               ta="center"
               style={{
-                background: colorScheme === 'dark'
+                backgroundImage: colorScheme === 'dark'
                   ? 'linear-gradient(135deg, var(--mantine-color-blue-4), var(--mantine-color-grape-4))'
                   : 'linear-gradient(135deg, var(--mantine-color-blue-6), var(--mantine-color-grape-6))',
                 WebkitBackgroundClip: 'text',
