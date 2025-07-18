@@ -14,7 +14,7 @@ import BattleSettings from '../settings/BattleSettings';
 import BattleSimulation from '../battle/BattleSimulation';
 import { useSettingsStore } from '../../store/settingsStore';
 import { useGameStore } from '../../store/gameStore';
-import ApiService from '../../services/api';
+import { simulateSingleBattle } from '../../utils/battleSimulation';
 
 interface MainLayoutProps {
   children: React.ReactNode;
@@ -53,7 +53,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({
       return;
     }
     
-    console.log('handleSimulateBattle: Starting battle simulation', {
+    console.log('handleSimulateBattle: Starting LOCAL battle simulation', {
       pokemon1: currentBattle.pokemon1,
       pokemon2: currentBattle.pokemon2,
       pokemon1Id: currentBattle.pokemon1.id,
@@ -63,16 +63,23 @@ const MainLayout: React.FC<MainLayoutProps> = ({
     
     setIsSimulating(true);
     try {
-      console.log('handleSimulateBattle: Calling API...');
-      const result = await ApiService.simulateSingleBattle(
+      console.log('handleSimulateBattle: Running battle locally...');
+      
+      // Run battle simulation locally
+      const result = await simulateSingleBattle(
         currentBattle.pokemon1.id,
         currentBattle.pokemon2.id,
-        battleSettings
+        {
+          generation: battleSettings.generation || 1,
+          pokemon1Level: battleSettings.levelMode === 'set' ? battleSettings.setLevel : Math.floor(Math.random() * 100) + 1,
+          pokemon2Level: battleSettings.levelMode === 'set' ? battleSettings.setLevel : Math.floor(Math.random() * 100) + 1
+        }
       );
-      console.log('handleSimulateBattle: Battle simulation result:', result);
+      
+      console.log('handleSimulateBattle: Local battle simulation result:', result);
       
       if (!result) {
-        console.error('handleSimulateBattle: No result returned from API');
+        console.error('handleSimulateBattle: No result returned from battle simulation');
         throw new Error('No result returned from battle simulation');
       }
       
@@ -85,8 +92,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({
       console.error('handleSimulateBattle: Error simulating battle:', error);
       console.error('handleSimulateBattle: Error details:', {
         message: error instanceof Error ? error.message : 'Unknown error',
-        stack: error instanceof Error ? error.stack : undefined,
-        response: (error as any).response?.data
+        stack: error instanceof Error ? error.stack : undefined
       });
       // Set empty simulation to show error state
       setBattleSimulation(null);

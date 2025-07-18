@@ -169,7 +169,8 @@ export class ApiService {
     }
   }
 
-  // Simulate a single battle with turn-by-turn details
+  // DEPRECATED: Single battle simulation now runs locally in the frontend
+  // See frontend/src/utils/battleSimulation.ts
   static async simulateSingleBattle(pokemon1Id: number, pokemon2Id: number, options?: {
     levelMode?: 'random' | 'set';
     setLevel?: number;
@@ -178,52 +179,8 @@ export class ApiService {
     movesetType?: 'random' | 'competitive';
     aiDifficulty?: 'random' | 'elite';
   }): Promise<any> {
-    try {
-      console.log('ApiService.simulateSingleBattle: Starting request', {
-        pokemon1Id,
-        pokemon2Id,
-        options
-      });
-      
-      // Generate levels based on settings
-      let pokemon1Level = 50;
-      let pokemon2Level = 50;
-      
-      if (options?.levelMode === 'set' && options.setLevel) {
-        pokemon1Level = options.setLevel;
-        pokemon2Level = options.setLevel;
-      } else if (options?.levelMode === 'random') {
-        pokemon1Level = Math.floor(Math.random() * 100) + 1;
-        pokemon2Level = Math.floor(Math.random() * 100) + 1;
-      }
-
-      const payload = {
-        pokemon1Id,
-        pokemon2Id,
-        options: {
-          generation: options?.generation || 1,
-          pokemon1Level,
-          pokemon2Level,
-          withItems: options?.withItems || false,
-          movesetType: options?.movesetType || 'random',
-          aiDifficulty: options?.aiDifficulty || 'random'
-        }
-      };
-      
-      console.log('ApiService.simulateSingleBattle: Sending payload', payload);
-      
-      const response = await api.post('/battle/simulate-single', payload);
-      
-      console.log('ApiService.simulateSingleBattle: Response received', {
-        status: response.status,
-        data: response.data
-      });
-      
-      return response.data;
-    } catch (error) {
-      console.error('ApiService.simulateSingleBattle: Error occurred', error);
-      throw error;
-    }
+    console.warn('ApiService.simulateSingleBattle is deprecated. Use local battle simulation instead.');
+    throw new Error('Single battle simulation should be run locally. Use simulateSingleBattle from utils/battleSimulation.ts');
   }
 }
 
