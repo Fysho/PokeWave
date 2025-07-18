@@ -44,13 +44,17 @@ const BattleView: React.FC = () => {
   const handleSubmitGuess = async () => {
     if (!selectedPokemon || !currentBattle) return;
     
-    await submitGuess(selectedPokemon);
-    setShowResults(true);
-    
-    // Auto-generate new battle after showing results
-    setTimeout(() => {
-      generateNewBattle();
-    }, 3000);
+    try {
+      await submitGuess(selectedPokemon);
+      setShowResults(true);
+      
+      // Auto-generate new battle after showing results
+      setTimeout(() => {
+        generateNewBattle();
+      }, 3000);
+    } catch (error) {
+      console.error('Error submitting guess:', error);
+    }
   };
 
   const handleNewBattle = () => {

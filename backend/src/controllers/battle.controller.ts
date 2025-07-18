@@ -32,17 +32,17 @@ export const submitGuess = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const { battleId, guessedWinRate } = req.body;
+    const { battleId, guess } = req.body;
 
-    if (!battleId || guessedWinRate === undefined) {
-      throw new ApiError(400, 'Both battleId and guessedWinRate are required');
+    if (!battleId || !guess) {
+      throw new ApiError(400, 'Both battleId and guess (Pokemon ID) are required');
     }
 
-    if (guessedWinRate < 0 || guessedWinRate > 100) {
-      throw new ApiError(400, 'Guessed win rate must be between 0 and 100');
+    if (typeof guess !== 'number') {
+      throw new ApiError(400, 'Guess must be a valid Pokemon ID (number)');
     }
 
-    const result = await battleService.submitGuess(battleId, guessedWinRate);
+    const result = await battleService.submitGuess(battleId, guess);
     res.json(result);
   } catch (error) {
     next(error);

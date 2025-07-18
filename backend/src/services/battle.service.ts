@@ -35,10 +35,12 @@ interface BattleResult {
 }
 
 interface GuessResult {
-  actualWinRate: number;
-  guessedWinRate: number;
-  accuracy: number;
-  score: number;
+  battleId: string;
+  guess: number;
+  correctAnswer: number;
+  isCorrect: boolean;
+  winRate: number;
+  points: number;
   message: string;
 }
 
@@ -88,7 +90,7 @@ class BattleService {
     }
   }
 
-  async submitGuess(battleId: string, guessedWinRate: number): Promise<GuessResult> {
+  async submitGuess(battleId: string, guess: number): Promise<GuessResult> {
     try {
       // Check active battles first
       let battle = this.activeBattles.get(battleId);
@@ -105,38 +107,53 @@ class BattleService {
         throw new ApiError(404, 'Battle not found');
       }
 
-      const actualWinRate = battle.winRate;
-      const difference = Math.abs(actualWinRate - guessedWinRate);
-      const accuracy = 100 - difference;
+      // Validate that the guess is one of the two Pokemon in the battle
+      if (guess !== battle.pokemon1.id && guess !== battle.pokemon2.id) {
+        throw new ApiError(400, 'Guess must be the ID of one of the Pokemon in the battle');
+      }
 
-      // Calculate score (lower is better, like golf)
-      // Perfect guess = 0 points, worst guess = 100 points
-      const score = Math.round(difference);
+      // Determine the correct answer (the Pokemon with more wins)
+      const correctAnswer = battle.pokemon1.wins > battle.pokemon2.wins 
+        ? battle.pokemon1.id 
+        : battle.pokemon2.id;
+
+      const isCorrect = guess === correctAnswer;
+
+      // Calculate points based on correctness and win rate margin
+      let points = 0;
+      if (isCorrect) {
+        // Award more points for correctly guessing closer battles
+        const winRateMargin = Math.abs(battle.winRate - 50); // How close to 50/50
+        const difficultyBonus = Math.max(1, Math.round(10 - (winRateMargin / 5))); // 1-10 points
+        points = 10 + difficultyBonus; // Base 10 points + difficulty bonus
+      }
 
       // Generate feedback message
       let message: string;
-      if (difference === 0) {
-        message = 'Perfect! You nailed it exactly!';
-      } else if (difference <= 5) {
-        message = 'Excellent! Very close guess!';
-      } else if (difference <= 10) {
-        message = 'Great job! Pretty accurate!';
-      } else if (difference <= 20) {
-        message = 'Good effort! Not too far off.';
-      } else if (difference <= 30) {
-        message = 'Nice try! Room for improvement.';
+      if (isCorrect) {
+        const winRateMargin = Math.abs(battle.winRate - 50);
+        if (winRateMargin <= 5) {
+          message = `Excellent! You correctly picked the winner in a very close battle (${battle.winRate.toFixed(1)}% win rate)!`;
+        } else if (winRateMargin <= 15) {
+          message = `Great job! You correctly identified the winner!`;
+        } else {
+          message = `Correct! That was a relatively easy one to predict.`;
+        }
       } else {
-        message = 'Keep practicing! You\'ll get better!';
+        const winnerName = correctAnswer === battle.pokemon1.id ? battle.pokemon1.name : battle.pokemon2.name;
+        message = `Wrong! ${winnerName} actually won ${battle.winRate.toFixed(1)}% of the battles.`;
       }
 
       // Clean up the battle from active battles
       this.activeBattles.delete(battleId);
 
       return {
-        actualWinRate,
-        guessedWinRate,
-        accuracy,
-        score,
+        battleId,
+        guess,
+        correctAnswer,
+        isCorrect,
+        winRate: battle.winRate,
+        points,
         message
       };
     } catch (error) {
