@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
 import type { GameState, ApiError } from '../types/api';
 import ApiService from '../services/api';
+import { simulateMainBattle } from '../utils/mainBattleSimulation';
 
 interface BattleHistoryEntry {
   id: string;
@@ -78,7 +79,37 @@ export const useGameStore = create<GameStore>()(
           set({ isLoading: true, error: null });
           
           try {
-            const battleResult = await ApiService.generateRandomBattle(battleSettings);
+            // Generate random Pokemon IDs
+            const pokemon1Id = Math.floor(Math.random() * 1010) + 1;
+            const pokemon2Id = Math.floor(Math.random() * 1010) + 1;
+            
+            // Calculate levels based on settings
+            const pokemon1Level = battleSettings?.levelMode === 'set' ? 
+              (battleSettings.setLevel || 50) : 
+              Math.floor(Math.random() * 100) + 1;
+            const pokemon2Level = battleSettings?.levelMode === 'set' ? 
+              (battleSettings.setLevel || 50) : 
+              Math.floor(Math.random() * 100) + 1;
+            
+            // Use local simulation instead of API
+            const battleResult = await simulateMainBattle(pokemon1Id, pokemon2Id, {
+              generation: battleSettings?.generation || 9,
+              pokemon1Level,
+              pokemon2Level
+            });
+            
+            // Fetch sprites from API for the UI
+            try {
+              const [sprites1, sprites2] = await Promise.all([
+                ApiService.getPokemonSprites(pokemon1Id),
+                ApiService.getPokemonSprites(pokemon2Id)
+              ]);
+              battleResult.pokemon1.sprites = sprites1;
+              battleResult.pokemon2.sprites = sprites2;
+            } catch (spriteError) {
+              console.warn('Failed to fetch sprites:', spriteError);
+            }
+            
             set({ 
               currentBattle: battleResult,
               isLoading: false,

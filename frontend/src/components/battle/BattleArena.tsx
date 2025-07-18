@@ -58,7 +58,7 @@ const PokemonBattleCard: React.FC<PokemonBattleCardProps> = ({
     return typeColors[type.toLowerCase()] || 'gray';
   };
 
-  const displayWinPercentage = winPercentage !== undefined ? winPercentage.toFixed(1) : showResults ? ((pokemon.wins / 1000) * 100).toFixed(1) : null;
+  const displayWinPercentage = winPercentage !== undefined ? winPercentage.toFixed(1) : showResults ? ((pokemon.wins / 100) * 100).toFixed(1) : null;
 
   // Calculate dynamic sprite size based on guess percentage
   const calculateSpriteSize = () => {
@@ -325,7 +325,7 @@ const PokemonBattleCard: React.FC<PokemonBattleCardProps> = ({
                     {displayWinPercentage}%
                   </Text>
                   <Text size="sm" c="gray.6">
-                    {pokemon.wins}/1000 wins
+                    {pokemon.wins}/{currentBattle?.totalBattles || 100} wins
                   </Text>
                 </Box>
               </ScaleIn>

@@ -65,6 +65,18 @@ export class ApiService {
     }
   }
 
+  // Get Pokemon sprites
+  static async getPokemonSprites(pokemonId: number): Promise<{ front: string; back: string; shiny: string }> {
+    try {
+      const response = await api.get(`/pokemon/${pokemonId}/sprites`);
+      return response.data;
+    } catch (error) {
+      // Return default empty sprites on error
+      console.warn(`Failed to fetch sprites for Pokemon ${pokemonId}:`, error);
+      return { front: '', back: '', shiny: '' };
+    }
+  }
+
   // Simulate battle between two Pokemon
   static async simulateBattle(pokemon1Id: number, pokemon2Id: number, options?: {
     levelMode?: 'random' | 'set';
