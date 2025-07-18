@@ -68,11 +68,17 @@ class ShowdownService {
       // If not found by ID, try to find by national dex number
       if (!pokemon1?.exists) {
         const allPokemon = dex.species.all();
-        pokemon1 = allPokemon.find(p => p.num === config.pokemon1Id);
+        const found = allPokemon.find(p => p.num === config.pokemon1Id);
+        if (found) {
+          pokemon1 = found;
+        }
       }
       if (!pokemon2?.exists) {
         const allPokemon = dex.species.all();
-        pokemon2 = allPokemon.find(p => p.num === config.pokemon2Id);
+        const found = allPokemon.find(p => p.num === config.pokemon2Id);
+        if (found) {
+          pokemon2 = found;
+        }
       }
 
       if (!pokemon1?.exists || !pokemon2?.exists) {

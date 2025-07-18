@@ -1,10 +1,7 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
-import { ThemeProvider } from '@/components/theme-provider'
-import { Layout } from '@/components/layout/Layout'
-import { Game } from '@/pages/Game'
-import { Daily } from '@/pages/Daily'
-import { Survival } from '@/pages/Survival'
-import { Leaderboard } from '@/pages/Leaderboard'
+import { ThemeProvider } from './components/theme-provider'
+import { Layout } from './components/layout/Layout'
+import GameDashboard from './components/game/GameDashboard'
 
 function App() {
   return (
@@ -12,10 +9,7 @@ function App() {
       <Router>
         <Layout>
           <Routes>
-            <Route path="/" element={<Game />} />
-            <Route path="/daily" element={<Daily />} />
-            <Route path="/survival" element={<Survival />} />
-            <Route path="/leaderboard" element={<Leaderboard />} />
+            <Route path="/" element={<GameDashboard />} />
           </Routes>
         </Layout>
       </Router>

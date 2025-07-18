@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { ThemeToggle } from './ThemeToggle'
-import { Button } from '@/components/ui/button'
+import { Button } from '../ui/button'
 
 export function Header() {
   return (
