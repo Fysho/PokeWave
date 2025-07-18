@@ -394,22 +394,19 @@ class PokemonShowdownService {
       const turns = this.parseBattleLog(battleResult.outputs);
       const winner = battleResult.winner;
       
-      // If no turns were parsed, generate a simplified battle simulation
-      let finalTurns = turns;
-      let finalHP1 = 0;
-      let finalHP2 = 0;
-      
+      // If no turns were parsed, log error and throw
       if (turns.length === 0) {
-        logger.warn('No turns parsed from battle log, generating simplified battle');
-        // Generate a simplified battle for demonstration
-        const result = await this.generateSimplifiedBattle(
-          species1, species2, pokemon1Level, pokemon2Level, generation,
-          config.pokemon1Id, config.pokemon2Id
-        );
-        finalTurns = result.turns;
-        finalHP1 = result.finalHP1;
-        finalHP2 = result.finalHP2;
+        logger.error('Failed to parse battle turns from Pokemon Showdown simulation', {
+          pokemon1: species1.name,
+          pokemon2: species2.name,
+          outputLength: battleResult.outputs.length
+        });
+        throw new ApiError(500, 'Battle simulation failed - no turns were generated');
       }
+      
+      // Extract final HP from the last turn or set to 0 for the loser
+      const finalHP1 = winner === species1.name ? turns[turns.length - 1]?.remainingHP || 0 : 0;
+      const finalHP2 = winner === species2.name ? turns[turns.length - 1]?.remainingHP || 0 : 0;
       
       const executionTime = Date.now() - startTime;
 
@@ -419,8 +416,8 @@ class PokemonShowdownService {
 
       return {
         winner: winner || species1.name,
-        turns: finalTurns,
-        totalTurns: finalTurns.length,
+        turns: turns,
+        totalTurns: turns.length,
         finalHP1,
         finalHP2,
         executionTime,
@@ -453,28 +450,76 @@ class PokemonShowdownService {
     generation: number
   ): Promise<1 | 2> {
     try {
-      // For now, use a simplified calculation based on base stats
-      // This ensures battles work while we fix the full Showdown integration
-      const bst1 = Object.values(species1.baseStats).reduce((a, b) => a + b, 0);
-      const bst2 = Object.values(species2.baseStats).reduce((a, b) => a + b, 0);
+      const stream = new BattleStreams.BattleStream();
       
-      // Adjust for levels
-      const power1 = bst1 * (level1 / 50);
-      const power2 = bst2 * (level2 / 50);
+      // Create simple teams
+      const p1team = await this.createTeam(species1, level1, generation);
+      const p2team = await this.createTeam(species2, level2, generation);
       
-      // Add randomness
-      const random = Math.random();
-      const winChance = power1 / (power1 + power2);
+      // Start battle
+      await stream.write(`>start {"formatid":"gen${generation}singles","seed":[${Math.floor(Math.random() * 65536)},${Math.floor(Math.random() * 65536)},${Math.floor(Math.random() * 65536)},${Math.floor(Math.random() * 65536)}]}`);
+      await stream.write(`>player p1 {"name":"Player 1","team":"${p1team}"}`);
+      await stream.write(`>player p2 {"name":"Player 2","team":"${p2team}"}`);
       
-      return random < winChance ? 1 : 2;
+      let winner: 1 | 2 = 1;
+      let battleEnded = false;
+      let turnCount = 0;
+      const maxTurns = 50;
+      
+      // Process battle quickly
+      while (!battleEnded && turnCount < maxTurns) {
+        const chunk = await stream.read();
+        if (!chunk) continue;
+        
+        // Check for winner
+        if (chunk.includes('|win|')) {
+          battleEnded = true;
+          winner = chunk.includes('Player 1') ? 1 : 2;
+          break;
+        }
+        
+        // Handle team preview
+        if (chunk.includes('|teampreview')) {
+          await stream.write('>p1 team 1');
+          await stream.write('>p2 team 1');
+        }
+        
+        // Make random moves for both players
+        if (chunk.includes('|request|')) {
+          const lines = chunk.split('\n');
+          for (const line of lines) {
+            if (line.includes('p1') && line.includes('|request|')) {
+              await stream.write('>p1 move 1');
+            } else if (line.includes('p2') && line.includes('|request|')) {
+              await stream.write('>p2 move 1');
+            }
+          }
+        }
+        
+        if (chunk.includes('|turn|')) {
+          turnCount++;
+        }
+      }
+      
+      // Force end if battle takes too long
+      if (!battleEnded) {
+        // Determine winner based on base stats as fallback
+        const bst1 = Object.values(species1.baseStats).reduce((a, b) => a + b, 0);
+        const bst2 = Object.values(species2.baseStats).reduce((a, b) => a + b, 0);
+        winner = bst1 >= bst2 ? 1 : 2;
+      }
+      
+      return winner;
     } catch (error) {
       logger.error('Error in runSingleShowdownBattle:', {
         error: error instanceof Error ? error.message : error,
         species1: species1.name,
         species2: species2.name
       });
-      // Default to player 1 winning on error
-      return 1;
+      // Fallback to BST comparison on error
+      const bst1 = Object.values(species1.baseStats).reduce((a, b) => a + b, 0);
+      const bst2 = Object.values(species2.baseStats).reduce((a, b) => a + b, 0);
+      return bst1 >= bst2 ? 1 : 2;
     }
   }
 
@@ -514,115 +559,6 @@ class PokemonShowdownService {
     return team;
   }
 
-  private async generateSimplifiedBattle(
-    species1: Species,
-    species2: Species,
-    level1: number,
-    level2: number,
-    generation: number,
-    pokemon1Id: number,
-    pokemon2Id: number
-  ): Promise<{ turns: BattleTurn[], finalHP1: number, finalHP2: number }> {
-    const dex = Dex.forGen(generation);
-    const turns: BattleTurn[] = [];
-    
-    // Calculate stats
-    const stats1 = this.calculateStats(species1, level1);
-    const stats2 = this.calculateStats(species2, level2);
-    
-    logger.info(`Battle stats calculated - ${species1.name} (Lv.${level1}): HP=${stats1.hp}, ${species2.name} (Lv.${level2}): HP=${stats2.hp}`);
-    
-    let hp1 = stats1.hp;
-    let hp2 = stats2.hp;
-    let turn = 1;
-    
-    // Fetch moves from Pokemon data
-    const [pokemon1Data, pokemon2Data] = await this.fetchPokemonData(
-      pokemon1Id,
-      pokemon2Id
-    );
-    
-    // Use fetched moves or fall back to random moves
-    const moves1 = pokemon1Data?.moves?.length > 0 ? pokemon1Data.moves.slice(0, 4) : this.getRandomMoves(species1, dex, 4);
-    const moves2 = pokemon2Data?.moves?.length > 0 ? pokemon2Data.moves.slice(0, 4) : this.getRandomMoves(species2, dex, 4);
-    
-    logger.info(`Simplified battle using moves - ${species1.name}: ${moves1.join(', ')}, ${species2.name}: ${moves2.join(', ')}`);
-    
-    while (hp1 > 0 && hp2 > 0 && turn <= 20) {
-      // Determine who goes first based on speed
-      const p1First = stats1.speed >= stats2.speed;
-      
-      if (p1First && hp1 > 0) {
-        // Pokemon 1 attacks
-        const move = moves1[Math.floor(Math.random() * moves1.length)];
-        // More realistic damage calculation based on stats
-        const baseDamage = Math.floor((((2 * level1 / 5 + 2) * stats1.attack * 50 / stats2.defense) / 50 + 2) * (Math.random() * 0.15 + 0.85));
-        const critical = Math.random() < 0.0625;
-        const actualDamage = Math.floor(critical ? baseDamage * 1.5 : baseDamage);
-        hp2 = Math.max(0, hp2 - actualDamage);
-        
-        turns.push({
-          turn,
-          attacker: species1.name,
-          defender: species2.name,
-          move: move || 'Tackle',
-          damage: Math.floor(actualDamage),
-          remainingHP: Math.max(0, hp2),
-          critical,
-          effectiveness: 'normal'
-        });
-      }
-      
-      if (hp2 > 0) {
-        // Pokemon 2 attacks
-        const move = moves2[Math.floor(Math.random() * moves2.length)];
-        // More realistic damage calculation based on stats
-        const baseDamage = Math.floor((((2 * level2 / 5 + 2) * stats2.attack * 50 / stats1.defense) / 50 + 2) * (Math.random() * 0.15 + 0.85));
-        const critical = Math.random() < 0.0625;
-        const actualDamage = Math.floor(critical ? baseDamage * 1.5 : baseDamage);
-        hp1 = Math.max(0, hp1 - actualDamage);
-        
-        turns.push({
-          turn,
-          attacker: species2.name,
-          defender: species1.name,
-          move: move || 'Tackle',
-          damage: Math.floor(actualDamage),
-          remainingHP: Math.max(0, hp1),
-          critical,
-          effectiveness: 'normal'
-        });
-      }
-      
-      if (!p1First && hp1 > 0 && hp2 <= 0) {
-        // Pokemon 1 attacks if it hasn't yet and opponent fainted
-        const move = moves1[Math.floor(Math.random() * moves1.length)];
-        const damage = Math.floor(Math.random() * 30) + 20;
-        const critical = Math.random() < 0.0625;
-        const actualDamage = critical ? damage * 1.5 : damage;
-        hp2 = Math.max(0, hp2 - actualDamage);
-        
-        turns.push({
-          turn,
-          attacker: species1.name,
-          defender: species2.name,
-          move: move || 'Tackle',
-          damage: Math.floor(actualDamage),
-          remainingHP: 0,
-          critical,
-          effectiveness: 'normal'
-        });
-      }
-      
-      turn++;
-    }
-    
-    return {
-      turns,
-      finalHP1: Math.max(0, hp1),
-      finalHP2: Math.max(0, hp2)
-    };
-  }
 
   private getRandomMoves(species: Species, dex: any, count: number): string[] {
     const moves: string[] = [];
