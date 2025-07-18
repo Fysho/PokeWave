@@ -271,10 +271,6 @@ const BattleArena: React.FC = () => {
       const result = await submitGuess(guessPercentage);
       setGuessResult(result);
       setShowResults(true);
-      
-      setTimeout(() => {
-        generateNewBattle();
-      }, 5000);
     } catch (error) {
       console.error('Error submitting guess:', error);
     }
@@ -654,11 +650,21 @@ const BattleArena: React.FC = () => {
                             )}
                           </ResultReveal>
 
-                          <Group justify="center" gap="xs">
-                            <IconClock size={16} />
-                            <Text size="sm" c="dimmed">
-                              Simulation completed in {currentBattle.executionTime}ms
-                            </Text>
+                          <Group justify="center" gap="md">
+                            <Group gap="xs">
+                              <IconClock size={16} />
+                              <Text size="sm" c="dimmed">
+                                Simulation completed in {currentBattle.executionTime}ms
+                              </Text>
+                            </Group>
+                            <Button
+                              onClick={handleNewBattle}
+                              size="lg"
+                              leftSection={<IconRotateClockwise2 size={16} />}
+                              variant="filled"
+                            >
+                              Next Battle
+                            </Button>
                           </Group>
                         </Stack>
                       )}
