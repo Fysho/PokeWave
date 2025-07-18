@@ -22,13 +22,15 @@ interface PokemonBattleCardProps {
   showResults: boolean;
   position: 'left' | 'right';
   winPercentage?: number;
+  guessPercentage?: number;
 }
 
 const PokemonBattleCard: React.FC<PokemonBattleCardProps> = ({
   pokemon,
   showResults,
   position,
-  winPercentage
+  winPercentage,
+  guessPercentage
 }) => {
   const getTypeColor = (type: string): string => {
     const typeColors: { [key: string]: string } = {
@@ -56,6 +58,30 @@ const PokemonBattleCard: React.FC<PokemonBattleCardProps> = ({
 
   const displayWinPercentage = winPercentage !== undefined ? winPercentage.toFixed(1) : showResults ? ((pokemon.wins / 1000) * 100).toFixed(1) : null;
 
+  // Calculate dynamic sprite size based on guess percentage
+  const calculateSpriteSize = () => {
+    if (!guessPercentage || showResults) return 160; // Default size when not guessing or showing results
+    
+    const baseSize = 160;
+    const minSize = 120;
+    const maxSize = 200;
+    
+    // For left pokemon (position === 'left'), size increases with guessPercentage
+    // For right pokemon (position === 'right'), size decreases with guessPercentage
+    const percentage = position === 'left' ? guessPercentage : (100 - guessPercentage);
+    
+    // Scale the size based on percentage (0-100)
+    // At 50%, both should be base size (160px)
+    // At 0%, size should be minSize (120px)
+    // At 100%, size should be maxSize (200px)
+    const scaleFactor = percentage / 100;
+    const size = minSize + (maxSize - minSize) * scaleFactor;
+    
+    return Math.round(size);
+  };
+
+  const spriteSize = calculateSpriteSize();
+
   return (
     <SlideIn 
       direction={position === 'left' ? 'left' : 'right'} 
@@ -77,12 +103,12 @@ const PokemonBattleCard: React.FC<PokemonBattleCardProps> = ({
                   alt={pokemon.name}
                   className="pokemon-sprite"
                   style={{
-                    width: '160px',
-                    height: '160px',
+                    width: `${spriteSize}px`,
+                    height: `${spriteSize}px`,
                     objectFit: 'contain',
                     margin: '0 auto',
                     filter: 'drop-shadow(0 25px 25px rgb(0 0 0 / 0.15))',
-                    transition: 'transform 0.3s ease',
+                    transition: 'transform 0.3s ease, width 0.3s ease, height 0.3s ease',
                     cursor: 'pointer'
                   }}
                   onMouseEnter={(e: React.MouseEvent<HTMLImageElement>) => (e.currentTarget.style.transform = 'scale(1.1)')}
@@ -110,13 +136,14 @@ const PokemonBattleCard: React.FC<PokemonBattleCardProps> = ({
               </Box>
             ) : (
               <Box 
-                w={160} 
-                h={160} 
+                w={spriteSize} 
+                h={spriteSize} 
                 bg="gray.1" 
                 mx="auto"
                 style={{ 
                   borderRadius: '8px',
                   display: 'flex',
+                  transition: 'width 0.3s ease, height 0.3s ease',
                   alignItems: 'center', 
                   justifyContent: 'center'
                 }}
@@ -516,6 +543,7 @@ const BattleArena: React.FC = () => {
                           showResults={showResults}
                           position="left"
                           winPercentage={showResults ? guessResult?.actualWinRate : undefined}
+                          guessPercentage={!showResults ? guessPercentage : undefined}
                         />
                       </Grid.Col>
 
@@ -558,6 +586,7 @@ const BattleArena: React.FC = () => {
                           showResults={showResults}
                           position="right"
                           winPercentage={showResults ? (100 - (guessResult?.actualWinRate || 0)) : undefined}
+                          guessPercentage={!showResults ? guessPercentage : undefined}
                         />
                       </Grid.Col>
                     </Grid>
