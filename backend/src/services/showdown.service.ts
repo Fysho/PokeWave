@@ -198,7 +198,22 @@ class ShowdownService {
     
     // Add some randomness and type effectiveness simulation
     const typeAdvantage = this.getTypeAdvantage(pokemon1, pokemon2);
-    const adjustedWinRate = Math.max(0.1, Math.min(0.9, statRatio + typeAdvantage));
+    const adjustedWinRate = Math.max(0.01, Math.min(0.99, statRatio + typeAdvantage));
+
+    // Debug logging for extreme level differences
+    if (Math.abs(pokemon1Level - pokemon2Level) > 50) {
+      logger.info(`Battle simulation debug:`, {
+        pokemon1: `${pokemon1.name} (Level ${pokemon1Level})`,
+        pokemon2: `${pokemon2.name} (Level ${pokemon2Level})`,
+        p1Stats,
+        p2Stats,
+        p1Total,
+        p2Total,
+        statRatio,
+        typeAdvantage,
+        adjustedWinRate: adjustedWinRate.toFixed(3)
+      });
+    }
 
     // Simulate 1000 battles
     let pokemon1Wins = 0;
@@ -217,16 +232,30 @@ class ShowdownService {
   }
 
   private calculateEffectiveStats(pokemon: any, level: number): any {
-    // Calculate level-adjusted stats
-    const levelMultiplier = level / 50; // Normalize to level 50
+    // More realistic Pokemon stat calculation
+    // Formula: ((2 * baseStat + IV + (EV / 4)) * level / 100) + 5
+    // Simplified: assume average IV (15) and no EVs for fairness
+    const IV = 15; // Average IV
+    const EV = 0;  // No EVs for simplicity
+    
+    const calculateStat = (baseStat: number, isHP: boolean = false) => {
+      let stat = Math.floor(((2 * baseStat + IV + (EV / 4)) * level / 100) + 5);
+      
+      // HP has a different formula: add level + 5 instead of just + 5
+      if (isHP) {
+        stat = Math.floor(((2 * baseStat + IV + (EV / 4)) * level / 100) + level + 10);
+      }
+      
+      return Math.max(1, stat); // Minimum stat of 1
+    };
     
     return {
-      hp: Math.floor(pokemon.baseStats.hp * levelMultiplier),
-      attack: Math.floor(pokemon.baseStats.atk * levelMultiplier),
-      defense: Math.floor(pokemon.baseStats.def * levelMultiplier),
-      specialAttack: Math.floor(pokemon.baseStats.spa * levelMultiplier),
-      specialDefense: Math.floor(pokemon.baseStats.spd * levelMultiplier),
-      speed: Math.floor(pokemon.baseStats.spe * levelMultiplier)
+      hp: calculateStat(pokemon.baseStats.hp, true),
+      attack: calculateStat(pokemon.baseStats.atk),
+      defense: calculateStat(pokemon.baseStats.def),
+      specialAttack: calculateStat(pokemon.baseStats.spa),
+      specialDefense: calculateStat(pokemon.baseStats.spd),
+      speed: calculateStat(pokemon.baseStats.spe)
     };
   }
 
