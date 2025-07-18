@@ -403,7 +403,8 @@ class PokemonShowdownService {
         logger.warn('No turns parsed from battle log, generating simplified battle');
         // Generate a simplified battle for demonstration
         const result = await this.generateSimplifiedBattle(
-          species1, species2, pokemon1Level, pokemon2Level, generation
+          species1, species2, pokemon1Level, pokemon2Level, generation,
+          config.pokemon1Id, config.pokemon2Id
         );
         finalTurns = result.turns;
         finalHP1 = result.finalHP1;
@@ -518,7 +519,9 @@ class PokemonShowdownService {
     species2: Species,
     level1: number,
     level2: number,
-    generation: number
+    generation: number,
+    pokemon1Id: number,
+    pokemon2Id: number
   ): Promise<{ turns: BattleTurn[], finalHP1: number, finalHP2: number }> {
     const dex = Dex.forGen(generation);
     const turns: BattleTurn[] = [];
@@ -531,10 +534,17 @@ class PokemonShowdownService {
     let hp2 = stats2.hp;
     let turn = 1;
     
-    // Get some moves for each Pokemon
-    // Note: This is a simplified battle, moves would need to be passed in for full accuracy
-    const moves1 = this.getRandomMoves(species1, dex, 4);
-    const moves2 = this.getRandomMoves(species2, dex, 4);
+    // Fetch moves from Pokemon data
+    const [pokemon1Data, pokemon2Data] = await this.fetchPokemonData(
+      pokemon1Id,
+      pokemon2Id
+    );
+    
+    // Use fetched moves or fall back to random moves
+    const moves1 = pokemon1Data?.moves?.length > 0 ? pokemon1Data.moves.slice(0, 4) : this.getRandomMoves(species1, dex, 4);
+    const moves2 = pokemon2Data?.moves?.length > 0 ? pokemon2Data.moves.slice(0, 4) : this.getRandomMoves(species2, dex, 4);
+    
+    logger.info(`Simplified battle using moves - ${species1.name}: ${moves1.join(', ')}, ${species2.name}: ${moves2.join(', ')}`);
     
     while (hp1 > 0 && hp2 > 0 && turn <= 20) {
       // Determine who goes first based on speed
