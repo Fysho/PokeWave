@@ -34,6 +34,26 @@ const PokemonBattleCard: React.FC<PokemonBattleCardProps> = ({
 }) => {
   const theme = useMantineTheme();
   const { colorScheme } = useMantineColorScheme();
+  const formatItemName = (item: string): string => {
+    // Map of item IDs to proper display names
+    const itemNames: { [key: string]: string } = {
+      'leftovers': 'Leftovers',
+      'choiceband': 'Choice Band',
+      'choicescarf': 'Choice Scarf',
+      'choicespecs': 'Choice Specs',
+      'lifeorb': 'Life Orb',
+      'focussash': 'Focus Sash',
+      'assaultvest': 'Assault Vest',
+      'eviolite': 'Eviolite',
+      'blacksludge': 'Black Sludge',
+      'rockyhelmet': 'Rocky Helmet',
+      'lightclay': 'Light Clay',
+      'sitrusberry': 'Sitrus Berry'
+    };
+    
+    return itemNames[item.toLowerCase()] || item.replace(/([A-Z])/g, ' $1').trim();
+  };
+
   const getTypeColor = (type: string): string => {
     const typeColors: { [key: string]: string } = {
       normal: 'gray',
@@ -62,20 +82,20 @@ const PokemonBattleCard: React.FC<PokemonBattleCardProps> = ({
 
   // Calculate dynamic sprite size based on guess percentage
   const calculateSpriteSize = () => {
-    if (guessPercentage === undefined || guessPercentage === null || showResults) return 160; // Default size when showing results
+    if (guessPercentage === undefined || guessPercentage === null || showResults) return 320; // Default size when showing results (2x bigger)
     
-    const baseSize = 160;
-    const minSize = 120;
-    const maxSize = 200;
+    const baseSize = 320; // 2x bigger (was 160)
+    const minSize = 240; // 2x bigger (was 120)
+    const maxSize = 400; // 2x bigger (was 200)
     
     // For left pokemon (position === 'left'), size increases with guessPercentage
     // For right pokemon (position === 'right'), size decreases with guessPercentage
     const percentage = position === 'left' ? guessPercentage : (100 - guessPercentage);
     
     // Scale the size based on percentage (0-100)
-    // At 50%, both should be base size (160px)
-    // At 0%, size should be minSize (120px)
-    // At 100%, size should be maxSize (200px)
+    // At 50%, both should be base size (320px)
+    // At 0%, size should be minSize (240px)
+    // At 100%, size should be maxSize (400px)
     const scaleFactor = percentage / 100;
     const size = minSize + (maxSize - minSize) * scaleFactor;
     
@@ -102,7 +122,7 @@ const PokemonBattleCard: React.FC<PokemonBattleCardProps> = ({
             ta="center" 
             mb="md"
             style={{
-              height: '220px', // Fixed height container to prevent UI shifting
+              height: '440px', // Fixed height container to prevent UI shifting (2x bigger)
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center'
@@ -229,19 +249,36 @@ const PokemonBattleCard: React.FC<PokemonBattleCardProps> = ({
                   {pokemon.ability}
                 </Badge>
               )}
-              <Badge
-                variant="outline"
-                size="md"
-                color="gray"
-                leftSection={<IconStar size={14} />}
-                style={{ 
-                  fontSize: '13px',
-                  fontWeight: 500,
-                  padding: '6px 12px'
-                }}
-              >
-                No Item
-              </Badge>
+              {pokemon.item ? (
+                <Badge
+                  variant="outline"
+                  size="md"
+                  color="teal"
+                  leftSection={<IconStar size={14} />}
+                  tt="capitalize"
+                  style={{ 
+                    fontSize: '13px',
+                    fontWeight: 500,
+                    padding: '6px 12px'
+                  }}
+                >
+                  {formatItemName(pokemon.item)}
+                </Badge>
+              ) : (
+                <Badge
+                  variant="outline"
+                  size="md"
+                  color="gray"
+                  leftSection={<IconStar size={14} />}
+                  style={{ 
+                    fontSize: '13px',
+                    fontWeight: 500,
+                    padding: '6px 12px'
+                  }}
+                >
+                  No Item
+                </Badge>
+              )}
             </Group>
 
             {/* Moves */}
