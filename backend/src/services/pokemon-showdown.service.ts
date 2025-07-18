@@ -99,7 +99,7 @@ interface SingleBattleResult {
 }
 
 class PokemonShowdownService {
-  private readonly NUM_BATTLES = 1000; // Number of battles to simulate
+  private readonly NUM_BATTLES = 10; // Number of battles to simulate
 
   async simulateBattle(config: ShowdownBattleConfig): Promise<ShowdownBattleResult> {
     const startTime = Date.now();
@@ -153,7 +153,7 @@ class PokemonShowdownService {
       logger.info(`Starting ${this.NUM_BATTLES} battle simulations`);
 
       for (let i = 0; i < this.NUM_BATTLES; i++) {
-        if (i % 100 === 0) {
+        if (i % 5 === 0 && i > 0) {
           logger.info(`Progress: ${i}/${this.NUM_BATTLES} battles completed`);
         }
         

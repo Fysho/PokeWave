@@ -1,7 +1,7 @@
 # PokeWave Project Context
 
 ## Project Overview
-PokeWave is a web-based Pokemon battle prediction game where users predict the winner of simulated battles between randomly selected Pokemon. The system uses Pokemon Showdown's battle engine to simulate 1000 battles between two Pokemon and challenges users to correctly identify which Pokemon will win.
+PokeWave is a web-based Pokemon battle prediction game where users predict the winner of simulated battles between randomly selected Pokemon. The system uses Pokemon Showdown's battle engine to simulate 10 battles between two Pokemon and challenges users to correctly identify which Pokemon will win.
 
 ## Implementation Status
 
@@ -27,7 +27,7 @@ PokeWave is a web-based Pokemon battle prediction game where users predict the w
 
 ## Game Flow
 1. **Battle Generation**: System selects two random Pokemon (Gen 1-151)
-2. **Battle Simulation**: Pokemon Showdown engine simulates 1000 battles
+2. **Battle Simulation**: Pokemon Showdown engine simulates 10 battles
 3. **User Prediction**: User predicts win percentage using a slider (within 10% accuracy required)
 4. **Result Feedback**: System shows correct/incorrect with accuracy percentage and points
 5. **Score Tracking**: Points, streak, accuracy, and total battles are tracked
@@ -44,7 +44,7 @@ PokeWave is a web-based Pokemon battle prediction game where users predict the w
 - **API Endpoints**:
   - `GET /health` - Health check
   - `GET /api/pokemon/random` - Random Pokemon data
-  - `POST /api/battle/simulate` - Simulate 1000 battles between two Pokemon
+  - `POST /api/battle/simulate` - Simulate 10 battles between two Pokemon
   - `POST /api/battle/guess` - Submit Pokemon selection guess
 - **Caching**: Redis integration with graceful fallback
 - **Error Handling**: Comprehensive middleware with proper HTTP status codes
@@ -88,7 +88,7 @@ User Interaction → Frontend (React) → API Service (Axios) → Backend (Expre
                                                               ↓
 Pokemon Showdown Simulation ← Battle Service ← API Controller
                     ↓                              ↓
-1000 Battle Results → Cache → Frontend Display → Pokemon Service → PokeAPI
+10 Battle Results → Cache → Frontend Display → Pokemon Service → PokeAPI
                     ↓                              ↓
               Battle History → Streak Tracking → User Feedback + Celebrations
 ```
@@ -208,7 +208,7 @@ Response:
       "shiny": "https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/shiny/4.png"
     }
   },
-  "totalBattles": 1000,
+  "totalBattles": 10,
   "winRate": 41.8,
   "executionTime": 12
 }
@@ -244,7 +244,7 @@ Response:
 - **Accuracy Calculation**: Percentage of correct guesses over time
 
 ## Known Working Features
-- ✅ Real Pokemon battle simulation with 1000 battles
+- ✅ Real Pokemon battle simulation with 10 battles
 - ✅ Interactive Pokemon cards with sprites and types
 - ✅ Percentage-based prediction system with slider
 - ✅ 10% accuracy requirement for scoring
