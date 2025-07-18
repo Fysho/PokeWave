@@ -99,7 +99,7 @@ interface SingleBattleResult {
 }
 
 class PokemonShowdownService {
-  private readonly NUM_BATTLES = 1000;
+  private readonly NUM_BATTLES = 10; // Reduced for testing
 
   async simulateBattle(config: ShowdownBattleConfig): Promise<ShowdownBattleResult> {
     const startTime = Date.now();
@@ -123,8 +123,19 @@ class PokemonShowdownService {
       const species2 = this.getSpeciesById(dex, config.pokemon2Id);
 
       if (!species1 || !species2) {
-        throw new ApiError(400, 'Invalid Pokemon IDs provided');
+        logger.error('Pokemon not found', {
+          pokemon1Id: config.pokemon1Id,
+          pokemon2Id: config.pokemon2Id,
+          species1Found: !!species1,
+          species2Found: !!species2
+        });
+        throw new ApiError(400, `Invalid Pokemon IDs provided: ${config.pokemon1Id}, ${config.pokemon2Id}`);
       }
+
+      logger.info('Pokemon species found', {
+        species1: species1.name,
+        species2: species2.name
+      });
 
       // Fetch additional Pokemon data
       const [pokemon1Data, pokemon2Data] = await this.fetchPokemonData(
@@ -139,7 +150,13 @@ class PokemonShowdownService {
       let pokemon1Wins = 0;
       let pokemon2Wins = 0;
 
+      logger.info(`Starting ${this.NUM_BATTLES} battle simulations`);
+
       for (let i = 0; i < this.NUM_BATTLES; i++) {
+        if (i % 100 === 0) {
+          logger.info(`Progress: ${i}/${this.NUM_BATTLES} battles completed`);
+        }
+        
         const winner = await this.runSingleShowdownBattle(
           species1,
           species2,
@@ -218,8 +235,19 @@ class PokemonShowdownService {
       const species2 = this.getSpeciesById(dex, config.pokemon2Id);
 
       if (!species1 || !species2) {
-        throw new ApiError(400, 'Invalid Pokemon IDs provided');
+        logger.error('Pokemon not found', {
+          pokemon1Id: config.pokemon1Id,
+          pokemon2Id: config.pokemon2Id,
+          species1Found: !!species1,
+          species2Found: !!species2
+        });
+        throw new ApiError(400, `Invalid Pokemon IDs provided: ${config.pokemon1Id}, ${config.pokemon2Id}`);
       }
+
+      logger.info('Pokemon species found', {
+        species1: species1.name,
+        species2: species2.name
+      });
 
       const pokemon1Level = config.options?.pokemon1Level || 50;
       const pokemon2Level = config.options?.pokemon2Level || 50;
@@ -251,19 +279,38 @@ class PokemonShowdownService {
       let turn = 0;
       const maxTurns = 100;
 
+      // First handle team preview
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      for (const output of outputs) {
+        if (output.includes('|teampreview')) {
+          stream.write('>p1 team 1');
+          stream.write('>p2 team 1');
+          await new Promise(resolve => setTimeout(resolve, 100));
+          break;
+        }
+      }
+
       while (!battleEnded && turn < maxTurns) {
-        // Process outputs to check for requests
-        for (const output of outputs) {
-          if (output.startsWith('|request|')) {
-            const parts = output.split('|');
-            const playerIndex = output.includes('>p1') ? 1 : 2;
-            const requestData = parts[2];
+        // Process the latest outputs to check for requests
+        const newOutputs = outputs.slice(); // Get current outputs
+        
+        for (const output of newOutputs) {
+          if (output.includes('sideupdate') && output.includes('|request|')) {
+            // Parse sideupdate format
+            const lines = output.split('\n');
+            const playerLine = lines[0]; // 'p1' or 'p2'
+            const requestLine = lines.find(l => l.startsWith('|request|'));
             
-            if (requestData) {
+            if (requestLine) {
+              const requestData = requestLine.split('|')[2];
               try {
                 const request = JSON.parse(requestData);
-                if (playerIndex === 1) p1Request = request;
-                else p2Request = request;
+                if (playerLine === 'p1') {
+                  p1Request = request;
+                } else if (playerLine === 'p2') {
+                  p2Request = request;
+                }
               } catch (e) {
                 // Not JSON, skip
               }
@@ -274,22 +321,30 @@ class PokemonShowdownService {
         }
 
         // Make moves based on requests
-        if (p1Request && p1Request.active) {
-          const choice = this.makeRandomChoice(p1Request);
-          stream.write(`>p1 ${choice}`);
+        if (p1Request) {
+          if (p1Request.teamPreview) {
+            stream.write('>p1 team 1');
+          } else if (p1Request.active) {
+            const choice = this.makeRandomChoice(p1Request);
+            stream.write(`>p1 ${choice}`);
+          }
           p1Request = null;
         }
 
-        if (p2Request && p2Request.active) {
-          const choice = this.makeRandomChoice(p2Request);
-          stream.write(`>p2 ${choice}`);
+        if (p2Request) {
+          if (p2Request.teamPreview) {
+            stream.write('>p2 team 1');
+          } else if (p2Request.active) {
+            const choice = this.makeRandomChoice(p2Request);
+            stream.write(`>p2 ${choice}`);
+          }
           p2Request = null;
         }
 
         turn++;
         
         // Give the stream time to process
-        await new Promise(resolve => setTimeout(resolve, 10));
+        await new Promise(resolve => setTimeout(resolve, 50));
       }
 
       // Force end if needed
@@ -338,19 +393,20 @@ class PokemonShowdownService {
     level2: number,
     generation: number
   ): Promise<1 | 2> {
-    const stream = new BattleStreams.BattleStream();
-    const outputs: string[] = [];
-    let winner: 1 | 2 = 1;
+    try {
+      const stream = new BattleStreams.BattleStream();
+      const outputs: string[] = [];
+      let winner: 1 | 2 = 1;
 
-    // Capture outputs
-    void (async () => {
-      for await (const output of stream) {
-        outputs.push(output);
-        if (output.includes('|win|')) {
-          winner = output.includes('Player 1') ? 1 : 2;
+      // Capture outputs
+      void (async () => {
+        for await (const output of stream) {
+          outputs.push(output);
+          if (output.includes('|win|')) {
+            winner = output.includes('Player 1') ? 1 : 2;
+          }
         }
-      }
-    })();
+      })();
 
     // Create teams
     const p1team = this.createTeam(species1, level1, generation);
@@ -361,6 +417,19 @@ class PokemonShowdownService {
     stream.write(`>player p1 {"name":"Player 1","team":"${p1team}"}`);
     stream.write(`>player p2 {"name":"Player 2","team":"${p2team}"}`);
 
+    // Wait for initial output
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
+    // Handle team preview first
+    for (const output of outputs) {
+      if (output.includes('|teampreview')) {
+        stream.write('>p1 team 1');
+        stream.write('>p2 team 1');
+        await new Promise(resolve => setTimeout(resolve, 50));
+        break;
+      }
+    }
+    
     // Simple AI loop
     let battleEnded = false;
     let turn = 0;
@@ -378,10 +447,14 @@ class PokemonShowdownService {
       stream.write(`>p2 move ${Math.floor(Math.random() * 4) + 1}`);
       
       turn++;
-      await new Promise(resolve => setTimeout(resolve, 10));
+      await new Promise(resolve => setTimeout(resolve, 50));
     }
 
     return winner;
+    } catch (error) {
+      logger.error('Error in runSingleShowdownBattle:', error);
+      throw error;
+    }
   }
 
   private createTeam(species: Species, level: number, generation: number): string {
@@ -582,14 +655,16 @@ class PokemonShowdownService {
   }
 
   private getSpeciesById(dex: any, id: number): Species | null {
-    // Try by ID first
-    let species = dex.species.get(String(id));
-    if (species && species.exists) return species;
-    
-    // Try by national dex number
+    // Try by national dex number first
     const allSpecies = dex.species.all();
     const found = allSpecies.find((s: Species) => s.num === id);
-    return found || null;
+    if (found) return found;
+    
+    // Fallback to trying by ID string
+    const species = dex.species.get(String(id));
+    if (species && species.exists) return species;
+    
+    return null;
   }
 
   private async fetchPokemonData(id1: number, id2: number) {
