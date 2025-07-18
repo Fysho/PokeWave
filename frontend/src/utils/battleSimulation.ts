@@ -69,7 +69,7 @@ function createTeamString(species: any, level: number, dex: any): string {
   
   // Basic team format: name|item|ability|moves|nature|evs|ivs|level
   // Simplified version with just name, ability, moves, and level
-  const ability = species.abilities[0] || 'pressure';
+  const ability = species.abilities ? (species.abilities[0] || species.abilities['0'] || 'pressure') : 'pressure';
   return `${species.name}||${ability}|${movesStr}|||${level}`;
 }
 
@@ -177,6 +177,19 @@ function extractPokemonName(str: string): string {
   return match ? match[1] : str;
 }
 
+function getSpeciesById(dex: any, id: number): any {
+  // Try by national dex number first
+  const allSpecies = dex.species.all();
+  const found = allSpecies.find((s: any) => s.num === id);
+  if (found) return found;
+  
+  // Fallback to trying by ID string
+  const species = dex.species.get(String(id));
+  if (species && species.exists) return species;
+  
+  return null;
+}
+
 export async function simulateSingleBattle(
   pokemon1Id: number,
   pokemon2Id: number,
@@ -192,9 +205,16 @@ export async function simulateSingleBattle(
     const generation = options?.generation || 9;
     const dex = Dex.forGen(generation);
     
-    // Get Pokemon species
-    const species1 = dex.species.get(pokemon1Id);
-    const species2 = dex.species.get(pokemon2Id);
+    // Get Pokemon species using the same logic as backend
+    const species1 = getSpeciesById(dex, pokemon1Id);
+    const species2 = getSpeciesById(dex, pokemon2Id);
+    
+    console.log('Species lookup:', {
+      pokemon1Id,
+      pokemon2Id,
+      species1: species1 ? { name: species1.name, num: species1.num } : null,
+      species2: species2 ? { name: species2.name, num: species2.num } : null
+    });
     
     if (!species1 || !species2) {
       throw new Error(`Invalid Pokemon IDs: ${pokemon1Id}, ${pokemon2Id}`);
