@@ -62,10 +62,35 @@
     background-color: hsl(var(--background));
     color: hsl(var(--foreground));
     min-height: 100vh;
+    transition: background-color 0.3s ease, color 0.3s ease;
   }
   
   #root {
     min-height: 100vh;
     background-color: hsl(var(--background));
+    transition: background-color 0.3s ease;
+  }
+  
+  /* Force theme application */
+  .dark,
+  .dark body,
+  .dark #root {
+    background-color: hsl(222.2 84% 4.9%) !important;
+    color: hsl(210 40% 98%) !important;
+  }
+  
+  .light,
+  .light body,
+  .light #root {
+    background-color: hsl(0 0% 100%) !important;
+    color: hsl(222.2 84% 4.9%) !important;
+  }
+  
+  /* Default state should match light theme */
+  html,
+  body,
+  #root {
+    background-color: hsl(0 0% 100%);
+    color: hsl(222.2 84% 4.9%);
   }
 }
