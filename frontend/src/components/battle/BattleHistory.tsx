@@ -82,7 +82,7 @@ const BattleHistory: React.FC<BattleHistoryProps> = ({
     <FadeIn className={`space-y-4 ${className}`}>
       {/* Summary Stats */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-        <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900">
+        <Card className="bg-blue-500/10 border-blue-500/20">
           <CardContent className="p-4 text-center">
             <div className="flex items-center justify-center space-x-2 mb-2">
               <Trophy className="h-4 w-4 text-blue-600" />
@@ -94,7 +94,7 @@ const BattleHistory: React.FC<BattleHistoryProps> = ({
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950 dark:to-green-900">
+        <Card className="bg-green-500/10 border-green-500/20">
           <CardContent className="p-4 text-center">
             <div className="flex items-center justify-center space-x-2 mb-2">
               <Target className="h-4 w-4 text-green-600" />
@@ -135,7 +135,7 @@ const BattleHistory: React.FC<BattleHistoryProps> = ({
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950 dark:to-purple-900">
+        <Card className="bg-purple-500/10 border-purple-500/20">
           <CardContent className="p-4 text-center">
             <div className="flex items-center justify-center space-x-2 mb-2">
               <TrendingUp className="h-4 w-4 text-purple-600" />
@@ -152,7 +152,7 @@ const BattleHistory: React.FC<BattleHistoryProps> = ({
           </CardContent>
         </Card>
 
-        <Card className="bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-950 dark:to-orange-900">
+        <Card className="bg-orange-500/10 border-orange-500/20">
           <CardContent className="p-4 text-center">
             <div className="flex items-center justify-center space-x-2 mb-2">
               <Clock className="h-4 w-4 text-orange-600" />
@@ -207,8 +207,8 @@ const BattleHistory: React.FC<BattleHistoryProps> = ({
                       delay={index * 0.05}
                       className={`p-4 rounded-lg border-2 transition-all relative ${
                         entry.isCorrect
-                          ? 'bg-green-50 border-green-200 dark:bg-green-950 dark:border-green-800'
-                          : 'bg-red-50 border-red-200 dark:bg-red-950 dark:border-red-800'
+                          ? 'bg-green-500/10 border-green-500/20'
+                          : 'bg-red-500/10 border-red-500/20'
                       } ${isPartOfStreak ? 'ring-2 ring-red-300 dark:ring-red-700' : ''}`}
                     >
                     <div className="flex items-center justify-between mb-2">

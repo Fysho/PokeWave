@@ -4,7 +4,7 @@ import GameDashboard from './components/game/GameDashboard'
 
 function App() {
   return (
-    <ThemeProvider defaultTheme="system" storageKey="pokewave-theme">
+    <ThemeProvider defaultTheme="system" storageKey="pokewave-theme" attribute="class" enableSystem disableTransitionOnChange>
       <Router>
         <Routes>
           <Route path="/" element={<GameDashboard />} />

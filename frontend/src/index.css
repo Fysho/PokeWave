@@ -53,8 +53,19 @@
   * {
     border-color: hsl(var(--border));
   }
+  
+  html {
+    background-color: hsl(var(--background));
+  }
+  
   body {
     background-color: hsl(var(--background));
     color: hsl(var(--foreground));
+    min-height: 100vh;
+  }
+  
+  #root {
+    min-height: 100vh;
+    background-color: hsl(var(--background));
   }
 }
