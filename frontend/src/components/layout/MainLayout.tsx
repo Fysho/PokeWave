@@ -39,6 +39,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({
     setBattleSettings, 
     toggleSettingsPanel,
     toggleSimulationPanel,
+    setSimulationPanelExpanded,
     setBattleSimulation,
     setIsSimulating
   } = useSettingsStore();
@@ -46,7 +47,16 @@ const MainLayout: React.FC<MainLayoutProps> = ({
   const { currentBattle } = useGameStore();
 
   const handleSimulateBattle = async () => {
-    if (!currentBattle) return;
+    if (!currentBattle) {
+      console.log('No current battle available');
+      return;
+    }
+    
+    console.log('Starting battle simulation', {
+      pokemon1: currentBattle.pokemon1,
+      pokemon2: currentBattle.pokemon2,
+      settings: battleSettings
+    });
     
     setIsSimulating(true);
     try {
@@ -55,7 +65,12 @@ const MainLayout: React.FC<MainLayoutProps> = ({
         currentBattle.pokemon2.id,
         battleSettings
       );
+      console.log('Battle simulation result:', result);
       setBattleSimulation(result);
+      // Auto-expand the simulation panel to show results
+      if (!isSimulationPanelExpanded) {
+        setSimulationPanelExpanded(true);
+      }
     } catch (error) {
       console.error('Error simulating battle:', error);
     } finally {

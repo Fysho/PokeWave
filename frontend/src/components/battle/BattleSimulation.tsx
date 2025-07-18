@@ -61,6 +61,16 @@ const BattleSimulation: React.FC<BattleSimulationProps> = ({
   simulation,
   isSimulating
 }) => {
+  // Debug logging
+  React.useEffect(() => {
+    console.log('BattleSimulation props:', {
+      isExpanded,
+      pokemon1,
+      pokemon2,
+      simulation,
+      isSimulating
+    });
+  }, [isExpanded, pokemon1, pokemon2, simulation, isSimulating]);
   const getEffectivenessIcon = (effectiveness: string) => {
     switch (effectiveness) {
       case 'super':
@@ -199,7 +209,7 @@ const BattleSimulation: React.FC<BattleSimulationProps> = ({
                     
                     <Group justify="space-between">
                       <Text size="xs" c="dimmed">
-                        Duration: {simulation.duration}ms
+                        Duration: {simulation.executionTime}ms
                       </Text>
                       <Text size="xs" c="dimmed">
                         {simulation.totalTurns} turns
