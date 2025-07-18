@@ -1,5 +1,5 @@
 import { Dex, Species } from '@pkmn/dex';
-import { BattleStreams, Teams } from '@pkmn/sim';
+import { Teams, BattleStreams } from '@pkmn/sim';
 import { cacheService } from './cache.service';
 import { pokemonService } from './pokemon.service';
 import logger from '../utils/logger';
@@ -265,7 +265,7 @@ class PokemonShowdownService {
       const p2team = await this.createTeam(species2, pokemon2Level, generation);
 
       // Run battle and collect outputs
-      const battleResult = await new Promise<{ outputs: string[], winner: string }>((resolve) => {
+      const battleResult = await new Promise<{ outputs: string[], winner: string }>(async (resolve) => {
         let p1Request: any = null;
         let p2Request: any = null;
         let battleEnded = false;
@@ -273,10 +273,14 @@ class PokemonShowdownService {
         let turn = 0;
         const maxTurns = 100;
 
-        // Setup event handling without async iteration
-        const processOutput = () => {
-          let chunk: string | null;
-          while ((chunk = (stream as any).read()) !== null) {
+        // Process outputs using async reading
+        const processOutput = async () => {
+          let chunk: string | null | undefined;
+          
+          // Use the stream's read method directly
+          chunk = await stream.read();
+          
+          while (chunk !== null && chunk !== undefined) {
             outputs.push(chunk);
             
             // Check for battle end
@@ -313,48 +317,58 @@ class PokemonShowdownService {
             
             // Handle team preview
             if (chunk.includes('|teampreview')) {
-              stream.write('>p1 team 1');
-              stream.write('>p2 team 1');
+              await stream.write('>p1 team 1');
+              await stream.write('>p2 team 1');
             }
-          }
-          
-          // Make moves based on requests
-          if (p1Request) {
-            if (p1Request.teamPreview) {
-              stream.write('>p1 team 1');
-            } else if (p1Request.active) {
-              const choice = this.makeRandomChoice(p1Request);
-              stream.write(`>p1 ${choice}`);
+            
+            // Make moves based on requests
+            if (p1Request) {
+              if (p1Request.teamPreview) {
+                await stream.write('>p1 team 1');
+              } else if (p1Request.active) {
+                const choice = this.makeRandomChoice(p1Request);
+                await stream.write(`>p1 ${choice}`);
+              }
+              p1Request = null;
             }
-            p1Request = null;
-          }
-          
-          if (p2Request) {
-            if (p2Request.teamPreview) {
-              stream.write('>p2 team 1');
-            } else if (p2Request.active) {
-              const choice = this.makeRandomChoice(p2Request);
-              stream.write(`>p2 ${choice}`);
+            
+            if (p2Request) {
+              if (p2Request.teamPreview) {
+                await stream.write('>p2 team 1');
+              } else if (p2Request.active) {
+                const choice = this.makeRandomChoice(p2Request);
+                await stream.write(`>p2 ${choice}`);
+              }
+              p2Request = null;
             }
-            p2Request = null;
-          }
-          
-          turn++;
-          if (turn > maxTurns && !battleEnded) {
-            stream.write('>forcewin p1');
+            
+            turn++;
+            if (turn > maxTurns && !battleEnded) {
+              await stream.write('>forcewin p1');
+            }
+            
+            // Read next chunk
+            chunk = await stream.read();
           }
         };
 
-        // Set up readable event handler
-        (stream as any).on('readable', processOutput);
-        
         // Start battle
-        stream.write(`>start {"formatid":"gen${generation}customgame"}`);
-        stream.write(`>player p1 {"name":"Player 1","team":"${p1team}"}`);
-        stream.write(`>player p2 {"name":"Player 2","team":"${p2team}"}`);
+        await stream.write(`>start {"formatid":"gen${generation}customgame"}`);
+        await stream.write(`>player p1 {"name":"Player 1","team":"${p1team}"}`);
+        await stream.write(`>player p2 {"name":"Player 2","team":"${p2team}"}`);
+
+        // Start processing outputs
+        const processLoop = setInterval(async () => {
+          try {
+            await processOutput();
+          } catch (error) {
+            logger.error('Error processing battle output:', error);
+          }
+        }, 10); // Check every 10ms
 
         // Timeout after 10 seconds
         setTimeout(() => {
+          clearInterval(processLoop);
           if (!battleEnded) {
             stream.write('>forcewin p1');
             resolve({ outputs, winner: species1.name });
@@ -391,8 +405,12 @@ class PokemonShowdownService {
         }
       };
     } catch (error) {
-      logger.error('Failed to simulate single battle:', error);
-      throw error instanceof ApiError ? error : new ApiError(500, 'Failed to simulate single battle');
+      logger.error('Failed to simulate single battle:', {
+        error: error instanceof Error ? error.message : error,
+        stack: error instanceof Error ? error.stack : undefined,
+        config
+      });
+      throw error instanceof ApiError ? error : new ApiError(500, `Battle simulation error: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 

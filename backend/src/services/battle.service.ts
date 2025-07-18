@@ -218,8 +218,12 @@ class BattleService {
       const result = await showdownService.simulateSingleBattle(config);
       return result;
     } catch (error) {
-      logger.error('Failed to simulate single battle:', error);
-      throw new ApiError(500, 'Failed to simulate single battle');
+      logger.error('Failed to simulate single battle:', {
+        error: error instanceof Error ? error.message : error,
+        stack: error instanceof Error ? error.stack : undefined,
+        config
+      });
+      throw new ApiError(500, `Failed to simulate single battle: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 }
