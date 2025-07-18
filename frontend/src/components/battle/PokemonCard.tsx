@@ -2,7 +2,7 @@ import React from 'react';
 import { Card, CardContent } from '../ui/card';
 import { Badge } from '../ui/badge';
 import { Button } from '../ui/button';
-import { BattleResult } from '../../types/api';
+import type { BattleResult } from '../../types/api';
 
 interface PokemonCardProps {
   pokemon: BattleResult['pokemon1'] | BattleResult['pokemon2'];

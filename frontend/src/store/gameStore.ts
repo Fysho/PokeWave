@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
-import { GameState, BattleResult, GuessResult, ApiError } from '../types/api';
+import type { GameState, ApiError } from '../types/api';
 import ApiService from '../services/api';
 
 interface GameStore extends GameState {
