@@ -1,7 +1,7 @@
-import { createTheme, MantineColorsTuple } from '@mantine/core';
+import { createTheme } from '@mantine/core';
 
 // Custom color palette for PokeWave
-const pokeBlue: MantineColorsTuple = [
+const pokeBlue = [
   '#e7f5ff',
   '#d0ebff',
   '#a5d8ff',
@@ -12,9 +12,9 @@ const pokeBlue: MantineColorsTuple = [
   '#1c7ed6',
   '#1971c2',
   '#1864ab'
-];
+] as const;
 
-const pokeGrape: MantineColorsTuple = [
+const pokeGrape = [
   '#f3f0ff',
   '#e5dbff',
   '#d0bfff',
@@ -25,7 +25,7 @@ const pokeGrape: MantineColorsTuple = [
   '#7048e8',
   '#6741d9',
   '#5f3dc4'
-];
+] as const;
 
 export const theme = createTheme({
   primaryColor: 'pokeBlue',
