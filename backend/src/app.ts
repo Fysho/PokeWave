@@ -36,7 +36,7 @@ app.use((req: Request, res: Response) => {
 app.use(errorMiddleware);
 
 // Start server
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 4000;
 const server = app.listen(PORT, () => {
   logger.info(`Server running on port ${PORT}`);
 });
