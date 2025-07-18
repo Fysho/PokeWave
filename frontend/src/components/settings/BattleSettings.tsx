@@ -63,14 +63,14 @@ const BattleSettings: React.FC<BattleSettingsProps> = ({
   return (
     <Box
       pos="fixed"
-      top={0}
+      top={60}
       left={0}
-      h="100vh"
+      h="calc(100vh - 60px)"
       style={{
         width: isExpanded ? '320px' : '60px',
         transition: 'width 0.3s ease',
         borderRight: '1px solid var(--mantine-color-gray-3)',
-        zIndex: 1000,
+        zIndex: 999,
         boxShadow: 'var(--mantine-shadow-lg)',
         backgroundColor: 'var(--mantine-color-body)'
       }}
@@ -80,8 +80,7 @@ const BattleSettings: React.FC<BattleSettingsProps> = ({
         <Box
           p="md"
           style={{
-            borderBottom: '1px solid var(--mantine-color-gray-3)',
-            backgroundColor: 'var(--mantine-color-blue-0)'
+            borderBottom: '1px solid var(--mantine-color-gray-3)'
           }}
         >
           <Group justify="space-between" align="center">

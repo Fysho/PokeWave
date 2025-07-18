@@ -100,16 +100,16 @@ const BattleSimulation: React.FC<BattleSimulationProps> = ({
   return (
     <Box
       pos="fixed"
-      top={0}
+      top={60}
       right={0}
-      h="100vh"
-      bg="white"
+      h="calc(100vh - 60px)"
       style={{
         width: isExpanded ? '400px' : '60px',
         transition: 'width 0.3s ease',
         borderLeft: '1px solid var(--mantine-color-gray-3)',
-        zIndex: 1000,
-        boxShadow: 'var(--mantine-shadow-lg)'
+        zIndex: 999,
+        boxShadow: 'var(--mantine-shadow-lg)',
+        backgroundColor: 'var(--mantine-color-body)'
       }}
     >
       <Stack h="100%" gap={0}>
@@ -117,8 +117,7 @@ const BattleSimulation: React.FC<BattleSimulationProps> = ({
         <Box
           p="md"
           style={{
-            borderBottom: '1px solid var(--mantine-color-gray-3)',
-            backgroundColor: 'var(--mantine-color-grape-0)'
+            borderBottom: '1px solid var(--mantine-color-gray-3)'
           }}
         >
           <Group justify="space-between" align="center">
@@ -149,7 +148,7 @@ const BattleSimulation: React.FC<BattleSimulationProps> = ({
             <Stack gap="md">
               {/* Battle Setup */}
               {pokemon1 && pokemon2 && (
-                <Card withBorder p="md" style={{ backgroundColor: 'var(--mantine-color-gray-0)' }}>
+                <Card withBorder p="md">
                   <Stack gap="sm">
                     <Text fw={600} size="sm" ta="center">
                       Battle Setup
@@ -242,7 +241,7 @@ const BattleSimulation: React.FC<BattleSimulationProps> = ({
                     <ScrollArea h={300}>
                       <Stack gap="xs">
                         {simulation.turns?.map((turn: BattleTurn, index: number) => (
-                          <Card key={index} withBorder p="sm" style={{ backgroundColor: 'var(--mantine-color-gray-0)' }}>
+                          <Card key={index} withBorder p="sm">
                             <Stack gap="xs">
                               <Group justify="space-between" align="center">
                                 <Text size="xs" fw={600} c="gray.7">
@@ -304,7 +303,7 @@ const BattleSimulation: React.FC<BattleSimulationProps> = ({
 
               {/* No simulation message */}
               {!simulation && !isSimulating && (
-                <Card withBorder p="md" style={{ backgroundColor: 'var(--mantine-color-gray-0)' }}>
+                <Card withBorder p="md">
                   <Stack align="center" gap="md">
                     <IconSwords size={32} color="var(--mantine-color-gray-6)" />
                     <Text size="sm" c="dimmed" ta="center">
