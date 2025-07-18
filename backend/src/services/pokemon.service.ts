@@ -41,7 +41,7 @@ class PokemonService {
   async getPokemonById(id: number): Promise<Pokemon> {
     try {
       // Check cache first
-      const cached = await cacheService.get(`pokemon:${id}`);
+      const cached = await cacheService.get<Pokemon>(`pokemon:${id}`);
       if (cached) {
         logger.info(`Pokemon ${id} found in cache`);
         return cached;

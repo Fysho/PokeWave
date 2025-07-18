@@ -108,7 +108,7 @@ class BattleService {
 
       // If not in memory, check cache
       if (!battle) {
-        battle = await cacheService.get(`battle:${battleId}`);
+        battle = await cacheService.get<BattleResult>(`battle:${battleId}`);
       }
 
       if (!battle) {
