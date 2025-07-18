@@ -5,6 +5,7 @@ interface BattleSettings {
   levelMode: 'random' | 'set';
   setLevel: number;
   generation: number;
+  withItems: boolean;
 }
 
 interface SettingsState {
@@ -29,6 +30,7 @@ export const useSettingsStore = create<SettingsState>()(
         levelMode: 'random',
         setLevel: 50,
         generation: 1,
+        withItems: false,
       },
       isSettingsPanelExpanded: false,
       isSimulationPanelExpanded: false,
@@ -49,10 +51,15 @@ export const useSettingsStore = create<SettingsState>()(
         isSettingsPanelExpanded: state.isSettingsPanelExpanded,
         isSimulationPanelExpanded: state.isSimulationPanelExpanded,
       }),
-      // Handle migration for existing users without generation field
+      // Handle migration for existing users without generation or withItems field
       onRehydrateStorage: () => (state) => {
-        if (state && state.battleSettings && !state.battleSettings.generation) {
-          state.battleSettings.generation = 1;
+        if (state && state.battleSettings) {
+          if (!state.battleSettings.generation) {
+            state.battleSettings.generation = 1;
+          }
+          if (state.battleSettings.withItems === undefined) {
+            state.battleSettings.withItems = false;
+          }
         }
       },
     }

@@ -21,7 +21,8 @@ import {
   IconSettings,
   IconDice,
   IconEqual,
-  IconPokeball
+  IconPokeball,
+  IconPackage
 } from '@tabler/icons-react';
 
 interface BattleSettingsProps {
@@ -31,6 +32,7 @@ interface BattleSettingsProps {
     levelMode: 'random' | 'set';
     setLevel: number;
     generation: number;
+    withItems: boolean;
   };
   onSettingsChange: (settings: any) => void;
 }
@@ -61,6 +63,13 @@ const BattleSettings: React.FC<BattleSettingsProps> = ({
     onSettingsChange({
       ...settings,
       generation: value ? parseInt(value) : 1
+    });
+  };
+
+  const handleWithItemsChange = (checked: boolean) => {
+    onSettingsChange({
+      ...settings,
+      withItems: checked
     });
   };
 
@@ -199,6 +208,39 @@ const BattleSettings: React.FC<BattleSettingsProps> = ({
                   
                   <Text size="xs" c="dimmed">
                     This affects which Pokemon appear and the battle mechanics used
+                  </Text>
+                </Stack>
+              </Card>
+
+              {/* Items Settings */}
+              <Card withBorder p="md">
+                <Stack gap="md">
+                  <Group gap="sm">
+                    <IconPackage size={18} color="var(--mantine-color-teal-6)" />
+                    <Text fw={600} size="sm">
+                      Battle Items
+                    </Text>
+                  </Group>
+                  
+                  <Switch
+                    label={
+                      <Group gap="xs">
+                        <IconPackage size={16} color={settings.withItems ? 'var(--mantine-color-teal-6)' : 'var(--mantine-color-gray-6)'} />
+                        <Text size="sm">
+                          Use Held Items
+                        </Text>
+                      </Group>
+                    }
+                    checked={settings.withItems}
+                    onChange={(event) => handleWithItemsChange(event.currentTarget.checked)}
+                    color="teal"
+                  />
+                  
+                  <Text size="xs" c="dimmed" mt={-8}>
+                    {settings.withItems 
+                      ? 'Pokemon will hold competitive items like Choice Band, Leftovers, etc.' 
+                      : 'Pokemon will not hold any items'
+                    }
                   </Text>
                 </Stack>
               </Card>
