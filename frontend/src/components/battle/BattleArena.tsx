@@ -328,7 +328,7 @@ const BattleArena: React.FC = () => {
                       </div>
                     </div>
                     
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-12 lg:gap-16 items-center justify-center max-w-6xl mx-auto">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 md:gap-12 lg:gap-16 items-start justify-center max-w-6xl mx-auto">
                     {/* Pokemon 1 */}
                     <PokemonBattleCard
                       pokemon={currentBattle.pokemon1}
@@ -375,32 +375,42 @@ const BattleArena: React.FC = () => {
                         </p>
                       </div>
                       
-                      <div className="bg-card rounded-lg p-6 space-y-4">
-                        <div className="flex justify-between items-center mb-2">
+                      <div className="bg-card rounded-lg p-6 space-y-6 border-2 border-primary/20 shadow-lg">
+                        <div className="flex justify-between items-center mb-4">
                           <div className="text-left">
-                            <div className="font-semibold">{currentBattle.pokemon1.name}</div>
-                            <div className="text-4xl font-bold text-primary">{guessPercentage}%</div>
+                            <div className="font-semibold text-lg">{currentBattle.pokemon1.name}</div>
+                            <div className="text-4xl font-bold text-blue-600 dark:text-blue-400">{guessPercentage}%</div>
+                          </div>
+                          <div className="text-center">
+                            <div className="text-sm text-muted-foreground">Win Rate Prediction</div>
+                            <div className="text-2xl font-bold">VS</div>
                           </div>
                           <div className="text-right">
-                            <div className="font-semibold">{currentBattle.pokemon2.name}</div>
-                            <div className="text-4xl font-bold text-muted-foreground">{100 - guessPercentage}%</div>
+                            <div className="font-semibold text-lg">{currentBattle.pokemon2.name}</div>
+                            <div className="text-4xl font-bold text-purple-600 dark:text-purple-400">{100 - guessPercentage}%</div>
                           </div>
                         </div>
                         
-                        <Slider
-                          value={[guessPercentage]}
-                          onValueChange={handleSliderChange}
-                          min={0}
-                          max={100}
-                          step={1}
-                          className="w-full"
-                          disabled={isLoading}
-                        />
-                        
-                        <div className="flex justify-between text-sm text-muted-foreground">
-                          <span>0%</span>
-                          <span>50%</span>
-                          <span>100%</span>
+                        <div className="space-y-3">
+                          <div className="text-center text-sm text-muted-foreground">
+                            Drag the slider to adjust your prediction
+                          </div>
+                          
+                          <Slider
+                            value={[guessPercentage]}
+                            onValueChange={handleSliderChange}
+                            min={0}
+                            max={100}
+                            step={1}
+                            className="w-full py-2"
+                            disabled={isLoading}
+                          />
+                          
+                          <div className="flex justify-between text-sm text-muted-foreground">
+                            <span className="font-medium">0%</span>
+                            <span className="font-medium">50%</span>
+                            <span className="font-medium">100%</span>
+                          </div>
                         </div>
                       </div>
                     </div>
