@@ -4,6 +4,7 @@ import { persist } from 'zustand/middleware';
 interface BattleSettings {
   levelMode: 'random' | 'set';
   setLevel: number;
+  generation: number;
 }
 
 interface SettingsState {
@@ -27,6 +28,7 @@ export const useSettingsStore = create<SettingsState>()(
       battleSettings: {
         levelMode: 'random',
         setLevel: 50,
+        generation: 1,
       },
       isSettingsPanelExpanded: false,
       isSimulationPanelExpanded: false,

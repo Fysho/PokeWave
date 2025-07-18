@@ -135,14 +135,35 @@ export class ApiService {
     aiDifficulty?: 'random' | 'elite';
   }): Promise<BattleResult> {
     try {
-      // Get two random Pokemon IDs (simplified - in real app you'd have better random selection)
-      const pokemon1Id = Math.floor(Math.random() * 151) + 1; // Gen 1 Pokemon
-      const pokemon2Id = Math.floor(Math.random() * 151) + 1;
+      // Determine the generation and range
+      const generation = battleSettings?.generation || 1;
+      
+      // For generations 1-8, use cumulative ranges (all Pokemon up to that generation)
+      // For generation 9, use only generation 9 Pokemon
+      const generationRanges: { [key: number]: { start: number; end: number } } = {
+        1: { start: 1, end: 151 },     // Only Gen 1
+        2: { start: 1, end: 251 },     // Gen 1-2
+        3: { start: 1, end: 386 },     // Gen 1-3
+        4: { start: 1, end: 493 },     // Gen 1-4
+        5: { start: 1, end: 649 },     // Gen 1-5
+        6: { start: 1, end: 721 },     // Gen 1-6
+        7: { start: 1, end: 809 },     // Gen 1-7
+        8: { start: 1, end: 905 },     // Gen 1-8
+        9: { start: 1, end: 1025 }     // Gen 1-9
+      };
+      
+      const range = generationRanges[generation] || generationRanges[1];
+      
+      // Get two random Pokemon IDs from the selected generation range
+      const pokemon1Id = Math.floor(Math.random() * (range.end - range.start + 1)) + range.start;
+      let pokemon2Id = Math.floor(Math.random() * (range.end - range.start + 1)) + range.start;
       
       // Ensure they're different
-      const finalPokemon2Id = pokemon1Id === pokemon2Id ? (pokemon2Id % 151) + 1 : pokemon2Id;
+      while (pokemon2Id === pokemon1Id) {
+        pokemon2Id = Math.floor(Math.random() * (range.end - range.start + 1)) + range.start;
+      }
       
-      return await this.simulateBattle(pokemon1Id, finalPokemon2Id, battleSettings);
+      return await this.simulateBattle(pokemon1Id, pokemon2Id, battleSettings);
     } catch (error) {
       throw error;
     }

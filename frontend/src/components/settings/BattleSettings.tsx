@@ -10,14 +10,16 @@ import {
   ActionIcon,
   Collapse,
   Group,
-  Card
+  Card,
+  Select
 } from '@mantine/core';
 import { 
   IconChevronLeft, 
   IconChevronRight, 
   IconSettings,
   IconDice,
-  IconEqual
+  IconEqual,
+  IconPokeball
 } from '@tabler/icons-react';
 
 interface BattleSettingsProps {
@@ -26,6 +28,7 @@ interface BattleSettingsProps {
   settings: {
     levelMode: 'random' | 'set';
     setLevel: number;
+    generation: number;
   };
   onSettingsChange: (settings: any) => void;
 }
@@ -47,6 +50,13 @@ const BattleSettings: React.FC<BattleSettingsProps> = ({
     onSettingsChange({
       ...settings,
       setLevel: typeof value === 'string' ? parseInt(value) || 50 : value
+    });
+  };
+
+  const handleGenerationChange = (value: string | null) => {
+    onSettingsChange({
+      ...settings,
+      generation: value ? parseInt(value) : 1
     });
   };
 
@@ -146,6 +156,42 @@ const BattleSettings: React.FC<BattleSettingsProps> = ({
                       leftSection={<IconEqual size={16} />}
                     />
                   )}
+                </Stack>
+              </Card>
+
+              {/* Generation Settings */}
+              <Card withBorder p="md" style={{ backgroundColor: 'var(--mantine-color-gray-0)' }}>
+                <Stack gap="md">
+                  <Group gap="sm">
+                    <IconPokeball size={18} color="var(--mantine-color-red-6)" />
+                    <Text fw={600} size="sm">
+                      Pokemon Generation
+                    </Text>
+                  </Group>
+                  
+                  <Select
+                    label="Generation"
+                    description="Select which generation of Pokemon and battle mechanics to use"
+                    value={settings.generation.toString()}
+                    onChange={handleGenerationChange}
+                    data={[
+                      { value: '1', label: 'Generation 1 (Red/Blue/Yellow)' },
+                      { value: '2', label: 'Generation 2 (Gold/Silver/Crystal)' },
+                      { value: '3', label: 'Generation 3 (Ruby/Sapphire/Emerald)' },
+                      { value: '4', label: 'Generation 4 (Diamond/Pearl/Platinum)' },
+                      { value: '5', label: 'Generation 5 (Black/White)' },
+                      { value: '6', label: 'Generation 6 (X/Y)' },
+                      { value: '7', label: 'Generation 7 (Sun/Moon)' },
+                      { value: '8', label: 'Generation 8 (Sword/Shield)' },
+                      { value: '9', label: 'Generation 9 (Scarlet/Violet)' }
+                    ]}
+                    size="sm"
+                    leftSection={<IconPokeball size={16} />}
+                  />
+                  
+                  <Text size="xs" c="dimmed">
+                    This affects which Pokemon appear and the battle mechanics used
+                  </Text>
                 </Stack>
               </Card>
 
