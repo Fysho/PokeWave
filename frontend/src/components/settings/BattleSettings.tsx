@@ -66,13 +66,13 @@ const BattleSettings: React.FC<BattleSettingsProps> = ({
       top={0}
       left={0}
       h="100vh"
-      bg="white"
       style={{
         width: isExpanded ? '320px' : '60px',
         transition: 'width 0.3s ease',
         borderRight: '1px solid var(--mantine-color-gray-3)',
         zIndex: 1000,
-        boxShadow: 'var(--mantine-shadow-lg)'
+        boxShadow: 'var(--mantine-shadow-lg)',
+        backgroundColor: 'var(--mantine-color-body)'
       }}
     >
       <Stack h="100%" gap={0}>
@@ -109,7 +109,7 @@ const BattleSettings: React.FC<BattleSettingsProps> = ({
           <Box p="md" style={{ overflowY: 'auto', flex: 1 }}>
             <Stack gap="lg">
               {/* Level Settings */}
-              <Card withBorder p="md" style={{ backgroundColor: 'var(--mantine-color-gray-0)' }}>
+              <Card withBorder p="md">
                 <Stack gap="md">
                   <Group gap="sm">
                     <IconDice size={18} color="var(--mantine-color-grape-6)" />
@@ -160,7 +160,7 @@ const BattleSettings: React.FC<BattleSettingsProps> = ({
               </Card>
 
               {/* Generation Settings */}
-              <Card withBorder p="md" style={{ backgroundColor: 'var(--mantine-color-gray-0)' }}>
+              <Card withBorder p="md">
                 <Stack gap="md">
                   <Group gap="sm">
                     <IconPokeball size={18} color="var(--mantine-color-red-6)" />
@@ -187,6 +187,13 @@ const BattleSettings: React.FC<BattleSettingsProps> = ({
                     ]}
                     size="sm"
                     leftSection={<IconPokeball size={16} />}
+                    withinPortal={true}
+                    dropdownPosition="bottom"
+                    styles={{
+                      dropdown: {
+                        zIndex: 2000
+                      }
+                    }}
                   />
                   
                   <Text size="xs" c="dimmed">
@@ -198,7 +205,7 @@ const BattleSettings: React.FC<BattleSettingsProps> = ({
               <Divider />
 
               {/* Placeholder for future settings */}
-              <Card withBorder p="md" style={{ backgroundColor: 'var(--mantine-color-gray-0)' }}>
+              <Card withBorder p="md">
                 <Text size="sm" c="dimmed" ta="center">
                   More settings coming soon...
                 </Text>
