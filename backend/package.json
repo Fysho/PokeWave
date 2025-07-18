@@ -15,6 +15,7 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@pkmn/data": "^0.9.35",
     "@pkmn/dex": "^0.9.35",
     "@pkmn/sets": "^5.1.2",
     "@pkmn/sim": "^0.9.35",
