@@ -244,38 +244,38 @@ const PokemonBattleCard: React.FC<PokemonBattleCardProps> = ({
                 <Text size="sm" c="gray.6" ta="center" mb="xs">Stats (Level {pokemon.level})</Text>
                 <Grid gutter="xs">
                   <Grid.Col span={6}>
-                    <Box ta="center" p="xs" style={{ backgroundColor: colorScheme === 'dark' ? theme.colors.red[9] : theme.colors.red[0], borderRadius: '4px' }}>
-                      <Text size="xs" fw={600} c="red.7">HP</Text>
+                    <Box ta="center" p="xs" style={{ backgroundColor: colorScheme === 'dark' ? theme.colors.dark[6] : theme.colors.red[0], borderRadius: '4px', border: colorScheme === 'dark' ? `1px solid ${theme.colors.red[8]}` : 'none' }}>
+                      <Text size="xs" fw={600} c={colorScheme === 'dark' ? 'red.4' : 'red.7'}>HP</Text>
                       <Text size="sm" fw={700}>{pokemon.stats.hp}</Text>
                     </Box>
                   </Grid.Col>
                   <Grid.Col span={6}>
-                    <Box ta="center" p="xs" style={{ backgroundColor: colorScheme === 'dark' ? theme.colors.orange[9] : theme.colors.orange[0], borderRadius: '4px' }}>
-                      <Text size="xs" fw={600} c="orange.7">ATK</Text>
+                    <Box ta="center" p="xs" style={{ backgroundColor: colorScheme === 'dark' ? theme.colors.dark[6] : theme.colors.orange[0], borderRadius: '4px', border: colorScheme === 'dark' ? `1px solid ${theme.colors.orange[8]}` : 'none' }}>
+                      <Text size="xs" fw={600} c={colorScheme === 'dark' ? 'orange.4' : 'orange.7'}>ATK</Text>
                       <Text size="sm" fw={700}>{pokemon.stats.attack}</Text>
                     </Box>
                   </Grid.Col>
                   <Grid.Col span={6}>
-                    <Box ta="center" p="xs" style={{ backgroundColor: colorScheme === 'dark' ? theme.colors.yellow[9] : theme.colors.yellow[0], borderRadius: '4px' }}>
-                      <Text size="xs" fw={600} c="yellow.7">DEF</Text>
+                    <Box ta="center" p="xs" style={{ backgroundColor: colorScheme === 'dark' ? theme.colors.dark[6] : theme.colors.yellow[0], borderRadius: '4px', border: colorScheme === 'dark' ? `1px solid ${theme.colors.yellow[8]}` : 'none' }}>
+                      <Text size="xs" fw={600} c={colorScheme === 'dark' ? 'yellow.4' : 'yellow.7'}>DEF</Text>
                       <Text size="sm" fw={700}>{pokemon.stats.defense}</Text>
                     </Box>
                   </Grid.Col>
                   <Grid.Col span={6}>
-                    <Box ta="center" p="xs" style={{ backgroundColor: colorScheme === 'dark' ? theme.colors.blue[9] : theme.colors.blue[0], borderRadius: '4px' }}>
-                      <Text size="xs" fw={600} c="blue.7">SPA</Text>
+                    <Box ta="center" p="xs" style={{ backgroundColor: colorScheme === 'dark' ? theme.colors.dark[6] : theme.colors.blue[0], borderRadius: '4px', border: colorScheme === 'dark' ? `1px solid ${theme.colors.blue[8]}` : 'none' }}>
+                      <Text size="xs" fw={600} c={colorScheme === 'dark' ? 'blue.4' : 'blue.7'}>SPA</Text>
                       <Text size="sm" fw={700}>{pokemon.stats.specialAttack}</Text>
                     </Box>
                   </Grid.Col>
                   <Grid.Col span={6}>
-                    <Box ta="center" p="xs" style={{ backgroundColor: colorScheme === 'dark' ? theme.colors.teal[9] : theme.colors.teal[0], borderRadius: '4px' }}>
-                      <Text size="xs" fw={600} c="teal.7">SPD</Text>
+                    <Box ta="center" p="xs" style={{ backgroundColor: colorScheme === 'dark' ? theme.colors.dark[6] : theme.colors.teal[0], borderRadius: '4px', border: colorScheme === 'dark' ? `1px solid ${theme.colors.teal[8]}` : 'none' }}>
+                      <Text size="xs" fw={600} c={colorScheme === 'dark' ? 'teal.4' : 'teal.7'}>SPD</Text>
                       <Text size="sm" fw={700}>{pokemon.stats.specialDefense}</Text>
                     </Box>
                   </Grid.Col>
                   <Grid.Col span={6}>
-                    <Box ta="center" p="xs" style={{ backgroundColor: colorScheme === 'dark' ? theme.colors.pink[9] : theme.colors.pink[0], borderRadius: '4px' }}>
-                      <Text size="xs" fw={600} c="pink.7">SPE</Text>
+                    <Box ta="center" p="xs" style={{ backgroundColor: colorScheme === 'dark' ? theme.colors.dark[6] : theme.colors.pink[0], borderRadius: '4px', border: colorScheme === 'dark' ? `1px solid ${theme.colors.pink[8]}` : 'none' }}>
+                      <Text size="xs" fw={600} c={colorScheme === 'dark' ? 'pink.4' : 'pink.7'}>SPE</Text>
                       <Text size="sm" fw={700}>{pokemon.stats.speed}</Text>
                     </Box>
                   </Grid.Col>
