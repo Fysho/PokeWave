@@ -122,7 +122,7 @@ const PokemonBattleCard: React.FC<PokemonBattleCardProps> = ({
             ta="center" 
             mb="md"
             style={{
-              height: '440px', // Fixed height container to prevent UI shifting (2x bigger)
+              height: '360px', // Fixed height container to prevent UI shifting (reduced whitespace)
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center'
