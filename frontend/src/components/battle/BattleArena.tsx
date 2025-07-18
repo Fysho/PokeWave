@@ -211,6 +211,39 @@ const PokemonBattleCard: React.FC<PokemonBattleCardProps> = ({
               </Group>
             )}
 
+            {/* Ability and Item */}
+            <Group justify="center" gap="md">
+              {pokemon.ability && (
+                <Badge
+                  variant="light"
+                  size="md"
+                  color="blue"
+                  leftSection={<IconBolt size={14} />}
+                  tt="capitalize"
+                  style={{ 
+                    fontSize: '13px',
+                    fontWeight: 600,
+                    padding: '6px 12px'
+                  }}
+                >
+                  {pokemon.ability}
+                </Badge>
+              )}
+              <Badge
+                variant="outline"
+                size="md"
+                color="gray"
+                leftSection={<IconStar size={14} />}
+                style={{ 
+                  fontSize: '13px',
+                  fontWeight: 500,
+                  padding: '6px 12px'
+                }}
+              >
+                No Item
+              </Badge>
+            </Group>
+
             {/* Moves */}
             {pokemon.moves && pokemon.moves.length > 0 && (
               <Box>

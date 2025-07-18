@@ -41,6 +41,7 @@ export interface ShowdownBattleResult {
       specialDefense: number;
       speed: number;
     };
+    ability?: string;
   };
   pokemon2: {
     id: number;
@@ -62,6 +63,7 @@ export interface ShowdownBattleResult {
       specialDefense: number;
       speed: number;
     };
+    ability?: string;
   };
   totalBattles: number;
   winRate: number;
@@ -187,6 +189,10 @@ class PokemonShowdownService {
       const pokemon1Moves = this.getRandomMoves(species1, dex, 4);
       const pokemon2Moves = this.getRandomMoves(species2, dex, 4);
 
+      // Get random abilities
+      const pokemon1Ability = this.getRandomAbility(species1);
+      const pokemon2Ability = this.getRandomAbility(species2);
+
       const result: ShowdownBattleResult = {
         battleId: crypto.randomUUID(),
         pokemon1: {
@@ -197,7 +203,8 @@ class PokemonShowdownService {
           types: pokemon1Types,
           sprites: pokemon1Sprites || { front: '', back: '', shiny: '' },
           moves: pokemon1Moves.map(move => this.formatMoveName(move)),
-          stats: pokemon1Stats
+          stats: pokemon1Stats,
+          ability: pokemon1Ability
         },
         pokemon2: {
           id: config.pokemon2Id,
@@ -207,7 +214,8 @@ class PokemonShowdownService {
           types: pokemon2Types,
           sprites: pokemon2Sprites || { front: '', back: '', shiny: '' },
           moves: pokemon2Moves.map(move => this.formatMoveName(move)),
-          stats: pokemon2Stats
+          stats: pokemon2Stats,
+          ability: pokemon2Ability
         },
         totalBattles: this.NUM_BATTLES,
         winRate,
@@ -860,6 +868,27 @@ class PokemonShowdownService {
       .replace(/^./, str => str.toUpperCase())
       .trim()
       .replace(/\s+/g, ' '); // Replace multiple spaces with single space
+  }
+
+  private getRandomAbility(species: Species): string {
+    // Get all available abilities
+    const abilities = [];
+    
+    if (species.abilities) {
+      // Add regular abilities
+      if (species.abilities['0']) abilities.push(species.abilities['0']);
+      if (species.abilities['1']) abilities.push(species.abilities['1']);
+      // Add hidden ability if available
+      if (species.abilities['H']) abilities.push(species.abilities['H']);
+    }
+    
+    // If no abilities found, return a default
+    if (abilities.length === 0) {
+      return 'Pressure';
+    }
+    
+    // Return a random ability
+    return abilities[Math.floor(Math.random() * abilities.length)];
   }
 
   private generateBattleKey(config: ShowdownBattleConfig): string {
