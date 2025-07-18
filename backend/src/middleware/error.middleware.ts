@@ -17,7 +17,7 @@ export const errorMiddleware = (
   err: Error | ApiError,
   req: Request,
   res: Response,
-  next: NextFunction
+  _next: NextFunction
 ): void => {
   if (err instanceof ApiError) {
     logger.error('API Error:', {
