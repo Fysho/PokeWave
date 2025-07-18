@@ -530,6 +530,8 @@ class PokemonShowdownService {
     const stats1 = this.calculateStats(species1, level1);
     const stats2 = this.calculateStats(species2, level2);
     
+    logger.info(`Battle stats calculated - ${species1.name} (Lv.${level1}): HP=${stats1.hp}, ${species2.name} (Lv.${level2}): HP=${stats2.hp}`);
+    
     let hp1 = stats1.hp;
     let hp2 = stats2.hp;
     let turn = 1;
@@ -553,9 +555,10 @@ class PokemonShowdownService {
       if (p1First && hp1 > 0) {
         // Pokemon 1 attacks
         const move = moves1[Math.floor(Math.random() * moves1.length)];
-        const damage = Math.floor(Math.random() * 30) + 20;
+        // More realistic damage calculation based on stats
+        const baseDamage = Math.floor((((2 * level1 / 5 + 2) * stats1.attack * 50 / stats2.defense) / 50 + 2) * (Math.random() * 0.15 + 0.85));
         const critical = Math.random() < 0.0625;
-        const actualDamage = critical ? damage * 1.5 : damage;
+        const actualDamage = Math.floor(critical ? baseDamage * 1.5 : baseDamage);
         hp2 = Math.max(0, hp2 - actualDamage);
         
         turns.push({
@@ -573,9 +576,10 @@ class PokemonShowdownService {
       if (hp2 > 0) {
         // Pokemon 2 attacks
         const move = moves2[Math.floor(Math.random() * moves2.length)];
-        const damage = Math.floor(Math.random() * 30) + 20;
+        // More realistic damage calculation based on stats
+        const baseDamage = Math.floor((((2 * level2 / 5 + 2) * stats2.attack * 50 / stats1.defense) / 50 + 2) * (Math.random() * 0.15 + 0.85));
         const critical = Math.random() < 0.0625;
-        const actualDamage = critical ? damage * 1.5 : damage;
+        const actualDamage = Math.floor(critical ? baseDamage * 1.5 : baseDamage);
         hp1 = Math.max(0, hp1 - actualDamage);
         
         turns.push({
