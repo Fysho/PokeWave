@@ -1,5 +1,6 @@
 import { Dex, Species } from '@pkmn/dex';
 import { Teams, BattleStreams } from '@pkmn/sim';
+import { Learnsets } from '@pkmn/data';
 import { cacheService } from './cache.service';
 import { pokemonService } from './pokemon.service';
 import logger from '../utils/logger';
@@ -702,45 +703,92 @@ class PokemonShowdownService {
 
   private getRandomMoves(species: Species, dex: any, count: number): string[] {
     const moves: string[] = [];
+    const generation = dex.gen || 9;
     
     try {
-      // First, try to get type-based moves which is more reliable
+      // Get the learnset data for this Pokemon
+      const learnsets = new Learnsets(dex);
+      const learnset = learnsets.get(species.id);
+      
+      if (learnset) {
+        // Get all level-up moves for the current generation
+        const levelupMoves: { level: number; move: string }[] = [];
+        
+        for (const [moveName, learnData] of Object.entries(learnset.learnset)) {
+          if (Array.isArray(learnData)) {
+            for (const learnMethod of learnData) {
+              // Format is like "8L1" (Gen 8, Level 1) or "7L45" (Gen 7, Level 45)
+              const match = learnMethod.match(/^(\d+)L(\d+)$/);
+              if (match) {
+                const moveGen = parseInt(match[1]);
+                const level = parseInt(match[2]);
+                
+                // Only include moves available in the current generation or earlier
+                if (moveGen <= generation) {
+                  const move = dex.moves.get(moveName);
+                  if (move && move.exists && !move.isZ && !move.isMax) {
+                    levelupMoves.push({ level, move: move.name });
+                  }
+                }
+              }
+            }
+          }
+        }
+        
+        // Sort by level (ascending)
+        levelupMoves.sort((a, b) => a.level - b.level);
+        
+        // Get unique moves (a move might be learned at multiple levels)
+        const uniqueMoves = new Map<string, number>();
+        for (const { level, move } of levelupMoves) {
+          uniqueMoves.set(move, level);
+        }
+        
+        // Convert back to array and sort by level again
+        const sortedUniqueMoves = Array.from(uniqueMoves.entries())
+          .sort((a, b) => a[1] - b[1])
+          .map(([move]) => move);
+        
+        // Take the last 4 moves (most recently learned)
+        const selectedMoves = sortedUniqueMoves.slice(-count);
+        moves.push(...selectedMoves);
+        
+        logger.info(`Selected level-up moves for ${species.name}:`, {
+          totalLevelupMoves: sortedUniqueMoves.length,
+          selectedMoves: moves,
+          allMoves: sortedUniqueMoves
+        });
+      }
+      
+      // If we couldn't get enough moves from learnset, fall back to type-based moves
+      if (moves.length < count) {
+        logger.warn(`Only found ${moves.length} level-up moves for ${species.name}, using type-based fallback`);
+        const typeBasedMoves = this.getTypeBasedMoves(species.types, dex);
+        const shuffledTypeMoves = [...typeBasedMoves].sort(() => Math.random() - 0.5);
+        
+        for (const moveName of shuffledTypeMoves) {
+          if (moves.length >= count) break;
+          if (!moves.includes(moveName)) {
+            moves.push(moveName);
+          }
+        }
+      }
+    } catch (error) {
+      logger.error('Failed to get learnset moves for species', { 
+        species: species.name, 
+        error: error instanceof Error ? error.message : error 
+      });
+      
+      // Fall back to type-based moves
       const typeBasedMoves = this.getTypeBasedMoves(species.types, dex);
       const shuffledTypeMoves = [...typeBasedMoves].sort(() => Math.random() - 0.5);
       
-      // Add type-based moves first
       for (const moveName of shuffledTypeMoves) {
         if (moves.length >= count) break;
         if (!moves.includes(moveName)) {
           moves.push(moveName);
         }
       }
-      
-      // If we still need moves, try learnset (though it may not work with @pkmn/dex)
-      if (moves.length < count) {
-        try {
-          // Try to get some common moves that most Pokemon can learn
-          const commonMoves = ['Return', 'Frustration', 'Hidden Power', 'Protect', 'Rest', 'Sleep Talk', 
-                              'Substitute', 'Swagger', 'Toxic', 'Double Team', 'Facade'];
-          
-          const availableCommon = commonMoves.filter(moveName => {
-            const move = dex.moves.get(moveName);
-            return move && move.exists && !move.isZ && !move.isMax;
-          });
-          
-          const shuffledCommon = [...availableCommon].sort(() => Math.random() - 0.5);
-          for (const moveName of shuffledCommon) {
-            if (moves.length >= count) break;
-            if (!moves.includes(moveName)) {
-              moves.push(moveName);
-            }
-          }
-        } catch (error) {
-          logger.debug('Could not get additional moves from learnset', { species: species.name });
-        }
-      }
-    } catch (error) {
-      logger.warn('Failed to get moves for species', { species: species.name, error });
     }
 
     // Fill with default moves if still needed
@@ -750,11 +798,11 @@ class PokemonShowdownService {
       if (!moves.includes(defaultMove)) {
         moves.push(defaultMove);
       } else {
-        moves.push('Struggle'); // Fallback
+        moves.push('Struggle'); // Ultimate fallback
       }
     }
 
-    logger.debug(`Selected moves for ${species.name}:`, moves);
+    logger.debug(`Final selected moves for ${species.name}:`, moves);
     return moves;
   }
 
@@ -930,35 +978,55 @@ class PokemonShowdownService {
 
   private getLevelupMoves(species: Species, dex: any): Array<{ level: number; move: string }> {
     const levelupMoves: Array<{ level: number; move: string }> = [];
+    const generation = dex.gen || 9;
     
     try {
-      // Try to get learnset from the species
-      // Note: This might not work perfectly with @pkmn/dex, but we'll try
-      const learnset = (dex.data?.Learnsets?.[species.id]) || (dex.data?.Learnsets?.[species.name.toLowerCase()]);
+      // Get the learnset data for this Pokemon
+      const learnsets = new Learnsets(dex);
+      const learnset = learnsets.get(species.id);
       
-      if (learnset && learnset.learnset) {
+      if (learnset) {
+        // Process all moves from the learnset
         for (const [moveName, learnData] of Object.entries(learnset.learnset)) {
           if (Array.isArray(learnData)) {
             for (const learnMethod of learnData) {
-              // Format is usually "8L1" meaning Gen 8, Level 1
-              const match = learnMethod.match(/^\d+L(\d+)$/);
+              // Format is like "8L1" (Gen 8, Level 1) or "7L45" (Gen 7, Level 45)
+              const match = learnMethod.match(/^(\d+)L(\d+)$/);
               if (match) {
-                const level = parseInt(match[1]);
-                const move = dex.moves.get(moveName);
-                if (move && move.exists) {
-                  levelupMoves.push({ 
-                    level, 
-                    move: this.formatMoveName(move.name) 
-                  });
+                const moveGen = parseInt(match[1]);
+                const level = parseInt(match[2]);
+                
+                // Only include moves available in the current generation or earlier
+                if (moveGen <= generation) {
+                  const move = dex.moves.get(moveName);
+                  if (move && move.exists) {
+                    // Check if we already have this move at a different level
+                    const existingMove = levelupMoves.find(m => m.move === this.formatMoveName(move.name));
+                    if (!existingMove) {
+                      levelupMoves.push({ 
+                        level, 
+                        move: this.formatMoveName(move.name) 
+                      });
+                    } else if (level < existingMove.level) {
+                      // Update to the earliest level this move is learned
+                      existingMove.level = level;
+                    }
+                  }
                 }
               }
             }
           }
         }
+        
+        // Sort by level
+        levelupMoves.sort((a, b) => a.level - b.level);
+        
+        logger.info(`Found ${levelupMoves.length} level-up moves for ${species.name}`);
       }
       
       // If we couldn't get learnset data, provide some basic moves as fallback
       if (levelupMoves.length === 0) {
+        logger.warn(`No level-up moves found for ${species.name}, using fallback`);
         // Add some default moves that most Pokemon learn
         levelupMoves.push({ level: 1, move: 'Tackle' });
         levelupMoves.push({ level: 1, move: 'Growl' });
@@ -973,11 +1041,11 @@ class PokemonShowdownService {
         });
       }
       
-      // Sort by level
-      levelupMoves.sort((a, b) => a.level - b.level);
-      
     } catch (error) {
-      logger.warn('Could not get levelup moves:', error);
+      logger.error('Could not get levelup moves:', { 
+        species: species.name,
+        error: error instanceof Error ? error.message : error 
+      });
       // Return basic fallback moves
       return [
         { level: 1, move: 'Tackle' },
@@ -1083,7 +1151,7 @@ class PokemonShowdownService {
       generation: config.options?.generation || 9,
       pokemon1Level: config.options?.pokemon1Level || 50,
       pokemon2Level: config.options?.pokemon2Level || 50,
-      version: 'v2' // Add version to invalidate old cache
+      version: 'v3-learnset' // Add version to invalidate old cache
     };
 
     return crypto
