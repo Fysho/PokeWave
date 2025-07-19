@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
 import type { GameState, ApiError } from '../types/api';
 import type { CompletePokemon } from '../types/pokemon';
+import { Pokemon } from './pokemon';
 import ApiService from '../services/api';
 // import { simulateMainBattle } from '../utils/mainBattleSimulation'; // Using backend API instead
 import { evaluateGuess } from '../utils/guessEvaluation';
@@ -30,8 +31,8 @@ interface BattleHistoryEntry {
 interface GameStore extends GameState {
   // Additional state
   battleHistory: BattleHistoryEntry[];
-  currentPokemon1?: CompletePokemon;
-  currentPokemon2?: CompletePokemon;
+  currentPokemon1?: Pokemon;
+  currentPokemon2?: Pokemon;
   
   // Actions
   generateNewBattle: (battleSettings?: {
@@ -138,10 +139,14 @@ export const useGameStore = create<GameStore>()(
               aiDifficulty: battleSettings?.aiDifficulty || 'random'
             });
             
+            // Create Pokemon instances from the battle result
+            const pokemon1 = Pokemon.fromApiResponse(battleResult.pokemon1, battleResult.totalBattles);
+            const pokemon2 = Pokemon.fromApiResponse(battleResult.pokemon2, battleResult.totalBattles);
+            
             set({ 
               currentBattle: battleResult,
-              currentPokemon1: null, // Backend returns complete Pokemon data in battleResult
-              currentPokemon2: null, // Backend returns complete Pokemon data in battleResult
+              currentPokemon1: pokemon1,
+              currentPokemon2: pokemon2,
               isLoading: false,
               error: null 
             });

@@ -1,11 +1,12 @@
 import React from 'react';
-import { Card, Stack, Title, Text, Box, Code, ScrollArea, SimpleGrid } from '@mantine/core';
+import { Card, Stack, Title, Text, Box, Code, ScrollArea, SimpleGrid, Table, Badge, Group } from '@mantine/core';
 import { useGameStore } from '../../store/gameStore';
+import { Pokemon } from '../../store/pokemon';
 
 const PokeInfo: React.FC = () => {
-  const { currentBattle } = useGameStore();
+  const { currentBattle, currentPokemon1, currentPokemon2 } = useGameStore();
 
-  if (!currentBattle) {
+  if (!currentBattle || !currentPokemon1 || !currentPokemon2) {
     return (
       <Box p="xl">
         <Title order={2}>Pokemon Debug Information</Title>
@@ -14,97 +15,162 @@ const PokeInfo: React.FC = () => {
     );
   }
 
-  const renderPokemonDebug = (pokemon: any, title: string) => {
-    // Calculate total stats
-    const totalStats = pokemon.stats ? Object.values(pokemon.stats).reduce((sum: number, stat: any) => sum + stat, 0) : 0;
-    const totalBaseStats = pokemon.baseStats ? Object.values(pokemon.baseStats).reduce((sum: number, stat: any) => sum + stat, 0) : 0;
-
+  const renderPokemonDebug = (pokemon: Pokemon, title: string) => {
     return (
       <Card withBorder p="md">
         <Title order={3} mb="md">{title}</Title>
         
         <Stack gap="sm">
-          {/* Basic Info */}
+          {/* Basic Info using Pokemon class */}
           <Box>
-            <Title order={5}>Basic Info</Title>
-            <Code block>{JSON.stringify({
-              id: pokemon.id,
-              name: pokemon.name,
-              level: pokemon.level,
-              types: pokemon.types,
-              ability: pokemon.ability,
-              item: pokemon.item
-            }, null, 2)}</Code>
+            <Title order={5}>Basic Info (Using Pokemon Class)</Title>
+            <Table fontSize="xs" withTableBorder>
+              <Table.Tbody>
+                <Table.Tr>
+                  <Table.Td fw={600}>ID</Table.Td>
+                  <Table.Td>{pokemon.id}</Table.Td>
+                </Table.Tr>
+                <Table.Tr>
+                  <Table.Td fw={600}>Name</Table.Td>
+                  <Table.Td>{pokemon.name}</Table.Td>
+                </Table.Tr>
+                <Table.Tr>
+                  <Table.Td fw={600}>Level</Table.Td>
+                  <Table.Td>{pokemon.level}</Table.Td>
+                </Table.Tr>
+                <Table.Tr>
+                  <Table.Td fw={600}>Types</Table.Td>
+                  <Table.Td>
+                    <Group gap="xs">
+                      <Badge>{pokemon.primaryType}</Badge>
+                      {pokemon.isDualType && <Badge>{pokemon.secondaryType}</Badge>}
+                    </Group>
+                  </Table.Td>
+                </Table.Tr>
+                <Table.Tr>
+                  <Table.Td fw={600}>Ability</Table.Td>
+                  <Table.Td>{pokemon.ability}</Table.Td>
+                </Table.Tr>
+                <Table.Tr>
+                  <Table.Td fw={600}>Item</Table.Td>
+                  <Table.Td>{pokemon.item || 'None'}</Table.Td>
+                </Table.Tr>
+              </Table.Tbody>
+            </Table>
           </Box>
 
-          {/* Battle Results */}
+          {/* Battle Performance using getters */}
           <Box>
             <Title order={5}>Battle Performance</Title>
-            <Code block>{JSON.stringify({
-              wins: pokemon.wins,
-              losses: currentBattle.totalBattles - pokemon.wins,
-              winRate: ((pokemon.wins / currentBattle.totalBattles) * 100).toFixed(1) + '%'
-            }, null, 2)}</Code>
+            <Table fontSize="xs" withTableBorder>
+              <Table.Tbody>
+                <Table.Tr>
+                  <Table.Td fw={600}>Wins</Table.Td>
+                  <Table.Td>{pokemon.wins}</Table.Td>
+                </Table.Tr>
+                <Table.Tr>
+                  <Table.Td fw={600}>Losses</Table.Td>
+                  <Table.Td>{pokemon.losses}</Table.Td>
+                </Table.Tr>
+                <Table.Tr>
+                  <Table.Td fw={600}>Total Battles</Table.Td>
+                  <Table.Td>{pokemon.totalBattles}</Table.Td>
+                </Table.Tr>
+                <Table.Tr>
+                  <Table.Td fw={600}>Win Rate</Table.Td>
+                  <Table.Td>{pokemon.winRate.toFixed(1)}%</Table.Td>
+                </Table.Tr>
+              </Table.Tbody>
+            </Table>
           </Box>
 
-          {/* Base Stats */}
-          {pokemon.baseStats && (
-            <Box>
-              <Title order={5}>Base Stats (Total: {totalBaseStats})</Title>
-              <Code block>{JSON.stringify(pokemon.baseStats, null, 2)}</Code>
-            </Box>
-          )}
-
-          {/* IVs */}
-          {pokemon.ivs && (
-            <Box>
-              <Title order={5}>IVs (Individual Values)</Title>
-              <Code block>{JSON.stringify(pokemon.ivs, null, 2)}</Code>
-            </Box>
-          )}
-
-          {/* EVs */}
-          {pokemon.evs && (
-            <Box>
-              <Title order={5}>EVs (Effort Values)</Title>
-              <Code block>{JSON.stringify(pokemon.evs, null, 2)}</Code>
-            </Box>
-          )}
-
-          {/* Calculated Stats */}
+          {/* Stats Breakdown */}
           <Box>
-            <Title order={5}>Calculated Stats (Total: {totalStats})</Title>
-            <Code block>{JSON.stringify(pokemon.stats, null, 2)}</Code>
+            <Title order={5}>Stats Breakdown</Title>
+            <Table fontSize="xs" withTableBorder withColumnBorders>
+              <Table.Thead>
+                <Table.Tr>
+                  <Table.Th>Stat</Table.Th>
+                  <Table.Th>Base</Table.Th>
+                  <Table.Th>IV</Table.Th>
+                  <Table.Th>EV</Table.Th>
+                  <Table.Th>Total</Table.Th>
+                </Table.Tr>
+              </Table.Thead>
+              <Table.Tbody>
+                {(['hp', 'attack', 'defense', 'specialAttack', 'specialDefense', 'speed'] as const).map(stat => (
+                  <Table.Tr key={stat}>
+                    <Table.Td>{Pokemon.getStatDisplayName(stat)}</Table.Td>
+                    <Table.Td>{pokemon.getBaseStatValue(stat)}</Table.Td>
+                    <Table.Td>{pokemon.ivs[stat]}</Table.Td>
+                    <Table.Td>{pokemon.evs[stat]}</Table.Td>
+                    <Table.Td fw={700}>{pokemon.getStatValue(stat)}</Table.Td>
+                  </Table.Tr>
+                ))}
+                <Table.Tr>
+                  <Table.Td fw={700}>Total</Table.Td>
+                  <Table.Td fw={700}>{pokemon.totalBaseStats}</Table.Td>
+                  <Table.Td fw={700}>186</Table.Td>
+                  <Table.Td fw={700}>0</Table.Td>
+                  <Table.Td fw={700}>{pokemon.totalCalculatedStats}</Table.Td>
+                </Table.Tr>
+              </Table.Tbody>
+            </Table>
           </Box>
 
           {/* Current Moves */}
           <Box>
             <Title order={5}>Current Moves ({pokemon.moves.length})</Title>
-            <Code block>{JSON.stringify(pokemon.moves, null, 2)}</Code>
+            <Stack gap="xs">
+              {pokemon.moves.map((move, index) => (
+                <Badge key={index} variant="dot" fullWidth>{move}</Badge>
+              ))}
+            </Stack>
           </Box>
 
           {/* Levelup Moves */}
-          {pokemon.levelupMoves && pokemon.levelupMoves.length > 0 && (
+          {pokemon.levelupMoves.length > 0 && (
             <Box>
               <Title order={5}>Levelup Moves ({pokemon.levelupMoves.length})</Title>
               <ScrollArea h={200}>
-                <Code block>{JSON.stringify(pokemon.levelupMoves, null, 2)}</Code>
+                <Table fontSize="xs" withTableBorder>
+                  <Table.Thead>
+                    <Table.Tr>
+                      <Table.Th>Level</Table.Th>
+                      <Table.Th>Move</Table.Th>
+                    </Table.Tr>
+                  </Table.Thead>
+                  <Table.Tbody>
+                    {pokemon.levelupMoves.map((moveData, index) => (
+                      <Table.Tr key={index}>
+                        <Table.Td>Lv. {moveData.level}</Table.Td>
+                        <Table.Td>{moveData.move}</Table.Td>
+                      </Table.Tr>
+                    ))}
+                  </Table.Tbody>
+                </Table>
               </ScrollArea>
             </Box>
           )}
 
           {/* Sprites */}
           <Box>
-            <Title order={5}>Sprite URLs</Title>
-            <Code block>{JSON.stringify(pokemon.sprites, null, 2)}</Code>
+            <Title order={5}>Sprites</Title>
+            <Group gap="xs">
+              <img src={pokemon.sprites.front} alt={`${pokemon.name} front`} width={64} height={64} />
+              <img src={pokemon.sprites.back} alt={`${pokemon.name} back`} width={64} height={64} />
+            </Group>
           </Box>
 
-          {/* Raw Data */}
+          {/* Class Method Examples */}
           <Box>
-            <Title order={5}>Raw Pokemon Data</Title>
-            <ScrollArea h={300}>
-              <Code block>{JSON.stringify(pokemon, null, 2)}</Code>
-            </ScrollArea>
+            <Title order={5}>Pokemon Class Method Examples</Title>
+            <Code block>{JSON.stringify({
+              "hasMove('Tackle')": pokemon.hasMove('Tackle'),
+              "getMovesUpToLevel(10)": pokemon.getMovesUpToLevel(10),
+              "calculateStatAtLevel('hp', 100)": pokemon.calculateStatAtLevel('hp', 100),
+              "isDualType": pokemon.isDualType
+            }, null, 2)}</Code>
           </Box>
         </Stack>
       </Card>
@@ -130,10 +196,11 @@ const PokeInfo: React.FC = () => {
           }, null, 2)}</Code>
         </Card>
 
-        {/* Pokemon Cards */}
+        {/* Pokemon Cards using Pokemon Class */}
+        <Title order={3} mb="md">Pokemon Data (Using Pokemon Class)</Title>
         <SimpleGrid cols={{ base: 1, lg: 2 }} spacing="lg">
-          {renderPokemonDebug(currentBattle.pokemon1, 'Pokemon 1')}
-          {renderPokemonDebug(currentBattle.pokemon2, 'Pokemon 2')}
+          {renderPokemonDebug(currentPokemon1, 'Pokemon 1')}
+          {renderPokemonDebug(currentPokemon2, 'Pokemon 2')}
         </SimpleGrid>
 
         {/* Full Battle Data */}
