@@ -242,7 +242,10 @@ const PokemonBattleCard: React.FC<PokemonBattleCardProps> = ({
                   style={{ 
                     fontSize: '13px',
                     fontWeight: 600,
-                    padding: '6px 12px'
+                    padding: '6px 12px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    lineHeight: '1'
                   }}
                 >
                   {pokemon.ability}
@@ -258,7 +261,10 @@ const PokemonBattleCard: React.FC<PokemonBattleCardProps> = ({
                   style={{ 
                     fontSize: '13px',
                     fontWeight: 500,
-                    padding: '6px 12px'
+                    padding: '6px 12px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    lineHeight: '1'
                   }}
                 >
                   {formatItemName(pokemon.item)}
@@ -272,7 +278,10 @@ const PokemonBattleCard: React.FC<PokemonBattleCardProps> = ({
                   style={{ 
                     fontSize: '13px',
                     fontWeight: 500,
-                    padding: '6px 12px'
+                    padding: '6px 12px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    lineHeight: '1'
                   }}
                 >
                   No Item
@@ -402,7 +411,7 @@ const BattleArena: React.FC = () => {
     if (!currentBattle && !isLoading) {
       generateNewBattle(battleSettings);
     }
-  }, [currentBattle, isLoading, generateNewBattle, battleSettings]);
+  }, [currentBattle, isLoading, battleSettings]); // Removed generateNewBattle from deps to prevent loops
 
   useEffect(() => {
     setGuessPercentage(50);

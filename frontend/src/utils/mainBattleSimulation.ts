@@ -55,7 +55,7 @@ interface BattleResult {
   executionTime: number;
 }
 
-const NUM_BATTLES = 100; // Run 100 battles
+const NUM_BATTLES = 10; // Run 10 battles to match backend
 
 interface BattleEvent {
   turn: number;
