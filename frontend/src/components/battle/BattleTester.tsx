@@ -57,7 +57,7 @@ const BattleTester: React.FC<BattleTesterProps> = ({
   onSimulateBattle,
   simulation,
   isSimulating,
-  rightOffset = 420
+  rightOffset = 0
 }) => {
   const theme = useMantineTheme();
   const { colorScheme } = useMantineColorScheme();

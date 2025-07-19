@@ -71,7 +71,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({
           onToggleExpanded={toggleBattleTester}
           pokemon1={currentBattle?.pokemon1}
           pokemon2={currentBattle?.pokemon2}
-          rightOffset={60}
+          rightOffset={0}
           onSimulateBattle={async () => {
             if (!currentPokemon1 || !currentPokemon2) return;
             
