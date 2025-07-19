@@ -39,6 +39,7 @@ interface BattleResult {
       speed: number;
     };
     ability?: string;
+    item?: string;
   };
   pokemon2: {
     id: number;
@@ -61,6 +62,7 @@ interface BattleResult {
       speed: number;
     };
     ability?: string;
+    item?: string;
   };
   totalBattles: number;
   winRate: number;
@@ -96,7 +98,9 @@ class BattleService {
           types: showdownResult.pokemon1.types,
           sprites: showdownResult.pokemon1.sprites,
           moves: showdownResult.pokemon1.moves,
-          stats: showdownResult.pokemon1.stats
+          stats: showdownResult.pokemon1.stats,
+          ability: showdownResult.pokemon1.ability,
+          item: showdownResult.pokemon1.item
         },
         pokemon2: {
           id: showdownResult.pokemon2.id,
@@ -106,7 +110,9 @@ class BattleService {
           types: showdownResult.pokemon2.types,
           sprites: showdownResult.pokemon2.sprites,
           moves: showdownResult.pokemon2.moves,
-          stats: showdownResult.pokemon2.stats
+          stats: showdownResult.pokemon2.stats,
+          ability: showdownResult.pokemon2.ability,
+          item: showdownResult.pokemon2.item
         },
         totalBattles: showdownResult.totalBattles,
         winRate: showdownResult.winRate,

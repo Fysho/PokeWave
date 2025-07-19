@@ -38,6 +38,8 @@ export interface ShowdownBattleResult {
       specialDefense: number;
       speed: number;
     };
+    ability?: string;
+    item?: string;
   };
   pokemon2: {
     id: number;
@@ -59,6 +61,8 @@ export interface ShowdownBattleResult {
       specialDefense: number;
       speed: number;
     };
+    ability?: string;
+    item?: string;
   };
   totalBattles: number;
   winRate: number;

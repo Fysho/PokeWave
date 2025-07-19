@@ -66,6 +66,7 @@ export interface ShowdownBattleResult {
       speed: number;
     };
     ability?: string;
+    item?: string;
     levelupMoves?: Array<{ level: number; move: string }>;
   };
   pokemon2: {
@@ -113,6 +114,7 @@ export interface ShowdownBattleResult {
       speed: number;
     };
     ability?: string;
+    item?: string;
     levelupMoves?: Array<{ level: number; move: string }>;
   };
   totalBattles: number;
@@ -243,6 +245,10 @@ class PokemonShowdownService {
       const pokemon1Ability = this.getRandomAbility(species1);
       const pokemon2Ability = this.getRandomAbility(species2);
 
+      // Get random items
+      const pokemon1Item = this.getRandomItem();
+      const pokemon2Item = this.getRandomItem();
+
       // Get levelup moves
       const pokemon1LevelupMoves = this.getLevelupMoves(species1, dex);
       const pokemon2LevelupMoves = this.getLevelupMoves(species2, dex);
@@ -285,6 +291,7 @@ class PokemonShowdownService {
           evs: evs,
           ivs: ivs,
           ability: pokemon1Ability,
+          item: pokemon1Item,
           levelupMoves: pokemon1LevelupMoves
         },
         pokemon2: {
@@ -300,6 +307,7 @@ class PokemonShowdownService {
           evs: evs,
           ivs: ivs,
           ability: pokemon2Ability,
+          item: pokemon2Item,
           levelupMoves: pokemon2LevelupMoves
         },
         totalBattles: this.NUM_BATTLES,
@@ -668,12 +676,16 @@ class PokemonShowdownService {
     const moves = this.getRandomMoves(species, dex, 4);
     logger.info(`Using moves for ${species.name}:`, moves);
     
+    // Get random ability and item
+    const ability = this.getRandomAbility(species);
+    const item = this.getRandomItem();
+    
     // Create a simple set
     const set = {
       name: species.name,
       species: species.name as any,
-      item: '',
-      ability: species.abilities['0'] || '',
+      item: item || '',
+      ability: ability,
       moves: moves,
       nature: 'Hardy',
       evs: { hp: 0, atk: 0, def: 0, spa: 0, spd: 0, spe: 0 },
@@ -1036,6 +1048,32 @@ class PokemonShowdownService {
     
     // Return a random ability
     return abilities[Math.floor(Math.random() * abilities.length)];
+  }
+
+  private getRandomItem(): string | undefined {
+    // Common competitive items pool
+    const itemPool = [
+      'Leftovers',
+      'Choice Band',
+      'Choice Scarf',
+      'Choice Specs',
+      'Life Orb',
+      'Focus Sash',
+      'Assault Vest',
+      'Eviolite',
+      'Black Sludge',
+      'Rocky Helmet',
+      'Light Clay',
+      'Sitrus Berry'
+    ];
+    
+    // 50% chance to have no item
+    if (Math.random() < 0.5) {
+      return undefined;
+    }
+    
+    // Return a random item
+    return itemPool[Math.floor(Math.random() * itemPool.length)];
   }
 
   private generateBattleKey(config: ShowdownBattleConfig): string {
