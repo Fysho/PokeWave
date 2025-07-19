@@ -238,8 +238,16 @@ class PokemonShowdownService {
       const pokemon2Types = species2.types.map(t => t.toLowerCase());
 
       // Get moves from level-up learnset only
-      const pokemon1Moves = this.getMovesFromLearnset(species1, pokemon1Level, dex);
-      const pokemon2Moves = this.getMovesFromLearnset(species2, pokemon2Level, dex);
+      const pokemon1MoveIds = this.getMovesFromLearnset(species1, pokemon1Level, dex);
+      const pokemon2MoveIds = this.getMovesFromLearnset(species2, pokemon2Level, dex);
+      
+      // Get formatted move names for display
+      const pokemon1Moves = this.getLevelupMoves(species1, dex)
+        .filter(m => pokemon1MoveIds.includes(m.moveId))
+        .map(m => m.move);
+      const pokemon2Moves = this.getLevelupMoves(species2, dex)
+        .filter(m => pokemon2MoveIds.includes(m.moveId))
+        .map(m => m.move);
 
       // Get random abilities
       const pokemon1Ability = this.getRandomAbility(species1);
@@ -710,8 +718,7 @@ class PokemonShowdownService {
       
       // Filter moves that the Pokemon can know at the given level
       const availableMoves = levelupMoves
-        .filter(moveData => moveData.level <= level)
-        .map(moveData => moveData.move);
+        .filter(moveData => moveData.level <= level);
       
       if (availableMoves.length === 0) {
         logger.error(`No moves found in learnset for ${species.name} at level ${level}`);
@@ -721,18 +728,18 @@ class PokemonShowdownService {
       // If we have more than 4 moves, select the 4 most recent ones (highest level)
       if (availableMoves.length > 4) {
         // Sort by level (descending) and take the last 4 learned
-        const sortedMoves = levelupMoves
-          .filter(moveData => moveData.level <= level)
+        const sortedMoves = availableMoves
           .sort((a, b) => b.level - a.level)
-          .slice(0, 4)
-          .map(moveData => moveData.move);
+          .slice(0, 4);
         
-        logger.info(`Selected 4 most recent moves for ${species.name} at level ${level}:`, sortedMoves);
-        return sortedMoves;
+        logger.info(`Selected 4 most recent moves for ${species.name} at level ${level}:`, sortedMoves.map(m => m.move));
+        // Return move IDs (not formatted names) for battle simulation
+        return sortedMoves.map(moveData => moveData.moveId);
       }
       
-      logger.info(`Using all ${availableMoves.length} available moves for ${species.name} at level ${level}:`, availableMoves);
-      return availableMoves;
+      logger.info(`Using all ${availableMoves.length} available moves for ${species.name} at level ${level}:`, availableMoves.map(m => m.move));
+      // Return move IDs (not formatted names) for battle simulation
+      return availableMoves.map(moveData => moveData.moveId);
     } catch (error) {
       logger.error('Critical error getting moves from learnset:', {
         species: species.name,
@@ -884,8 +891,8 @@ class PokemonShowdownService {
     };
   }
 
-  private getLevelupMoves(species: Species, dex: any): Array<{ level: number; move: string }> {
-    const levelupMoves: Array<{ level: number; move: string }> = [];
+  private getLevelupMoves(species: Species, dex: any): Array<{ level: number; move: string; moveId: string }> {
+    const levelupMoves: Array<{ level: number; move: string; moveId: string }> = [];
     const generation = dex.gen || 9;
     
     logger.debug(`Getting levelup moves for ${species.name} (ID: ${species.id}) in Gen ${generation}`);
@@ -923,7 +930,8 @@ class PokemonShowdownService {
                     if (!existingMove) {
                       levelupMoves.push({ 
                         level, 
-                        move: this.formatMoveName(move.name) 
+                        move: this.formatMoveName(move.name),
+                        moveId: moveName // Keep the original move ID for battle simulation
                       });
                     } else if (level < existingMove.level) {
                       // Update to the earliest level this move is learned
@@ -1056,7 +1064,7 @@ class PokemonShowdownService {
       generation: config.options?.generation || 9,
       pokemon1Level: config.options?.pokemon1Level || 50,
       pokemon2Level: config.options?.pokemon2Level || 50,
-      version: 'v5-learnset-only' // Add version to invalidate old cache
+      version: 'v6-learnset-moveids' // Add version to invalidate old cache
     };
 
     return crypto
