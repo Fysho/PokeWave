@@ -82,10 +82,57 @@ const MainLayout: React.FC<MainLayoutProps> = ({
               // Import and use the single battle simulation
               const { simulateSingleBattle } = await import('../../utils/mainBattleSimulation');
               
+              // Convert Pokemon instances to CompletePokemon format
+              const pokemon1Data = {
+                id: currentPokemon1.id,
+                name: currentPokemon1.name,
+                species: currentPokemon1.name,
+                level: currentPokemon1.level,
+                types: currentPokemon1.types,
+                stats: {
+                  hp: currentPokemon1.calculatedStats.hp,
+                  attack: currentPokemon1.calculatedStats.attack,
+                  defense: currentPokemon1.calculatedStats.defense,
+                  specialAttack: currentPokemon1.calculatedStats.specialAttack,
+                  specialDefense: currentPokemon1.calculatedStats.specialDefense,
+                  speed: currentPokemon1.calculatedStats.speed
+                },
+                moves: currentPokemon1.moves,
+                moveNames: currentPokemon1.moves,
+                ability: currentPokemon1.ability,
+                abilityName: currentPokemon1.ability,
+                item: currentPokemon1.item,
+                sprites: currentPokemon1.sprites,
+                wins: currentPokemon1.wins
+              };
+              
+              const pokemon2Data = {
+                id: currentPokemon2.id,
+                name: currentPokemon2.name,
+                species: currentPokemon2.name,
+                level: currentPokemon2.level,
+                types: currentPokemon2.types,
+                stats: {
+                  hp: currentPokemon2.calculatedStats.hp,
+                  attack: currentPokemon2.calculatedStats.attack,
+                  defense: currentPokemon2.calculatedStats.defense,
+                  specialAttack: currentPokemon2.calculatedStats.specialAttack,
+                  specialDefense: currentPokemon2.calculatedStats.specialDefense,
+                  speed: currentPokemon2.calculatedStats.speed
+                },
+                moves: currentPokemon2.moves,
+                moveNames: currentPokemon2.moves,
+                ability: currentPokemon2.ability,
+                abilityName: currentPokemon2.ability,
+                item: currentPokemon2.item,
+                sprites: currentPokemon2.sprites,
+                wins: currentPokemon2.wins
+              };
+              
               const startTime = Date.now();
               const result = await simulateSingleBattle(
-                currentPokemon1,
-                currentPokemon2,
+                pokemon1Data,
+                pokemon2Data,
                 battleSettings.generation
               );
               

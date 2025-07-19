@@ -255,8 +255,8 @@ export async function simulateSingleBattle(
       winner,
       events: [],
       finalHP: {
-        p1: pokemon1.stats.hp,
-        p2: pokemon2.stats.hp
+        p1: pokemon1.stats?.hp || 100,
+        p2: pokemon2.stats?.hp || 100
       },
       totalTurns: 0
     };
