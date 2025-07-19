@@ -6,7 +6,7 @@ const API_BASE_URL = 'http://localhost:4000/api';
 // Create axios instance with default config
 const api = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 30000, // Increased to 30 seconds for battle simulations
+  timeout: 5000, // 5 seconds is sufficient for 10 battle simulations
   headers: {
     'Content-Type': 'application/json',
   },
@@ -15,7 +15,7 @@ const api = axios.create({
 // Request interceptor for logging
 api.interceptors.request.use(
   (config) => {
-    console.log(`API Request: ${config.method?.toUpperCase()} ${config.url}`);
+    // console.log(`API Request: ${config.method?.toUpperCase()} ${config.url}`); // Commented for performance
     return config;
   },
   (error) => {
