@@ -84,7 +84,7 @@ export const getPokemonInfo = async (req: PokemonInfoRequest, res: Response) => 
     }
 
     // Get level-up moves for the specified generation
-    const levelUpMoves = getLevelUpMovesForGeneration(species, dex, generation);
+    const levelUpMoves = await getLevelUpMovesForGeneration(species, dex, generation);
 
     // Format base stats
     const baseStats = {
@@ -148,15 +148,12 @@ function getSpeciesById(dex: any, id: number): any {
 }
 
 // Helper function to get level-up moves for a specific generation
-function getLevelUpMovesForGeneration(species: any, dex: any, generation: number): Array<{ level: number; move: string }> {
+async function getLevelUpMovesForGeneration(species: any, dex: any, generation: number): Promise<Array<{ level: number; move: string }>> {
   const levelupMoves: Array<{ level: number; move: string }> = [];
   
   try {
-    // Load learnsets data
-    const learnsets = require('@pkmn/dex/build/learnsets-DJNGQKWY.js').default;
-    const allLearnsets = learnsets['9']; // Gen 9 contains complete move data
-    
-    const learnsetData = allLearnsets[species.id];
+    // Get learnset data using the Dex API
+    const learnsetData = await dex.learnsets.get(species.id);
     
     if (!learnsetData || !learnsetData.learnset) {
       logger.warn(`No learnset data found for ${species.name} (ID: ${species.id})`);

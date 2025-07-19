@@ -120,7 +120,7 @@ export const getPokemonInstance = async (req: PokemonInstanceRequest, res: Respo
     const ability = getRandomAbility(species);
 
     // Get the 4 highest level moves the Pokemon can learn at this level
-    const moves = getTopFourMoves(species, level, dex, generation);
+    const moves = await getTopFourMoves(species, level, dex, generation);
 
     // Format base stats
     const baseStats: StatValues = {
@@ -232,8 +232,8 @@ function getRandomAbility(species: any): string {
 }
 
 // Helper function to get the top 4 moves by level
-function getTopFourMoves(species: any, level: number, dex: any, generation: number): string[] {
-  const levelupMoves = getLevelUpMovesForGeneration(species, dex, generation);
+async function getTopFourMoves(species: any, level: number, dex: any, generation: number): Promise<string[]> {
+  const levelupMoves = await getLevelUpMovesForGeneration(species, dex, generation);
   
   // Filter moves that can be learned at or below the current level
   const availableMoves = levelupMoves.filter(move => move.level <= level);
@@ -254,15 +254,12 @@ function getTopFourMoves(species: any, level: number, dex: any, generation: numb
 }
 
 // Helper function to get level-up moves for a specific generation
-function getLevelUpMovesForGeneration(species: any, dex: any, generation: number): Array<{ level: number; move: string }> {
+async function getLevelUpMovesForGeneration(species: any, dex: any, generation: number): Promise<Array<{ level: number; move: string }>> {
   const levelupMoves: Array<{ level: number; move: string }> = [];
   
   try {
-    // Load learnsets data
-    const learnsets = require('@pkmn/dex/build/learnsets-DJNGQKWY.js').default;
-    const allLearnsets = learnsets['9']; // Gen 9 contains complete move data
-    
-    const learnsetData = allLearnsets[species.id];
+    // Get learnset data using the Dex API
+    const learnsetData = await dex.learnsets.get(species.id);
     
     if (!learnsetData || !learnsetData.learnset) {
       logger.warn(`No learnset data found for ${species.name} (ID: ${species.id})`);

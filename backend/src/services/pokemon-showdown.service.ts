@@ -156,41 +156,6 @@ interface SingleBattleResult {
 
 class PokemonShowdownService {
   private readonly NUM_BATTLES = BATTLE_CONFIG.TOTAL_BATTLES; // Number of battles to simulate from central config
-  private learnsets: any = null; // Cache learnsets data
-
-  constructor() {
-    // Preload learnsets data on service initialization
-    this.preloadLearnsets();
-  }
-
-  private preloadLearnsets() {
-    try {
-      logger.info('Preloading Pokemon learnsets data...');
-      // Try different approaches to load learnsets
-      try {
-        // First try the specific file
-        this.learnsets = require('@pkmn/dex/build/learnsets-DJNGQKWY.js').default;
-        logger.info('Pokemon learnsets data loaded successfully from DJNGQKWY file');
-      } catch (e1) {
-        logger.warn('Failed to load specific learnsets file, trying alternatives...', e1);
-        try {
-          // Try the minified version
-          this.learnsets = require('@pkmn/dex/build/learnsets.min.js');
-          logger.info('Pokemon learnsets data loaded successfully from min file');
-        } catch (e2) {
-          logger.warn('Failed to load minified learnsets, trying direct import...', e2);
-          // Try direct import
-          const { Learnsets } = require('@pkmn/dex');
-          this.learnsets = Learnsets;
-          logger.info('Pokemon learnsets data loaded successfully from direct import');
-        }
-      }
-    } catch (error) {
-      logger.error('Failed to preload learnsets completely:', error);
-      // Continue without learnsets - they may not be strictly necessary for basic battles
-      this.learnsets = null;
-    }
-  }
 
   async simulateBattle(config: ShowdownBattleConfig): Promise<ShowdownBattleResult> {
     const startTime = Date.now();
@@ -299,14 +264,16 @@ class PokemonShowdownService {
       const pokemon2Types = species2.types.map(t => t.toLowerCase());
 
       // Get moves from level-up learnset only
-      const pokemon1MoveIds = this.getMovesFromLearnset(species1, pokemon1Level, dex);
-      const pokemon2MoveIds = this.getMovesFromLearnset(species2, pokemon2Level, dex);
+      const pokemon1MoveIds = await this.getMovesFromLearnset(species1, pokemon1Level, dex);
+      const pokemon2MoveIds = await this.getMovesFromLearnset(species2, pokemon2Level, dex);
       
       // Get formatted move names for display
-      const pokemon1Moves = this.getLevelupMoves(species1, dex)
+      const pokemon1LevelupMovesData = await this.getLevelupMoves(species1, dex);
+      const pokemon1Moves = pokemon1LevelupMovesData
         .filter(m => pokemon1MoveIds.includes(m.moveId))
         .map(m => m.move);
-      const pokemon2Moves = this.getLevelupMoves(species2, dex)
+      const pokemon2LevelupMovesData = await this.getLevelupMoves(species2, dex);
+      const pokemon2Moves = pokemon2LevelupMovesData
         .filter(m => pokemon2MoveIds.includes(m.moveId))
         .map(m => m.move);
 
@@ -319,8 +286,8 @@ class PokemonShowdownService {
       const pokemon2Item = this.getRandomItem();
 
       // Get levelup moves
-      const pokemon1LevelupMoves = this.getLevelupMoves(species1, dex);
-      const pokemon2LevelupMoves = this.getLevelupMoves(species2, dex);
+      const pokemon1LevelupMoves = await this.getLevelupMoves(species1, dex);
+      const pokemon2LevelupMoves = await this.getLevelupMoves(species2, dex);
 
       // Base stats
       const pokemon1BaseStats = {
@@ -763,7 +730,7 @@ class PokemonShowdownService {
     logger.debug('Dex root keys:', Object.keys(dex).slice(0, 20));
     
     // Get moves from level-up learnset only
-    const moves = this.getMovesFromLearnset(species, level, dex);
+    const moves = await this.getMovesFromLearnset(species, level, dex);
     logger.info(`Using moves for ${species.name}:`, moves);
     
     // Get random ability and item
@@ -790,10 +757,10 @@ class PokemonShowdownService {
   }
 
 
-  private getMovesFromLearnset(species: Species, level: number, dex: any): string[] {
+  private async getMovesFromLearnset(species: Species, level: number, dex: any): Promise<string[]> {
     try {
       // Get all level-up moves for this Pokemon
-      const levelupMoves = this.getLevelupMoves(species, dex);
+      const levelupMoves = await this.getLevelupMoves(species, dex);
       
       // Filter moves that the Pokemon can know at the given level
       const availableMoves = levelupMoves
@@ -970,25 +937,18 @@ class PokemonShowdownService {
     };
   }
 
-  private getLevelupMoves(species: Species, dex: any): Array<{ level: number; move: string; moveId: string }> {
+  private async getLevelupMoves(species: Species, dex: any): Promise<Array<{ level: number; move: string; moveId: string }>> {
     const levelupMoves: Array<{ level: number; move: string; moveId: string }> = [];
     const generation = dex.gen || 9;
     
     logger.debug(`Getting levelup moves for ${species.name} (ID: ${species.id}) in Gen ${generation}`);
     
     try {
-      // Use cached learnsets data - use gen 9 data which contains all moves
-      const learnsets = this.learnsets || require('@pkmn/dex/build/learnsets-DJNGQKWY.js').default;
-      const allLearnsets = learnsets['9']; // Gen 9 contains complete move data
-      
-      logger.debug(`Learnsets loaded, checking for species ID: ${species.id}`);
-      logger.debug(`All learnsets type: ${typeof allLearnsets}, has species: ${!!allLearnsets[species.id]}`);
-      
-      const learnsetData = allLearnsets[species.id];
+      // Get learnset data using the Dex API
+      const learnsetData = await dex.learnsets.get(species.id);
       
       if (!learnsetData || !learnsetData.learnset) {
         logger.error(`No learnset data found for ${species.name} (ID: ${species.id}) in Gen ${generation}`);
-        logger.error(`Available IDs (first 20): ${Object.keys(allLearnsets).slice(0, 20).join(', ')}`);
         throw new ApiError(500, `No learnset data found for ${species.name}`);
       }
       
