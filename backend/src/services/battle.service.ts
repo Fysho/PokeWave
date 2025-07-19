@@ -38,6 +38,7 @@ interface BattleResult {
       specialDefense: number;
       speed: number;
     };
+    ability?: string;
   };
   pokemon2: {
     id: number;
@@ -59,6 +60,7 @@ interface BattleResult {
       specialDefense: number;
       speed: number;
     };
+    ability?: string;
   };
   totalBattles: number;
   winRate: number;
