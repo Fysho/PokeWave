@@ -1,6 +1,5 @@
 import { Dex, Species } from '@pkmn/dex';
 import { Teams, BattleStreams } from '@pkmn/sim';
-import { Learnsets } from '@pkmn/data';
 import { cacheService } from './cache.service';
 import { pokemonService } from './pokemon.service';
 import logger from '../utils/logger';
@@ -706,15 +705,14 @@ class PokemonShowdownService {
     const generation = dex.gen || 9;
     
     try {
-      // Get the learnset data for this Pokemon
-      const learnsets = new Learnsets(dex);
-      const learnset = learnsets.get(species.id);
+      // Try to get learnset from dex.data.Learnsets
+      const learnsetData = dex.data?.Learnsets?.[species.id];
       
-      if (learnset) {
+      if (learnsetData && learnsetData.learnset) {
         // Get all level-up moves for the current generation
         const levelupMoves: { level: number; move: string }[] = [];
         
-        for (const [moveName, learnData] of Object.entries(learnset.learnset)) {
+        for (const [moveName, learnData] of Object.entries(learnsetData.learnset)) {
           if (Array.isArray(learnData)) {
             for (const learnMethod of learnData) {
               // Format is like "8L1" (Gen 8, Level 1) or "7L45" (Gen 7, Level 45)
@@ -981,13 +979,12 @@ class PokemonShowdownService {
     const generation = dex.gen || 9;
     
     try {
-      // Get the learnset data for this Pokemon
-      const learnsets = new Learnsets(dex);
-      const learnset = learnsets.get(species.id);
+      // Try to get learnset from dex.data.Learnsets
+      const learnsetData = dex.data?.Learnsets?.[species.id];
       
-      if (learnset) {
+      if (learnsetData && learnsetData.learnset) {
         // Process all moves from the learnset
-        for (const [moveName, learnData] of Object.entries(learnset.learnset)) {
+        for (const [moveName, learnData] of Object.entries(learnsetData.learnset)) {
           if (Array.isArray(learnData)) {
             for (const learnMethod of learnData) {
               // Format is like "8L1" (Gen 8, Level 1) or "7L45" (Gen 7, Level 45)
