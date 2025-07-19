@@ -6,7 +6,7 @@ const API_BASE_URL = 'http://localhost:4000/api';
 // Create axios instance with default config
 const api = axios.create({
   baseURL: API_BASE_URL,
-  timeout: 5000, // 5 seconds is sufficient for 10 battle simulations
+  timeout: 5000, // Default 5 seconds for most endpoints
   headers: {
     'Content-Type': 'application/json',
   },
@@ -106,6 +106,8 @@ export class ApiService {
         pokemon2Level = Math.floor(Math.random() * 100) + 1;
       }
 
+      // Use a longer timeout for battle simulations (15 seconds)
+      // This accounts for cold starts and initial data loading
       const response = await api.post<BattleResult>('/battle/simulate', {
         pokemon1Id,
         pokemon2Id,
@@ -117,6 +119,8 @@ export class ApiService {
           movesetType: options?.movesetType || 'random',
           aiDifficulty: options?.aiDifficulty || 'random'
         }
+      }, {
+        timeout: 15000 // 15 seconds timeout for battle simulations
       });
       return response.data;
     } catch (error) {

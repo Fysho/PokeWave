@@ -154,6 +154,22 @@ interface SingleBattleResult {
 
 class PokemonShowdownService {
   private readonly NUM_BATTLES = 10; // Number of battles to simulate (reduced from 100 for performance)
+  private learnsets: any = null; // Cache learnsets data
+
+  constructor() {
+    // Preload learnsets data on service initialization
+    this.preloadLearnsets();
+  }
+
+  private preloadLearnsets() {
+    try {
+      logger.info('Preloading Pokemon learnsets data...');
+      this.learnsets = require('@pkmn/dex/build/learnsets-DJNGQKWY.js').default;
+      logger.info('Pokemon learnsets data loaded successfully');
+    } catch (error) {
+      logger.error('Failed to preload learnsets:', error);
+    }
+  }
 
   async simulateBattle(config: ShowdownBattleConfig): Promise<ShowdownBattleResult> {
     const startTime = Date.now();
@@ -898,8 +914,8 @@ class PokemonShowdownService {
     logger.debug(`Getting levelup moves for ${species.name} (ID: ${species.id}) in Gen ${generation}`);
     
     try {
-      // Load learnsets data directly - use gen 9 data which contains all moves
-      const learnsets = require('@pkmn/dex/build/learnsets-DJNGQKWY.js').default;
+      // Use cached learnsets data - use gen 9 data which contains all moves
+      const learnsets = this.learnsets || require('@pkmn/dex/build/learnsets-DJNGQKWY.js').default;
       const allLearnsets = learnsets['9']; // Gen 9 contains complete move data
       const learnsetData = allLearnsets[species.id];
       
