@@ -705,8 +705,58 @@ class PokemonShowdownService {
     const generation = dex.gen || 9;
     
     try {
-      // Try to get learnset from dex.data.Learnsets
-      const learnsetData = dex.data?.Learnsets?.[species.id];
+      // Log what we're looking for
+      logger.info(`Getting moves for ${species.name} (id: ${species.id}, num: ${species.num})`);
+      
+      // The learnset might be available directly on the species object
+      let learnsetData: any = null;
+      
+      // Check if species has learnset property
+      if ((species as any).learnset) {
+        learnsetData = { learnset: (species as any).learnset };
+        logger.info('Found learnset on species object');
+      } 
+      // Check if dex has learnsets
+      else if (dex.species?.learnsets?.get) {
+        const learnset = dex.species.learnsets.get(species.id);
+        if (learnset) {
+          learnsetData = { learnset };
+          logger.info('Found learnset via dex.species.learnsets.get');
+        }
+      }
+      // Try dex.data.Learnsets with different keys
+      else if (dex.data?.Learnsets) {
+        // Try species ID
+        learnsetData = dex.data.Learnsets[species.id];
+        
+        // Try lowercase ID
+        if (!learnsetData) {
+          const lowerId = species.id.toLowerCase();
+          learnsetData = dex.data.Learnsets[lowerId];
+          if (learnsetData) {
+            logger.info(`Found learnset data using lowercase ID: ${lowerId}`);
+          }
+        }
+        
+        // Try species name
+        if (!learnsetData) {
+          const speciesName = species.name.toLowerCase().replace(/[^a-z0-9]/g, '');
+          learnsetData = dex.data.Learnsets[speciesName];
+          if (learnsetData) {
+            logger.info(`Found learnset data using species name: ${speciesName}`);
+          }
+        }
+      }
+      
+      // Log what we found
+      if (!learnsetData) {
+        logger.warn(`No learnset data found for ${species.name}. Available dex properties:`, Object.keys(dex).slice(0, 10));
+        if (dex.data) {
+          logger.warn('Available dex.data keys:', Object.keys(dex.data).slice(0, 10));
+        }
+      }
+      
+      logger.info(`Learnset data found: ${!!learnsetData}, has learnset property: ${!!(learnsetData?.learnset)}`);
       
       if (learnsetData && learnsetData.learnset) {
         // Get all level-up moves for the current generation
@@ -758,38 +808,18 @@ class PokemonShowdownService {
         });
       }
       
-      // If we couldn't get enough moves from learnset, fall back to type-based moves
+      // If we couldn't get enough moves from learnset, use basic defaults only
       if (moves.length < count) {
-        logger.warn(`Only found ${moves.length} level-up moves for ${species.name}, using type-based fallback`);
-        const typeBasedMoves = this.getTypeBasedMoves(species.types, dex);
-        const shuffledTypeMoves = [...typeBasedMoves].sort(() => Math.random() - 0.5);
-        
-        for (const moveName of shuffledTypeMoves) {
-          if (moves.length >= count) break;
-          if (!moves.includes(moveName)) {
-            moves.push(moveName);
-          }
-        }
+        logger.warn(`Only found ${moves.length} level-up moves for ${species.name}, using basic defaults`);
       }
     } catch (error) {
       logger.error('Failed to get learnset moves for species', { 
         species: species.name, 
         error: error instanceof Error ? error.message : error 
       });
-      
-      // Fall back to type-based moves
-      const typeBasedMoves = this.getTypeBasedMoves(species.types, dex);
-      const shuffledTypeMoves = [...typeBasedMoves].sort(() => Math.random() - 0.5);
-      
-      for (const moveName of shuffledTypeMoves) {
-        if (moves.length >= count) break;
-        if (!moves.includes(moveName)) {
-          moves.push(moveName);
-        }
-      }
     }
 
-    // Fill with default moves if still needed
+    // Fill with very basic default moves if needed (no type-based moves)
     const defaultMoves = ['Tackle', 'Scratch', 'Pound', 'Quick Attack'];
     while (moves.length < count) {
       const defaultMove = defaultMoves[moves.length % defaultMoves.length];
@@ -804,40 +834,6 @@ class PokemonShowdownService {
     return moves;
   }
 
-  private getTypeBasedMoves(types: string[], dex: any): string[] {
-    const typeMoveSets: { [key: string]: string[] } = {
-      'Normal': ['Tackle', 'Quick Attack', 'Scratch', 'Take Down', 'Hyper Beam'],
-      'Fire': ['Ember', 'Flamethrower', 'Fire Blast', 'Fire Punch', 'Flame Wheel'],
-      'Water': ['Water Gun', 'Hydro Pump', 'Surf', 'Bubble Beam', 'Aqua Tail'],
-      'Electric': ['Thunder Shock', 'Thunderbolt', 'Thunder', 'Thunder Punch', 'Discharge'],
-      'Grass': ['Vine Whip', 'Razor Leaf', 'Solar Beam', 'Energy Ball', 'Leaf Blade'],
-      'Ice': ['Ice Beam', 'Blizzard', 'Ice Punch', 'Aurora Beam', 'Ice Shard'],
-      'Fighting': ['Karate Chop', 'Close Combat', 'Cross Chop', 'Dynamic Punch', 'Mach Punch'],
-      'Poison': ['Poison Sting', 'Sludge Bomb', 'Toxic', 'Poison Jab', 'Sludge'],
-      'Ground': ['Earthquake', 'Dig', 'Mud Slap', 'Earth Power', 'Bulldoze'],
-      'Flying': ['Wing Attack', 'Air Slash', 'Hurricane', 'Aerial Ace', 'Fly'],
-      'Psychic': ['Psychic', 'Psybeam', 'Confusion', 'Psycho Cut', 'Zen Headbutt'],
-      'Bug': ['Bug Bite', 'Signal Beam', 'X-Scissor', 'U-turn', 'Bug Buzz'],
-      'Rock': ['Rock Throw', 'Rock Slide', 'Stone Edge', 'Rock Tomb', 'Power Gem'],
-      'Ghost': ['Shadow Ball', 'Shadow Claw', 'Night Shade', 'Hex', 'Shadow Sneak'],
-      'Dragon': ['Dragon Claw', 'Dragon Pulse', 'Outrage', 'Dragon Rush', 'Draco Meteor'],
-      'Dark': ['Bite', 'Crunch', 'Dark Pulse', 'Foul Play', 'Night Slash'],
-      'Steel': ['Metal Claw', 'Iron Tail', 'Flash Cannon', 'Iron Head', 'Steel Wing'],
-      'Fairy': ['Dazzling Gleam', 'Moonblast', 'Play Rough', 'Fairy Wind', 'Draining Kiss']
-    };
-
-    const moves: string[] = [];
-    for (const type of types) {
-      const typeMoves = typeMoveSets[type] || [];
-      moves.push(...typeMoves);
-    }
-    
-    // Filter to only include moves that exist in the current generation
-    return moves.filter(moveName => {
-      const move = dex.moves.get(moveName);
-      return move && move.exists;
-    });
-  }
 
   private makeRandomChoice(request: any): string {
     if (!request.active || !request.active[0]) return 'pass';
@@ -1021,21 +1017,14 @@ class PokemonShowdownService {
         logger.info(`Found ${levelupMoves.length} level-up moves for ${species.name}`);
       }
       
-      // If we couldn't get learnset data, provide some basic moves as fallback
+      // If we couldn't get learnset data, provide only basic moves as fallback
       if (levelupMoves.length === 0) {
-        logger.warn(`No level-up moves found for ${species.name}, using fallback`);
-        // Add some default moves that most Pokemon learn
+        logger.warn(`No level-up moves found for ${species.name}, using basic fallback`);
+        // Add only very basic default moves
         levelupMoves.push({ level: 1, move: 'Tackle' });
         levelupMoves.push({ level: 1, move: 'Growl' });
-        
-        // Add type-based moves at various levels
-        const typeBasedMoves = this.getTypeBasedMoves(species.types, dex);
-        typeBasedMoves.slice(0, 10).forEach((move, index) => {
-          levelupMoves.push({ 
-            level: Math.min(5 + (index * 5), 50), 
-            move: this.formatMoveName(move) 
-          });
-        });
+        levelupMoves.push({ level: 5, move: 'Scratch' });
+        levelupMoves.push({ level: 10, move: 'Quick Attack' });
       }
       
     } catch (error) {
@@ -1148,7 +1137,7 @@ class PokemonShowdownService {
       generation: config.options?.generation || 9,
       pokemon1Level: config.options?.pokemon1Level || 50,
       pokemon2Level: config.options?.pokemon2Level || 50,
-      version: 'v3-learnset' // Add version to invalidate old cache
+      version: 'v4-real-learnset' // Add version to invalidate old cache
     };
 
     return crypto
