@@ -11,7 +11,6 @@ import {
   IconMoon
 } from '@tabler/icons-react';
 import BattleSettings from '../settings/BattleSettings';
-import SimulationPanel from '../battle/SimulationPanel';
 import BattleTester from '../battle/BattleTester';
 import { useSettingsStore } from '../../store/settingsStore';
 import { useGameStore } from '../../store/gameStore';
@@ -34,7 +33,6 @@ const MainLayout: React.FC<MainLayoutProps> = ({
   const { 
     battleSettings, 
     isSettingsPanelExpanded, 
-    isSimulationPanelExpanded,
     isBattleTesterExpanded,
     battleTesterSimulation,
     isBattleTesterSimulating,
@@ -66,11 +64,6 @@ const MainLayout: React.FC<MainLayoutProps> = ({
         />
       )}
 
-      {/* Battle Simulation Panel */}
-      {activeTab === 'battle' && (
-        <SimulationPanel />
-      )}
-
       {/* Battle Tester Panel */}
       {activeTab === 'battle' && (
         <BattleTester
@@ -78,7 +71,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({
           onToggleExpanded={toggleBattleTester}
           pokemon1={currentBattle?.pokemon1}
           pokemon2={currentBattle?.pokemon2}
-          rightOffset={isSimulationPanelExpanded ? 420 : 60}
+          rightOffset={60}
           onSimulateBattle={async () => {
             if (!currentPokemon1 || !currentPokemon2) return;
             
@@ -271,10 +264,10 @@ const MainLayout: React.FC<MainLayoutProps> = ({
             size="xl"
             style={{
               marginLeft: activeTab === 'battle' ? (isSettingsPanelExpanded ? '320px' : '60px') : '0',
-              marginRight: activeTab === 'battle' ? (isSimulationPanelExpanded ? '400px' : '60px') : '0',
+              marginRight: activeTab === 'battle' ? (isBattleTesterExpanded ? '400px' : '60px') : '0',
               transition: 'margin-left 0.3s ease, margin-right 0.3s ease',
               maxWidth: activeTab === 'battle' ? 
-                `calc(100% - ${isSettingsPanelExpanded ? '320px' : '60px'} - ${isSimulationPanelExpanded ? '400px' : '60px'})` : 
+                `calc(100% - ${isSettingsPanelExpanded ? '320px' : '60px'} - ${isBattleTesterExpanded ? '400px' : '60px'})` : 
                 '100%'
             }}
           >
