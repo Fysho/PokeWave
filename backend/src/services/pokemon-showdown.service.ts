@@ -1082,7 +1082,8 @@ class PokemonShowdownService {
       pokemon2Id: config.pokemon2Id,
       generation: config.options?.generation || 9,
       pokemon1Level: config.options?.pokemon1Level || 50,
-      pokemon2Level: config.options?.pokemon2Level || 50
+      pokemon2Level: config.options?.pokemon2Level || 50,
+      version: 'v2' // Add version to invalidate old cache
     };
 
     return crypto
