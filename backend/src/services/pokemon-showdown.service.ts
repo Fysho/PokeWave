@@ -237,9 +237,9 @@ class PokemonShowdownService {
       const pokemon1Types = species1.types.map(t => t.toLowerCase());
       const pokemon2Types = species2.types.map(t => t.toLowerCase());
 
-      // Get moves from Pokemon Showdown
-      const pokemon1Moves = await this.getRandomMoves(species1, dex, 4);
-      const pokemon2Moves = await this.getRandomMoves(species2, dex, 4);
+      // Get moves from level-up learnset only
+      const pokemon1Moves = this.getMovesFromLearnset(species1, pokemon1Level, dex);
+      const pokemon2Moves = this.getMovesFromLearnset(species2, pokemon2Level, dex);
 
       // Get random abilities
       const pokemon1Ability = this.getRandomAbility(species1);
@@ -675,8 +675,8 @@ class PokemonShowdownService {
     // Debug: Check what's available on dex at creation
     logger.debug('Dex root keys:', Object.keys(dex).slice(0, 20));
     
-    // Get random moves from Pokemon Showdown
-    const moves = await this.getRandomMoves(species, dex, 4);
+    // Get moves from level-up learnset only
+    const moves = this.getMovesFromLearnset(species, level, dex);
     logger.info(`Using moves for ${species.name}:`, moves);
     
     // Get random ability and item
@@ -703,88 +703,49 @@ class PokemonShowdownService {
   }
 
 
-  private async getRandomMoves(species: Species, dex: any, count: number): Promise<string[]> {
-    const moves: string[] = [];
-    
+  private getMovesFromLearnset(species: Species, level: number, dex: any): string[] {
     try {
-      // Define specific movesets for common Pokemon as a temporary solution
-      const commonMovesets: { [key: string]: string[] } = {
-        'pikachu': ['Thunder Shock', 'Quick Attack', 'Thunder Wave', 'Thunderbolt'],
-        'charizard': ['Flamethrower', 'Slash', 'Dragon Rage', 'Fire Blast'],
-        'bulbasaur': ['Tackle', 'Growl', 'Vine Whip', 'Razor Leaf'],
-        'squirtle': ['Tackle', 'Tail Whip', 'Water Gun', 'Bite'],
-        'charmander': ['Scratch', 'Growl', 'Ember', 'Slash'],
-        'mewtwo': ['Confusion', 'Swift', 'Psychic', 'Recover'],
-        'mew': ['Pound', 'Transform', 'Mega Punch', 'Psychic'],
-        'gengar': ['Lick', 'Night Shade', 'Hypnosis', 'Dream Eater'],
-        'alakazam': ['Confusion', 'Psybeam', 'Psychic', 'Recover'],
-        'eevee': ['Tackle', 'Sand Attack', 'Quick Attack', 'Bite'],
-        'vaporeon': ['Water Gun', 'Quick Attack', 'Bite', 'Aurora Beam']
-      };
+      // Get all level-up moves for this Pokemon
+      const levelupMoves = this.getLevelupMoves(species, dex);
       
-      const speciesId = species.id.toLowerCase();
-      if (commonMovesets[speciesId]) {
-        moves.push(...commonMovesets[speciesId].slice(0, count));
-        logger.info(`Using predefined moves for ${species.name}:`, moves);
-        return moves;
+      // Filter moves that the Pokemon can know at the given level
+      const availableMoves = levelupMoves
+        .filter(moveData => moveData.level <= level)
+        .map(moveData => moveData.move);
+      
+      if (availableMoves.length === 0) {
+        logger.error(`No moves found in learnset for ${species.name} at level ${level}`);
+        throw new ApiError(500, `Pokemon ${species.name} has no valid moves at level ${level}. This is a critical data error.`);
       }
       
-      // For other Pokemon, use type-appropriate moves
-      const typeMoveSets: { [key: string]: string[] } = {
-        'normal': ['Tackle', 'Scratch', 'Quick Attack', 'Slam'],
-        'fire': ['Ember', 'Fire Punch', 'Flamethrower', 'Fire Blast'],
-        'water': ['Water Gun', 'Bubble', 'Surf', 'Hydro Pump'],
-        'electric': ['Thunder Shock', 'Thunder Wave', 'Thunderbolt', 'Thunder'],
-        'grass': ['Vine Whip', 'Razor Leaf', 'Solar Beam', 'Petal Dance'],
-        'ice': ['Ice Beam', 'Blizzard', 'Ice Punch', 'Aurora Beam'],
-        'fighting': ['Karate Chop', 'Low Kick', 'Submission', 'High Jump Kick'],
-        'poison': ['Poison Sting', 'Acid', 'Sludge', 'Toxic'],
-        'ground': ['Sand Attack', 'Dig', 'Earthquake', 'Fissure'],
-        'flying': ['Gust', 'Wing Attack', 'Fly', 'Sky Attack'],
-        'psychic': ['Confusion', 'Psybeam', 'Psychic', 'Hypnosis'],
-        'bug': ['String Shot', 'Pin Missile', 'Leech Life', 'Twineedle'],
-        'rock': ['Rock Throw', 'Rock Slide', 'Earthquake', 'Rock Blast'],
-        'ghost': ['Lick', 'Night Shade', 'Confuse Ray', 'Shadow Ball'],
-        'dragon': ['Dragon Rage', 'Dragon Breath', 'Dragon Claw', 'Outrage'],
-        'dark': ['Bite', 'Faint Attack', 'Crunch', 'Pursuit'],
-        'steel': ['Metal Claw', 'Iron Defense', 'Iron Tail', 'Meteor Mash'],
-        'fairy': ['Fairy Wind', 'Moonblast', 'Dazzling Gleam', 'Play Rough']
-      };
-      
-      // Get moves based on Pokemon's primary type
-      const primaryType = species.types[0].toLowerCase();
-      if (typeMoveSets[primaryType]) {
-        // Filter moves that exist in the current generation
-        const availableMoves = typeMoveSets[primaryType].filter(moveName => {
-          const move = dex.moves.get(moveName);
-          return move && move.exists;
-        });
+      // If we have more than 4 moves, select the 4 most recent ones (highest level)
+      if (availableMoves.length > 4) {
+        // Sort by level (descending) and take the last 4 learned
+        const sortedMoves = levelupMoves
+          .filter(moveData => moveData.level <= level)
+          .sort((a, b) => b.level - a.level)
+          .slice(0, 4)
+          .map(moveData => moveData.move);
         
-        // Take up to 'count' moves
-        moves.push(...availableMoves.slice(0, count));
+        logger.info(`Selected 4 most recent moves for ${species.name} at level ${level}:`, sortedMoves);
+        return sortedMoves;
       }
       
-      logger.info(`Selected type-based moves for ${species.name} (${primaryType} type):`, moves);
-      
+      logger.info(`Using all ${availableMoves.length} available moves for ${species.name} at level ${level}:`, availableMoves);
+      return availableMoves;
     } catch (error) {
-      logger.error('Failed to get moves for species', { 
-        species: species.name, 
-        error: error instanceof Error ? error.message : error 
+      logger.error('Critical error getting moves from learnset:', {
+        species: species.name,
+        level: level,
+        error: error instanceof Error ? error.message : error
       });
-    }
-
-    // Fill with basic default moves if needed
-    const defaultMoves = ['Tackle', 'Scratch', 'Pound', 'Quick Attack'];
-    while (moves.length < count) {
-      const defaultMove = defaultMoves[moves.length % defaultMoves.length];
-      if (!moves.includes(defaultMove)) {
-        moves.push(defaultMove);
-      } else {
-        moves.push('Struggle'); // Ultimate fallback
+      
+      // This is a critical error - we cannot proceed without valid moves
+      if (error instanceof ApiError) {
+        throw error;
       }
+      throw new ApiError(500, `Failed to get valid moves for ${species.name}. Pokemon must have moves from their learnset.`);
     }
-
-    return moves;
   }
 
 
@@ -992,14 +953,10 @@ class PokemonShowdownService {
         logger.info(`Found ${levelupMoves.length} level-up moves for ${species.name}`);
       }
       
-      // If we couldn't get learnset data, provide only basic moves as fallback
+      // If we couldn't get learnset data, this is a critical error
       if (levelupMoves.length === 0) {
-        logger.warn(`No level-up moves found for ${species.name}, using basic fallback`);
-        // Add only very basic default moves
-        levelupMoves.push({ level: 1, move: 'Tackle' });
-        levelupMoves.push({ level: 1, move: 'Growl' });
-        levelupMoves.push({ level: 5, move: 'Scratch' });
-        levelupMoves.push({ level: 10, move: 'Quick Attack' });
+        logger.error(`CRITICAL: No level-up moves found for ${species.name} in learnset data`);
+        throw new ApiError(500, `No valid moves found for ${species.name} in Pokemon Showdown data. This is a critical data error.`);
       }
       
     } catch (error) {
@@ -1007,13 +964,11 @@ class PokemonShowdownService {
         species: species.name,
         error: error instanceof Error ? error.message : error 
       });
-      // Return basic fallback moves
-      return [
-        { level: 1, move: 'Tackle' },
-        { level: 1, move: 'Growl' },
-        { level: 5, move: 'Scratch' },
-        { level: 10, move: 'Quick Attack' }
-      ];
+      // Re-throw the error - we cannot proceed without valid moves
+      if (error instanceof ApiError) {
+        throw error;
+      }
+      throw new ApiError(500, `Failed to retrieve moves for ${species.name} from Pokemon Showdown data.`);
     }
     
     return levelupMoves;
@@ -1112,7 +1067,7 @@ class PokemonShowdownService {
       generation: config.options?.generation || 9,
       pokemon1Level: config.options?.pokemon1Level || 50,
       pokemon2Level: config.options?.pokemon2Level || 50,
-      version: 'v4-real-learnset' // Add version to invalidate old cache
+      version: 'v5-learnset-only' // Add version to invalidate old cache
     };
 
     return crypto
