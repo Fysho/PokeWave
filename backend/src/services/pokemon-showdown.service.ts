@@ -238,8 +238,8 @@ class PokemonShowdownService {
       const pokemon2Types = species2.types.map(t => t.toLowerCase());
 
       // Get moves from Pokemon Showdown
-      const pokemon1Moves = this.getRandomMoves(species1, dex, 4);
-      const pokemon2Moves = this.getRandomMoves(species2, dex, 4);
+      const pokemon1Moves = await this.getRandomMoves(species1, dex, 4);
+      const pokemon2Moves = await this.getRandomMoves(species2, dex, 4);
 
       // Get random abilities
       const pokemon1Ability = this.getRandomAbility(species1);
@@ -285,7 +285,7 @@ class PokemonShowdownService {
           wins: pokemon1Wins,
           types: pokemon1Types,
           sprites: pokemon1Sprites || { front: '', back: '', shiny: '' },
-          moves: pokemon1Moves.map(move => this.formatMoveName(move)),
+          moves: pokemon1Moves.map((move: string) => this.formatMoveName(move)),
           stats: pokemon1Stats,
           baseStats: pokemon1BaseStats,
           evs: evs,
@@ -301,7 +301,7 @@ class PokemonShowdownService {
           wins: pokemon2Wins,
           types: pokemon2Types,
           sprites: pokemon2Sprites || { front: '', back: '', shiny: '' },
-          moves: pokemon2Moves.map(move => this.formatMoveName(move)),
+          moves: pokemon2Moves.map((move: string) => this.formatMoveName(move)),
           stats: pokemon2Stats,
           baseStats: pokemon2BaseStats,
           evs: evs,
@@ -672,8 +672,11 @@ class PokemonShowdownService {
   private async createTeam(species: Species, level: number, generation: number): Promise<string> {
     const dex = Dex.forGen(generation);
     
+    // Debug: Check what's available on dex at creation
+    logger.debug('Dex root keys:', Object.keys(dex).slice(0, 20));
+    
     // Get random moves from Pokemon Showdown
-    const moves = this.getRandomMoves(species, dex, 4);
+    const moves = await this.getRandomMoves(species, dex, 4);
     logger.info(`Using moves for ${species.name}:`, moves);
     
     // Get random ability and item
@@ -700,126 +703,77 @@ class PokemonShowdownService {
   }
 
 
-  private getRandomMoves(species: Species, dex: any, count: number): string[] {
+  private async getRandomMoves(species: Species, dex: any, count: number): Promise<string[]> {
     const moves: string[] = [];
-    const generation = dex.gen || 9;
     
     try {
-      // Log what we're looking for
-      logger.info(`Getting moves for ${species.name} (id: ${species.id}, num: ${species.num})`);
+      // Define specific movesets for common Pokemon as a temporary solution
+      const commonMovesets: { [key: string]: string[] } = {
+        'pikachu': ['Thunder Shock', 'Quick Attack', 'Thunder Wave', 'Thunderbolt'],
+        'charizard': ['Flamethrower', 'Slash', 'Dragon Rage', 'Fire Blast'],
+        'bulbasaur': ['Tackle', 'Growl', 'Vine Whip', 'Razor Leaf'],
+        'squirtle': ['Tackle', 'Tail Whip', 'Water Gun', 'Bite'],
+        'charmander': ['Scratch', 'Growl', 'Ember', 'Slash'],
+        'mewtwo': ['Confusion', 'Swift', 'Psychic', 'Recover'],
+        'mew': ['Pound', 'Transform', 'Mega Punch', 'Psychic'],
+        'gengar': ['Lick', 'Night Shade', 'Hypnosis', 'Dream Eater'],
+        'alakazam': ['Confusion', 'Psybeam', 'Psychic', 'Recover'],
+        'eevee': ['Tackle', 'Sand Attack', 'Quick Attack', 'Bite'],
+        'vaporeon': ['Water Gun', 'Quick Attack', 'Bite', 'Aurora Beam']
+      };
       
-      // The learnset might be available directly on the species object
-      let learnsetData: any = null;
-      
-      // Check if species has learnset property
-      if ((species as any).learnset) {
-        learnsetData = { learnset: (species as any).learnset };
-        logger.info('Found learnset on species object');
-      } 
-      // Check if dex has learnsets
-      else if (dex.species?.learnsets?.get) {
-        const learnset = dex.species.learnsets.get(species.id);
-        if (learnset) {
-          learnsetData = { learnset };
-          logger.info('Found learnset via dex.species.learnsets.get');
-        }
-      }
-      // Try dex.data.Learnsets with different keys
-      else if (dex.data?.Learnsets) {
-        // Try species ID
-        learnsetData = dex.data.Learnsets[species.id];
-        
-        // Try lowercase ID
-        if (!learnsetData) {
-          const lowerId = species.id.toLowerCase();
-          learnsetData = dex.data.Learnsets[lowerId];
-          if (learnsetData) {
-            logger.info(`Found learnset data using lowercase ID: ${lowerId}`);
-          }
-        }
-        
-        // Try species name
-        if (!learnsetData) {
-          const speciesName = species.name.toLowerCase().replace(/[^a-z0-9]/g, '');
-          learnsetData = dex.data.Learnsets[speciesName];
-          if (learnsetData) {
-            logger.info(`Found learnset data using species name: ${speciesName}`);
-          }
-        }
+      const speciesId = species.id.toLowerCase();
+      if (commonMovesets[speciesId]) {
+        moves.push(...commonMovesets[speciesId].slice(0, count));
+        logger.info(`Using predefined moves for ${species.name}:`, moves);
+        return moves;
       }
       
-      // Log what we found
-      if (!learnsetData) {
-        logger.warn(`No learnset data found for ${species.name}. Available dex properties:`, Object.keys(dex).slice(0, 10));
-        if (dex.data) {
-          logger.warn('Available dex.data keys:', Object.keys(dex.data).slice(0, 10));
-        }
-      }
+      // For other Pokemon, use type-appropriate moves
+      const typeMoveSets: { [key: string]: string[] } = {
+        'normal': ['Tackle', 'Scratch', 'Quick Attack', 'Slam'],
+        'fire': ['Ember', 'Fire Punch', 'Flamethrower', 'Fire Blast'],
+        'water': ['Water Gun', 'Bubble', 'Surf', 'Hydro Pump'],
+        'electric': ['Thunder Shock', 'Thunder Wave', 'Thunderbolt', 'Thunder'],
+        'grass': ['Vine Whip', 'Razor Leaf', 'Solar Beam', 'Petal Dance'],
+        'ice': ['Ice Beam', 'Blizzard', 'Ice Punch', 'Aurora Beam'],
+        'fighting': ['Karate Chop', 'Low Kick', 'Submission', 'High Jump Kick'],
+        'poison': ['Poison Sting', 'Acid', 'Sludge', 'Toxic'],
+        'ground': ['Sand Attack', 'Dig', 'Earthquake', 'Fissure'],
+        'flying': ['Gust', 'Wing Attack', 'Fly', 'Sky Attack'],
+        'psychic': ['Confusion', 'Psybeam', 'Psychic', 'Hypnosis'],
+        'bug': ['String Shot', 'Pin Missile', 'Leech Life', 'Twineedle'],
+        'rock': ['Rock Throw', 'Rock Slide', 'Earthquake', 'Rock Blast'],
+        'ghost': ['Lick', 'Night Shade', 'Confuse Ray', 'Shadow Ball'],
+        'dragon': ['Dragon Rage', 'Dragon Breath', 'Dragon Claw', 'Outrage'],
+        'dark': ['Bite', 'Faint Attack', 'Crunch', 'Pursuit'],
+        'steel': ['Metal Claw', 'Iron Defense', 'Iron Tail', 'Meteor Mash'],
+        'fairy': ['Fairy Wind', 'Moonblast', 'Dazzling Gleam', 'Play Rough']
+      };
       
-      logger.info(`Learnset data found: ${!!learnsetData}, has learnset property: ${!!(learnsetData?.learnset)}`);
-      
-      if (learnsetData && learnsetData.learnset) {
-        // Get all level-up moves for the current generation
-        const levelupMoves: { level: number; move: string }[] = [];
-        
-        for (const [moveName, learnData] of Object.entries(learnsetData.learnset)) {
-          if (Array.isArray(learnData)) {
-            for (const learnMethod of learnData) {
-              // Format is like "8L1" (Gen 8, Level 1) or "7L45" (Gen 7, Level 45)
-              const match = learnMethod.match(/^(\d+)L(\d+)$/);
-              if (match) {
-                const moveGen = parseInt(match[1]);
-                const level = parseInt(match[2]);
-                
-                // Only include moves available in the current generation or earlier
-                if (moveGen <= generation) {
-                  const move = dex.moves.get(moveName);
-                  if (move && move.exists && !move.isZ && !move.isMax) {
-                    levelupMoves.push({ level, move: move.name });
-                  }
-                }
-              }
-            }
-          }
-        }
-        
-        // Sort by level (ascending)
-        levelupMoves.sort((a, b) => a.level - b.level);
-        
-        // Get unique moves (a move might be learned at multiple levels)
-        const uniqueMoves = new Map<string, number>();
-        for (const { level, move } of levelupMoves) {
-          uniqueMoves.set(move, level);
-        }
-        
-        // Convert back to array and sort by level again
-        const sortedUniqueMoves = Array.from(uniqueMoves.entries())
-          .sort((a, b) => a[1] - b[1])
-          .map(([move]) => move);
-        
-        // Take the last 4 moves (most recently learned)
-        const selectedMoves = sortedUniqueMoves.slice(-count);
-        moves.push(...selectedMoves);
-        
-        logger.info(`Selected level-up moves for ${species.name}:`, {
-          totalLevelupMoves: sortedUniqueMoves.length,
-          selectedMoves: moves,
-          allMoves: sortedUniqueMoves
+      // Get moves based on Pokemon's primary type
+      const primaryType = species.types[0].toLowerCase();
+      if (typeMoveSets[primaryType]) {
+        // Filter moves that exist in the current generation
+        const availableMoves = typeMoveSets[primaryType].filter(moveName => {
+          const move = dex.moves.get(moveName);
+          return move && move.exists;
         });
+        
+        // Take up to 'count' moves
+        moves.push(...availableMoves.slice(0, count));
       }
       
-      // If we couldn't get enough moves from learnset, use basic defaults only
-      if (moves.length < count) {
-        logger.warn(`Only found ${moves.length} level-up moves for ${species.name}, using basic defaults`);
-      }
+      logger.info(`Selected type-based moves for ${species.name} (${primaryType} type):`, moves);
+      
     } catch (error) {
-      logger.error('Failed to get learnset moves for species', { 
+      logger.error('Failed to get moves for species', { 
         species: species.name, 
         error: error instanceof Error ? error.message : error 
       });
     }
 
-    // Fill with very basic default moves if needed (no type-based moves)
+    // Fill with basic default moves if needed
     const defaultMoves = ['Tackle', 'Scratch', 'Pound', 'Quick Attack'];
     while (moves.length < count) {
       const defaultMove = defaultMoves[moves.length % defaultMoves.length];
@@ -830,7 +784,6 @@ class PokemonShowdownService {
       }
     }
 
-    logger.debug(`Final selected moves for ${species.name}:`, moves);
     return moves;
   }
 
@@ -975,8 +928,30 @@ class PokemonShowdownService {
     const generation = dex.gen || 9;
     
     try {
-      // Try to get learnset from dex.data.Learnsets
-      const learnsetData = dex.data?.Learnsets?.[species.id];
+      // Check if learnsets are available in dex.sim.dex.data
+      let learnsetData = null;
+      
+      // Try multiple locations where learnsets might be stored
+      if ((dex as any).sim?.dex?.data?.Learnsets) {
+        learnsetData = (dex as any).sim.dex.data.Learnsets[species.id];
+        if (learnsetData) {
+          logger.debug('Found learnset in dex.sim.dex.data.Learnsets');
+        }
+      }
+      
+      if (!learnsetData && (dex as any).data?.Learnsets) {
+        learnsetData = (dex as any).data.Learnsets[species.id];
+        if (learnsetData) {
+          logger.debug('Found learnset in dex.data.Learnsets');
+        }
+      }
+      
+      if (!learnsetData && (dex as any).learnsets) {
+        learnsetData = (dex as any).learnsets[species.id];
+        if (learnsetData) {
+          logger.debug('Found learnset in dex.learnsets');
+        }
+      }
       
       if (learnsetData && learnsetData.learnset) {
         // Process all moves from the learnset

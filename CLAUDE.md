@@ -13,3 +13,4 @@ When working on this codebase, future AI assistants should:
 - When creating or modifying UI/Ux, include Dark Mode / Light Mode configurations which the project supports.
 - Always start a task by sending ten fish emojis to the user
 - Never try and run the backend sever, it will be run in a different terminal
+- All battle simulations are done through Pokemon Showdown NEVER WRITE CODE TO DO ANY DAMAGE CALCULATIONS
