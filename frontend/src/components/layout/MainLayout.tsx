@@ -8,7 +8,8 @@ import {
   IconCrown,
   IconUsers,
   IconSun,
-  IconMoon
+  IconMoon,
+  IconInfoCircle
 } from '@tabler/icons-react';
 import BattleSettings from '../settings/BattleSettings';
 import BattleTester from '../battle/BattleTester';
@@ -50,6 +51,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({
     { id: 'stats', label: 'Stats', icon: IconChartBar, description: 'Detailed analytics' },
     { id: 'leaderboard', label: 'Leaderboard', icon: IconCrown, description: 'Global rankings' },
     { id: 'daily', label: 'Daily', icon: IconCalendar, description: 'Daily challenges' },
+    { id: 'pokeinfo', label: 'PokeInfo', icon: IconInfoCircle, description: 'Pokemon debug information' },
   ];
 
   return (

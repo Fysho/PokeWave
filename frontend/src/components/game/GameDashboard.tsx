@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import BattleArena from '../battle/BattleArena';
 import MainLayout from '../layout/MainLayout';
+import PokeInfo from '../debug/PokeInfo';
 import { useGameStore } from '../../store/gameStore';
 import { 
   IconChartBar, 
@@ -233,6 +234,9 @@ const GameDashboard: React.FC = () => {
             </Card>
           </Box>
         );
+      
+      case 'pokeinfo':
+        return <PokeInfo />;
       
       default:
         return <BattleArena />;
