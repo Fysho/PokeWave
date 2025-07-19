@@ -14,7 +14,7 @@ PokeWave is a web-based Pokemon battle prediction game where users predict the w
   - Pokemon Showdown (@pkmn packages) provides: stats, types, moves, abilities, battle mechanics
   - PokeAPI only provides: sprite images (front, back, shiny)
   - Local learnset data from @pkmn/dex for accurate move validation
-- **Battle Simulation**: Always simulates exactly 10 battles (not 1000 as originally planned)
+- **Battle Simulation**: Always simulates exactly 17 battles (configured in shared/config/battle.config.ts)
 - **Move System**: 
   - Strict enforcement of level-up moves only (no invalid moves)
   - Pokemon can only use moves from their actual learnset
@@ -48,7 +48,7 @@ PokeWave is a web-based Pokemon battle prediction game where users predict the w
 
 ## Game Flow
 1. **Battle Generation**: System selects two random Pokemon (default Gen 1-151, configurable up to Gen 9)
-2. **Battle Simulation**: Pokemon Showdown engine simulates exactly 10 battles (reduced from original 1000 for performance)
+2. **Battle Simulation**: Pokemon Showdown engine simulates exactly 17 battles (configured in shared/config/battle.config.ts)
 3. **User Prediction**: User predicts win percentage using a slider (must be within 10% accuracy to score)
 4. **Result Feedback**: System shows correct/incorrect with accuracy percentage and points earned
 5. **Score Tracking**: Points, streak, accuracy percentage, and total battles are persistently tracked
@@ -75,7 +75,7 @@ PokeWave is a web-based Pokemon battle prediction game where users predict the w
 - **Pokemon Showdown Service** (`pokemon-showdown.service.ts`): 
   - Primary battle engine integration using @pkmn packages
   - Provides Pokemon stats, types, moves, and abilities
-  - Handles all battle simulations (10 battles per request)
+  - Handles all battle simulations (17 battles per request, configured in shared/config/battle.config.ts)
   - Generates type-appropriate move pools for each Pokemon
 - **Battle Service** (`battle.service.ts`): 
   - Orchestrates battle flow and game state
@@ -128,7 +128,7 @@ User Interaction → Frontend (React) → API Service (Axios) → Backend (Expre
                                                     ↓                      ↓
                                               @pkmn packages           PokeAPI
                                                     ↓
-                                           10 Battle Simulations
+                                           17 Battle Simulations
                                                     ↓
                                               Cache (Redis)
                                                     ↓
@@ -288,7 +288,7 @@ Response:
 - **Accuracy Calculation**: Percentage of correct guesses over time
 
 ## Known Working Features
-- ✅ Real Pokemon battle simulation with exactly 10 battles (not 1000)
+- ✅ Real Pokemon battle simulation with exactly 17 battles (configured in shared/config/battle.config.ts)
 - ✅ Pokemon data from authoritative sources:
   - Stats, types, moves, abilities from Pokemon Showdown (@pkmn)
   - Sprite images from PokeAPI
@@ -360,13 +360,13 @@ curl -X POST http://localhost:4000/api/battle/simulate \
 3. **Data sources are split**:
    - Pokemon Showdown (@pkmn) provides all gameplay data (stats, types, moves)
    - PokeAPI only provides sprite images
-4. **Battle count is fixed at 10** - NOT 1000 as mentioned in original specs
+4. **Battle count is configured at 17** - Set in shared/config/battle.config.ts (originally 100, then reduced to 10)
 5. **Modular architecture** - easy to extend with new features
 6. **Phase 5 complete** - Data sources optimized for performance and accuracy
 
 ### Critical Implementation Details
 1. **Battle Simulation**:
-   - Always simulates exactly 10 battles (hardcoded in `NUM_BATTLES`)
+   - Always simulates exactly 17 battles (configured in `BATTLE_CONFIG.TOTAL_BATTLES`)
    - Each battle uses Pokemon Showdown's engine for accurate mechanics
    - Pokemon moves are strictly validated against their level-up learnset
    - Move IDs must be lowercase without spaces for Pokemon Showdown (e.g., 'thundershock' not 'Thunder Shock')
@@ -395,7 +395,7 @@ curl -X POST http://localhost:4000/api/battle/simulate \
 
 ### Common Tasks
 - **Adding new Pokemon generations**: Update `GENERATION_RANGES` in pokemon.service.ts
-- **Changing battle count**: Update `NUM_BATTLES` in pokemon-showdown.service.ts AND loading UI
+- **Changing battle count**: Update `TOTAL_BATTLES` in shared/config/battle.config.ts (centralized)
 - **Modifying scoring**: Update battle.service.ts point calculation logic
 - **Working with moves**: Moves come from learnsets only - modify `getMovesFromLearnset` and `getLevelupMoves`
 - **UI changes**: All components use Mantine UI (not Tailwind/shadcn)

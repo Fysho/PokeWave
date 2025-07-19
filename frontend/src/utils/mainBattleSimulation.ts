@@ -1,6 +1,7 @@
 import { Battle, Dex } from '@pkmn/sim';
 import type { CompletePokemon } from '../types/pokemon';
 import { createTeamString } from '../types/pokemon';
+import { BATTLE_CONFIG } from '../../../shared/config/battle.config';
 
 interface BattleResult {
   battleId: string;
@@ -55,7 +56,7 @@ interface BattleResult {
   executionTime: number;
 }
 
-const NUM_BATTLES = 10; // Run 10 battles to match backend
+const NUM_BATTLES = BATTLE_CONFIG.TOTAL_BATTLES; // Use centralized battle count configuration
 
 interface BattleEvent {
   turn: number;

@@ -5,6 +5,8 @@ import { pokemonService } from './pokemon.service';
 import logger from '../utils/logger';
 import { ApiError } from '../middleware/error.middleware';
 import crypto from 'crypto';
+// Temporarily hardcode BATTLE_CONFIG until shared config is properly set up
+const BATTLE_CONFIG = { TOTAL_BATTLES: 17 };
 
 export interface ShowdownBattleConfig {
   pokemon1Id: number;
@@ -153,7 +155,7 @@ interface SingleBattleResult {
 }
 
 class PokemonShowdownService {
-  private readonly NUM_BATTLES = 10; // Number of battles to simulate (reduced from 100 for performance)
+  private readonly NUM_BATTLES = BATTLE_CONFIG.TOTAL_BATTLES; // Number of battles to simulate from central config
   private learnsets: any = null; // Cache learnsets data
 
   constructor() {
@@ -176,6 +178,7 @@ class PokemonShowdownService {
     logger.info('Starting simulateBattle', { pokemon1Id: config.pokemon1Id, pokemon2Id: config.pokemon2Id });
     
     try {
+      logger.debug('Config received:', config);
       // Generate cache key
       const cacheKey = this.generateBattleKey(config);
       
@@ -358,7 +361,7 @@ class PokemonShowdownService {
         stack: error instanceof Error ? error.stack : undefined,
         config
       });
-      throw error instanceof ApiError ? error : new ApiError(500, 'Failed to simulate battle');
+      throw error instanceof ApiError ? error : new ApiError(500, `Failed to simulate battle: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
@@ -420,11 +423,8 @@ class PokemonShowdownService {
       
       // Process battle synchronously for simplicity
       while (!battleEnded && turnCount < maxTurns) {
-        // Add timeout to prevent hanging on stream.read()
-        const chunk = await Promise.race([
-          stream.read(),
-          new Promise<null>((resolve) => setTimeout(() => resolve(null), 1000)) // 1 second timeout per read
-        ]);
+        // Read from stream with a simple approach
+        const chunk = await stream.read();
         if (!chunk) continue;
         
         outputs.push(chunk);
@@ -647,11 +647,17 @@ class PokemonShowdownService {
       
       // Process battle quickly
       while (!battleEnded && turnCount < maxTurns) {
-        // Add timeout to prevent hanging on stream.read()
-        const chunk = await Promise.race([
-          stream.read(),
-          new Promise<null>((resolve) => setTimeout(() => resolve(null), 1000)) // 1 second timeout per read
-        ]);
+        let chunk: string | null = null;
+        try {
+          // Add timeout to prevent hanging on stream.read()
+          chunk = await Promise.race([
+            stream.read(),
+            new Promise<string | null>((resolve) => setTimeout(() => resolve(null), 1000)) // 1 second timeout per read
+          ]) as string | null;
+        } catch (readError) {
+          logger.error('Error reading from stream:', readError);
+          break;
+        }
         if (!chunk) continue;
         
         // Check for winner

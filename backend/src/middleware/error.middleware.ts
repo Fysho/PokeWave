@@ -42,7 +42,7 @@ export const errorMiddleware = (
     });
 
     res.status(500).json({
-      error: 'Internal server error',
+      error: err.message || 'Internal server error',
       statusCode: 500
     });
   }
