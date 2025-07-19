@@ -31,6 +31,41 @@ export interface PokemonInfo {
   generation: number;
 }
 
+export interface StatValues {
+  hp: number;
+  attack: number;
+  defense: number;
+  specialAttack: number;
+  specialDefense: number;
+  speed: number;
+}
+
+export interface PokemonInstance {
+  id: number;
+  name: string;
+  level: number;
+  types: string[];
+  ability: string;
+  moves: string[];
+  stats: StatValues;
+  baseStats: StatValues;
+  ivs: StatValues;
+  evs: StatValues;
+  sprites: {
+    front: string;
+    back: string;
+    shiny: string;
+  };
+}
+
+export interface CreatePokemonInstanceRequest {
+  pokemonId: number;
+  level: number;
+  ivs?: Partial<StatValues>;
+  evs?: Partial<StatValues>;
+  generation?: number;
+}
+
 class PokemonInfoService {
   /**
    * Get comprehensive Pokemon information
@@ -75,6 +110,71 @@ class PokemonInfoService {
     const stats = info.baseStats;
     return stats.hp + stats.attack + stats.defense + 
            stats.specialAttack + stats.specialDefense + stats.speed;
+  }
+
+  /**
+   * Create a Pokemon instance with calculated stats
+   * @param request - Pokemon instance configuration
+   * @returns Pokemon instance with calculated stats, moves, and ability
+   */
+  async createPokemonInstance(request: CreatePokemonInstanceRequest): Promise<PokemonInstance> {
+    try {
+      const response = await axios.post<PokemonInstance>(
+        `${API_BASE_URL}/pokemoninstance`,
+        request
+      );
+      return response.data;
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        throw new Error(error.response?.data?.error || 'Failed to create Pokemon instance');
+      }
+      throw error;
+    }
+  }
+
+  /**
+   * Create a perfect IV Pokemon instance
+   * @param pokemonId - Pokemon ID
+   * @param level - Pokemon level
+   * @param generation - Generation number (defaults to 9)
+   * @returns Pokemon instance with perfect IVs
+   */
+  async createPerfectPokemon(pokemonId: number, level: number, generation?: number): Promise<PokemonInstance> {
+    return this.createPokemonInstance({
+      pokemonId,
+      level,
+      generation,
+      ivs: {
+        hp: 31,
+        attack: 31,
+        defense: 31,
+        specialAttack: 31,
+        specialDefense: 31,
+        speed: 31
+      }
+    });
+  }
+
+  /**
+   * Create a competitive Pokemon instance with custom EVs
+   * @param pokemonId - Pokemon ID
+   * @param level - Pokemon level
+   * @param evSpread - EV distribution
+   * @param generation - Generation number (defaults to 9)
+   * @returns Pokemon instance with competitive EVs
+   */
+  async createCompetitivePokemon(
+    pokemonId: number, 
+    level: number, 
+    evSpread: Partial<StatValues>,
+    generation?: number
+  ): Promise<PokemonInstance> {
+    return this.createPokemonInstance({
+      pokemonId,
+      level,
+      generation,
+      evs: evSpread
+    });
   }
 }
 
