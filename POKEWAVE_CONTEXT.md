@@ -5,17 +5,28 @@ PokeWave is a web-based Pokemon battle prediction game where users predict the w
 
 ## Implementation Status
 
-### ✅ Phase 5 - Data Source Optimization (Current)
-**Status**: Updated to use Pokemon Showdown as primary data source
-**Last Commit**: 46cec68 - "fix: Correct battle simulation count display from 1000 to 10"
+### ✅ Phase 5 - Data Source Optimization (Complete)
+**Status**: Fully optimized with Pokemon Showdown data and learnset enforcement
+**Last Commit**: c0c31ad - "fix: Resolve first-load timeout issue with battle simulations"
 
 **Recent Updates**:
 - **Pokemon Data Sources**: 
   - Pokemon Showdown (@pkmn packages) provides: stats, types, moves, abilities, battle mechanics
   - PokeAPI only provides: sprite images (front, back, shiny)
+  - Local learnset data from @pkmn/dex for accurate move validation
 - **Battle Simulation**: Always simulates exactly 10 battles (not 1000 as originally planned)
-- **Performance**: Improved move selection with type-based move pools
-- **Bug Fixes**: Corrected UI display showing wrong battle count
+- **Move System**: 
+  - Strict enforcement of level-up moves only (no invalid moves)
+  - Pokemon can only use moves from their actual learnset
+  - Proper move ID formatting for Pokemon Showdown compatibility
+- **Performance Optimizations**:
+  - Learnset data preloaded on server startup
+  - Cached in memory to avoid repeated file reads
+  - Frontend timeout increased to 15s for battle simulations (handles cold starts)
+- **Bug Fixes**: 
+  - Fixed battle simulation timeout by using correct move IDs
+  - Resolved first-load timeout with preloading optimization
+  - Corrected UI display showing wrong battle count
 
 ### ✅ Phase 4 Complete - UI Framework Migration
 **Status**: Successfully migrated to Mantine UI framework
@@ -281,7 +292,8 @@ Response:
 - ✅ Pokemon data from authoritative sources:
   - Stats, types, moves, abilities from Pokemon Showdown (@pkmn)
   - Sprite images from PokeAPI
-- ✅ Type-appropriate move selection for each Pokemon
+  - Move validation from local @pkmn/dex learnset data
+- ✅ Strict level-up move enforcement (no invalid moves)
 - ✅ Interactive Pokemon cards with sprites and types
 - ✅ Percentage-based prediction system with slider (0-100%)
 - ✅ 10% accuracy requirement for scoring points
@@ -289,14 +301,15 @@ Response:
 - ✅ Dark/light theme support with Mantine theme system
 - ✅ Mobile-responsive design with Mantine Grid
 - ✅ Comprehensive error handling and user feedback
-- ✅ Battle result caching (Redis with fallback)
+- ✅ Battle result caching (Redis with fallback) with version-based invalidation
 - ✅ Automatic battle generation after each guess
 - ✅ Accurate battle simulation with Pokemon Showdown engine
 - ✅ Streak tracking with visual indicators
 - ✅ Streak celebration animations with particles
 - ✅ Loading animations with accurate battle count display
 - ✅ Comprehensive analytics and game statistics
-- ✅ 30-second timeout for API calls (sufficient for 10 battles)
+- ✅ 15-second timeout for battle API calls (handles cold starts)
+- ✅ Preloaded learnset data for improved performance
 
 ## Testing Current State
 
@@ -355,17 +368,20 @@ curl -X POST http://localhost:4000/api/battle/simulate \
 1. **Battle Simulation**:
    - Always simulates exactly 10 battles (hardcoded in `NUM_BATTLES`)
    - Each battle uses Pokemon Showdown's engine for accurate mechanics
-   - Type-based move pools ensure Pokemon use appropriate moves
-   - 30-second timeout is sufficient for 10 battles
+   - Pokemon moves are strictly validated against their level-up learnset
+   - Move IDs must be lowercase without spaces for Pokemon Showdown (e.g., 'thundershock' not 'Thunder Shock')
+   - Frontend has 15-second timeout for battle simulations to handle cold starts
 
 2. **Data Flow**:
-   - `pokemon-showdown.service.ts` is the primary service for Pokemon data
+   - `pokemon-showdown.service.ts` is the primary service for Pokemon data and battle engine
    - `pokemon.service.ts` ONLY provides sprites (getPokemonSprites method)
+   - Learnset data loaded from `@pkmn/dex/build/learnsets-DJNGQKWY.js`
    - The old `getPokemonById` method is deprecated and returns 501 error
 
 3. **Caching Strategy**:
-   - Battle results cached for 1 hour
+   - Battle results cached for 1 hour (cache key includes version for invalidation)
    - Pokemon sprites cached for 24 hours
+   - Learnset data preloaded and cached in memory on server startup
    - Redis optional with graceful in-memory fallback
 
 ### Key Files to Understand
@@ -375,22 +391,24 @@ curl -X POST http://localhost:4000/api/battle/simulate \
 - `frontend/src/components/battle/BattleArena.tsx` - Main game UI with prediction slider
 - `frontend/src/components/ui/loading.tsx` - Loading states (check battle count display)
 - `frontend/src/store/gameStore.ts` - Persistent game state management
-- `frontend/src/services/api.ts` - API client with 30-second timeout
+- `frontend/src/services/api.ts` - API client with 15-second timeout for battle simulations
 
 ### Common Tasks
 - **Adding new Pokemon generations**: Update `GENERATION_RANGES` in pokemon.service.ts
 - **Changing battle count**: Update `NUM_BATTLES` in pokemon-showdown.service.ts AND loading UI
 - **Modifying scoring**: Update battle.service.ts point calculation logic
-- **Improving move selection**: Enhance `getRandomMoves` and `getTypeBasedMoves` methods
+- **Working with moves**: Moves come from learnsets only - modify `getMovesFromLearnset` and `getLevelupMoves`
 - **UI changes**: All components use Mantine UI (not Tailwind/shadcn)
-- **Performance issues**: Check if sprites are being cached properly
-- **Timeout issues**: Verify only 10 battles are being simulated
+- **Performance issues**: Check if sprites and learnsets are being cached properly
+- **Timeout issues**: Frontend has 15s timeout for battles; backend preloads learnsets
 
 ### Common Pitfalls to Avoid
 1. **Don't use getPokemonById** - it's deprecated, use Pokemon Showdown for data
 2. **Don't change battle count** without updating both backend AND frontend
 3. **Don't fetch full Pokemon data from PokeAPI** - only sprites
-4. **Don't skip caching** - it significantly improves performance
+4. **Don't skip caching** - it significantly improves performance (especially learnsets)
 5. **Remember Mantine UI** - project migrated from shadcn/Tailwind
+6. **Don't use formatted move names in battles** - use move IDs (lowercase, no spaces)
+7. **Don't give Pokemon invalid moves** - all moves must come from their learnset
 
 The project is production-ready with accurate Pokemon battle simulation, proper data sourcing, and a complete game loop.
