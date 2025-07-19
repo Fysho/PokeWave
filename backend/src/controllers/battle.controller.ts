@@ -9,6 +9,7 @@ export const simulateBattle = async (
 ): Promise<void> => {
   try {
     const { pokemon1Id, pokemon2Id, options } = req.body;
+    console.log('Battle controller received request:', { pokemon1Id, pokemon2Id });
 
     if (!pokemon1Id || !pokemon2Id) {
       throw new ApiError(400, 'Both pokemon1Id and pokemon2Id are required');
@@ -20,8 +21,11 @@ export const simulateBattle = async (
       options
     });
 
+    console.log('Battle controller sending response');
     res.json(result);
+    console.log('Battle controller response sent');
   } catch (error) {
+    console.error('Battle controller error:', error);
     next(error);
   }
 };

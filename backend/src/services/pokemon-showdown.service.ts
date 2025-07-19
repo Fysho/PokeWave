@@ -173,6 +173,7 @@ class PokemonShowdownService {
 
   async simulateBattle(config: ShowdownBattleConfig): Promise<ShowdownBattleResult> {
     const startTime = Date.now();
+    logger.info('Starting simulateBattle', { pokemon1Id: config.pokemon1Id, pokemon2Id: config.pokemon2Id });
     
     try {
       // Generate cache key
@@ -349,6 +350,7 @@ class PokemonShowdownService {
         executionTime: `${executionTime}ms`
       });
 
+      logger.info('Returning battle result from simulateBattle');
       return result;
     } catch (error) {
       logger.error('Failed to simulate battle with Pokemon Showdown:', {
@@ -418,7 +420,11 @@ class PokemonShowdownService {
       
       // Process battle synchronously for simplicity
       while (!battleEnded && turnCount < maxTurns) {
-        const chunk = await stream.read();
+        // Add timeout to prevent hanging on stream.read()
+        const chunk = await Promise.race([
+          stream.read(),
+          new Promise<null>((resolve) => setTimeout(() => resolve(null), 1000)) // 1 second timeout per read
+        ]);
         if (!chunk) continue;
         
         outputs.push(chunk);
@@ -641,7 +647,11 @@ class PokemonShowdownService {
       
       // Process battle quickly
       while (!battleEnded && turnCount < maxTurns) {
-        const chunk = await stream.read();
+        // Add timeout to prevent hanging on stream.read()
+        const chunk = await Promise.race([
+          stream.read(),
+          new Promise<null>((resolve) => setTimeout(() => resolve(null), 1000)) // 1 second timeout per read
+        ]);
         if (!chunk) continue;
         
         // Check for winner
