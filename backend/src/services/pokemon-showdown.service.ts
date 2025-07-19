@@ -41,7 +41,32 @@ export interface ShowdownBattleResult {
       specialDefense: number;
       speed: number;
     };
+    baseStats: {
+      hp: number;
+      attack: number;
+      defense: number;
+      specialAttack: number;
+      specialDefense: number;
+      speed: number;
+    };
+    evs: {
+      hp: number;
+      attack: number;
+      defense: number;
+      specialAttack: number;
+      specialDefense: number;
+      speed: number;
+    };
+    ivs: {
+      hp: number;
+      attack: number;
+      defense: number;
+      specialAttack: number;
+      specialDefense: number;
+      speed: number;
+    };
     ability?: string;
+    levelupMoves?: Array<{ level: number; move: string }>;
   };
   pokemon2: {
     id: number;
@@ -63,7 +88,32 @@ export interface ShowdownBattleResult {
       specialDefense: number;
       speed: number;
     };
+    baseStats: {
+      hp: number;
+      attack: number;
+      defense: number;
+      specialAttack: number;
+      specialDefense: number;
+      speed: number;
+    };
+    evs: {
+      hp: number;
+      attack: number;
+      defense: number;
+      specialAttack: number;
+      specialDefense: number;
+      speed: number;
+    };
+    ivs: {
+      hp: number;
+      attack: number;
+      defense: number;
+      specialAttack: number;
+      specialDefense: number;
+      speed: number;
+    };
     ability?: string;
+    levelupMoves?: Array<{ level: number; move: string }>;
   };
   totalBattles: number;
   winRate: number;
@@ -193,6 +243,33 @@ class PokemonShowdownService {
       const pokemon1Ability = this.getRandomAbility(species1);
       const pokemon2Ability = this.getRandomAbility(species2);
 
+      // Get levelup moves
+      const pokemon1LevelupMoves = this.getLevelupMoves(species1, dex);
+      const pokemon2LevelupMoves = this.getLevelupMoves(species2, dex);
+
+      // Base stats
+      const pokemon1BaseStats = {
+        hp: species1.baseStats.hp,
+        attack: species1.baseStats.atk,
+        defense: species1.baseStats.def,
+        specialAttack: species1.baseStats.spa,
+        specialDefense: species1.baseStats.spd,
+        speed: species1.baseStats.spe
+      };
+
+      const pokemon2BaseStats = {
+        hp: species2.baseStats.hp,
+        attack: species2.baseStats.atk,
+        defense: species2.baseStats.def,
+        specialAttack: species2.baseStats.spa,
+        specialDefense: species2.baseStats.spd,
+        speed: species2.baseStats.spe
+      };
+
+      // EVs and IVs (currently fixed values)
+      const evs = { hp: 0, attack: 0, defense: 0, specialAttack: 0, specialDefense: 0, speed: 0 };
+      const ivs = { hp: 31, attack: 31, defense: 31, specialAttack: 31, specialDefense: 31, speed: 31 };
+
       const result: ShowdownBattleResult = {
         battleId: crypto.randomUUID(),
         pokemon1: {
@@ -204,7 +281,11 @@ class PokemonShowdownService {
           sprites: pokemon1Sprites || { front: '', back: '', shiny: '' },
           moves: pokemon1Moves.map(move => this.formatMoveName(move)),
           stats: pokemon1Stats,
-          ability: pokemon1Ability
+          baseStats: pokemon1BaseStats,
+          evs: evs,
+          ivs: ivs,
+          ability: pokemon1Ability,
+          levelupMoves: pokemon1LevelupMoves
         },
         pokemon2: {
           id: config.pokemon2Id,
@@ -215,7 +296,11 @@ class PokemonShowdownService {
           sprites: pokemon2Sprites || { front: '', back: '', shiny: '' },
           moves: pokemon2Moves.map(move => this.formatMoveName(move)),
           stats: pokemon2Stats,
-          ability: pokemon2Ability
+          baseStats: pokemon2BaseStats,
+          evs: evs,
+          ivs: ivs,
+          ability: pokemon2Ability,
+          levelupMoves: pokemon2LevelupMoves
         },
         totalBattles: this.NUM_BATTLES,
         winRate,
@@ -829,6 +914,68 @@ class PokemonShowdownService {
       specialDefense: calculateStat(species.baseStats.spd),
       speed: calculateStat(species.baseStats.spe)
     };
+  }
+
+  private getLevelupMoves(species: Species, dex: any): Array<{ level: number; move: string }> {
+    const levelupMoves: Array<{ level: number; move: string }> = [];
+    
+    try {
+      // Try to get learnset from the species
+      // Note: This might not work perfectly with @pkmn/dex, but we'll try
+      const learnset = (dex.data?.Learnsets?.[species.id]) || (dex.data?.Learnsets?.[species.name.toLowerCase()]);
+      
+      if (learnset && learnset.learnset) {
+        for (const [moveName, learnData] of Object.entries(learnset.learnset)) {
+          if (Array.isArray(learnData)) {
+            for (const learnMethod of learnData) {
+              // Format is usually "8L1" meaning Gen 8, Level 1
+              const match = learnMethod.match(/^\d+L(\d+)$/);
+              if (match) {
+                const level = parseInt(match[1]);
+                const move = dex.moves.get(moveName);
+                if (move && move.exists) {
+                  levelupMoves.push({ 
+                    level, 
+                    move: this.formatMoveName(move.name) 
+                  });
+                }
+              }
+            }
+          }
+        }
+      }
+      
+      // If we couldn't get learnset data, provide some basic moves as fallback
+      if (levelupMoves.length === 0) {
+        // Add some default moves that most Pokemon learn
+        levelupMoves.push({ level: 1, move: 'Tackle' });
+        levelupMoves.push({ level: 1, move: 'Growl' });
+        
+        // Add type-based moves at various levels
+        const typeBasedMoves = this.getTypeBasedMoves(species.types, dex);
+        typeBasedMoves.slice(0, 10).forEach((move, index) => {
+          levelupMoves.push({ 
+            level: Math.min(5 + (index * 5), 50), 
+            move: this.formatMoveName(move) 
+          });
+        });
+      }
+      
+      // Sort by level
+      levelupMoves.sort((a, b) => a.level - b.level);
+      
+    } catch (error) {
+      logger.warn('Could not get levelup moves:', error);
+      // Return basic fallback moves
+      return [
+        { level: 1, move: 'Tackle' },
+        { level: 1, move: 'Growl' },
+        { level: 5, move: 'Scratch' },
+        { level: 10, move: 'Quick Attack' }
+      ];
+    }
+    
+    return levelupMoves;
   }
 
   private getSpeciesById(dex: any, id: number): Species | null {

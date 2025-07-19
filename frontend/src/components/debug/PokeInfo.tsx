@@ -54,8 +54,9 @@ const PokeInfo: React.FC = () => {
   };
 
   const renderPokemonCard = (pokemon: typeof currentBattle.pokemon1, title: string) => {
-    const baseStats = pokemon.stats;
-    const totalStats = Object.values(baseStats).reduce((sum, stat) => sum + stat, 0);
+    const baseStats = pokemon.baseStats || pokemon.stats;
+    const totalBaseStats = Object.values(baseStats).reduce((sum, stat) => sum + stat, 0);
+    const totalStats = Object.values(pokemon.stats).reduce((sum, stat) => sum + stat, 0);
 
     return (
       <Card withBorder shadow="sm">
@@ -113,41 +114,95 @@ const PokeInfo: React.FC = () => {
 
             <Divider />
 
-            {/* Base Stats */}
+            {/* Detailed Stats Table */}
             <Stack gap="xs">
-              <Title order={5}>Base Stats (Total: {totalStats})</Title>
-              {Object.entries(baseStats).map(([statName, value]) => (
-                <Stack key={statName} gap={4}>
-                  <Group justify="space-between">
-                    <Group gap="xs">
-                      {getStatIcon(statName)}
-                      <Text size="sm" tt="capitalize">
-                        {statName.replace(/([A-Z])/g, ' $1').trim()}
-                      </Text>
-                    </Group>
-                    <Text size="sm" fw={600}>{value}</Text>
-                  </Group>
-                  <Progress 
-                    value={(value / 255) * 100} 
-                    color={getStatColor(value)}
-                    size="sm"
-                  />
-                </Stack>
-              ))}
+              <Title order={5}>Complete Stats Breakdown</Title>
+              <ScrollArea>
+                <Table fontSize="xs" withTableBorder withColumnBorders>
+                  <Table.Thead>
+                    <Table.Tr>
+                      <Table.Th>Stat</Table.Th>
+                      <Table.Th ta="center">Base</Table.Th>
+                      <Table.Th ta="center">IV</Table.Th>
+                      <Table.Th ta="center">EV</Table.Th>
+                      <Table.Th ta="center">Total</Table.Th>
+                    </Table.Tr>
+                  </Table.Thead>
+                  <Table.Tbody>
+                    {['hp', 'attack', 'defense', 'specialAttack', 'specialDefense', 'speed'].map((statName) => (
+                      <Table.Tr key={statName}>
+                        <Table.Td>
+                          <Group gap="xs">
+                            {getStatIcon(statName)}
+                            <Text size="xs" tt="capitalize">
+                              {statName.replace(/([A-Z])/g, ' $1').trim()}
+                            </Text>
+                          </Group>
+                        </Table.Td>
+                        <Table.Td ta="center" fw={600}>
+                          {pokemon.baseStats?.[statName as keyof typeof pokemon.baseStats] || 'N/A'}
+                        </Table.Td>
+                        <Table.Td ta="center">
+                          {pokemon.ivs?.[statName as keyof typeof pokemon.ivs] || 31}
+                        </Table.Td>
+                        <Table.Td ta="center">
+                          {pokemon.evs?.[statName as keyof typeof pokemon.evs] || 0}
+                        </Table.Td>
+                        <Table.Td ta="center" fw={700}>
+                          {pokemon.stats[statName as keyof typeof pokemon.stats]}
+                        </Table.Td>
+                      </Table.Tr>
+                    ))}
+                    <Table.Tr>
+                      <Table.Td fw={700}>Total</Table.Td>
+                      <Table.Td ta="center" fw={700}>{totalBaseStats}</Table.Td>
+                      <Table.Td ta="center" fw={700}>186</Table.Td>
+                      <Table.Td ta="center" fw={700}>0</Table.Td>
+                      <Table.Td ta="center" fw={700}>{totalStats}</Table.Td>
+                    </Table.Tr>
+                  </Table.Tbody>
+                </Table>
+              </ScrollArea>
             </Stack>
 
             <Divider />
 
-            {/* Moves */}
-            <Stack gap="xs">
-              <Title order={5}>Moves ({pokemon.moves.length})</Title>
-              <ScrollArea h={100}>
+            {/* Levelup Moves */}
+            {pokemon.levelupMoves && pokemon.levelupMoves.length > 0 && (
+              <>
                 <Stack gap="xs">
-                  {pokemon.moves.map((move, index) => (
-                    <Badge key={index} variant="dot" fullWidth>{move}</Badge>
-                  ))}
+                  <Title order={5}>Levelup Moves ({pokemon.levelupMoves.length})</Title>
+                  <ScrollArea h={200}>
+                    <Table fontSize="xs" withTableBorder>
+                      <Table.Thead>
+                        <Table.Tr>
+                          <Table.Th>Level</Table.Th>
+                          <Table.Th>Move</Table.Th>
+                        </Table.Tr>
+                      </Table.Thead>
+                      <Table.Tbody>
+                        {pokemon.levelupMoves.map((moveData, index) => (
+                          <Table.Tr key={index}>
+                            <Table.Td fw={600}>Lv. {moveData.level}</Table.Td>
+                            <Table.Td>{moveData.move}</Table.Td>
+                          </Table.Tr>
+                        ))}
+                      </Table.Tbody>
+                    </Table>
+                  </ScrollArea>
                 </Stack>
-              </ScrollArea>
+                <Divider />
+              </>
+            )}
+
+            {/* Current Moves */}
+            <Stack gap="xs">
+              <Title order={5}>Current Moves ({pokemon.moves.length})</Title>
+              <Stack gap="xs">
+                {pokemon.moves.map((move, index) => (
+                  <Badge key={index} variant="dot" fullWidth>{move}</Badge>
+                ))}
+              </Stack>
             </Stack>
 
             <Divider />
@@ -171,29 +226,19 @@ const PokeInfo: React.FC = () => {
 
             {/* Additional Debug Info */}
             <Stack gap="xs">
-              <Title order={5}>Debug Information</Title>
-              <ScrollArea h={100}>
-                <Table fontSize="xs">
-                  <Table.Tbody>
-                    <Table.Tr>
-                      <Table.Td>IVs</Table.Td>
-                      <Table.Td>31 (all stats)</Table.Td>
-                    </Table.Tr>
-                    <Table.Tr>
-                      <Table.Td>EVs</Table.Td>
-                      <Table.Td>0 (all stats)</Table.Td>
-                    </Table.Tr>
-                    <Table.Tr>
-                      <Table.Td>Nature</Table.Td>
-                      <Table.Td>Hardy (neutral)</Table.Td>
-                    </Table.Tr>
-                    <Table.Tr>
-                      <Table.Td>Item</Table.Td>
-                      <Table.Td>None</Table.Td>
-                    </Table.Tr>
-                  </Table.Tbody>
-                </Table>
-              </ScrollArea>
+              <Title order={5}>Additional Information</Title>
+              <Table fontSize="xs">
+                <Table.Tbody>
+                  <Table.Tr>
+                    <Table.Td>Nature</Table.Td>
+                    <Table.Td>Hardy (neutral)</Table.Td>
+                  </Table.Tr>
+                  <Table.Tr>
+                    <Table.Td>Item</Table.Td>
+                    <Table.Td>{pokemon.item || 'None'}</Table.Td>
+                  </Table.Tr>
+                </Table.Tbody>
+              </Table>
             </Stack>
           </Stack>
         </Card.Section>

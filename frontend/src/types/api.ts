@@ -37,8 +37,33 @@ export interface BattleResult {
       specialDefense: number;
       speed: number;
     };
+    baseStats?: {
+      hp: number;
+      attack: number;
+      defense: number;
+      specialAttack: number;
+      specialDefense: number;
+      speed: number;
+    };
+    evs?: {
+      hp: number;
+      attack: number;
+      defense: number;
+      specialAttack: number;
+      specialDefense: number;
+      speed: number;
+    };
+    ivs?: {
+      hp: number;
+      attack: number;
+      defense: number;
+      specialAttack: number;
+      specialDefense: number;
+      speed: number;
+    };
     ability?: string;
     item?: string;
+    levelupMoves?: Array<{ level: number; move: string }>;
   };
   pokemon2: {
     id: number;
@@ -60,8 +85,33 @@ export interface BattleResult {
       specialDefense: number;
       speed: number;
     };
+    baseStats?: {
+      hp: number;
+      attack: number;
+      defense: number;
+      specialAttack: number;
+      specialDefense: number;
+      speed: number;
+    };
+    evs?: {
+      hp: number;
+      attack: number;
+      defense: number;
+      specialAttack: number;
+      specialDefense: number;
+      speed: number;
+    };
+    ivs?: {
+      hp: number;
+      attack: number;
+      defense: number;
+      specialAttack: number;
+      specialDefense: number;
+      speed: number;
+    };
     ability?: string;
     item?: string;
+    levelupMoves?: Array<{ level: number; move: string }>;
   };
   totalBattles: number;
   winRate: number;

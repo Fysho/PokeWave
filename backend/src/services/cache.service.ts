@@ -6,7 +6,12 @@ class CacheService {
   private isConnected = false;
 
   constructor() {
-    this.connect();
+    // Only connect to Redis if not explicitly disabled
+    if (process.env.DISABLE_REDIS !== 'true') {
+      this.connect();
+    } else {
+      logger.info('Redis caching disabled by environment variable');
+    }
   }
 
   private connect(): void {
@@ -16,9 +21,16 @@ class CacheService {
         port: parseInt(process.env.REDIS_PORT || '6379'),
         password: process.env.REDIS_PASSWORD,
         retryStrategy: (times: number) => {
+          // Give up after 5 attempts
+          if (times > 5) {
+            logger.info('Redis connection failed after 5 attempts, falling back to no caching');
+            return null; // Stop retrying
+          }
           const delay = Math.min(times * 50, 2000);
           return delay;
-        }
+        },
+        maxRetriesPerRequest: 3,
+        enableOfflineQueue: false
       });
 
       this.redis.on('connect', () => {
@@ -27,7 +39,10 @@ class CacheService {
       });
 
       this.redis.on('error', (error) => {
-        logger.error('Redis connection error:', error);
+        // Only log the first error to avoid spamming logs
+        if (this.isConnected) {
+          logger.error('Redis connection error:', error);
+        }
         this.isConnected = false;
       });
 
