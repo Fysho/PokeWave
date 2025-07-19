@@ -584,6 +584,9 @@ class PokemonShowdownService {
       const pokemon1Stats = this.calculateStats(species1, pokemon1Level);
       const pokemon2Stats = this.calculateStats(species2, pokemon2Level);
 
+      // Important: Destroy the stream to prevent hanging connections
+      stream.destroy();
+
       return {
         winner: winner || species1.name,
         turns: turns,
@@ -678,6 +681,9 @@ class PokemonShowdownService {
         const bst2 = Object.values(species2.baseStats).reduce((a, b) => a + b, 0);
         winner = bst1 >= bst2 ? 1 : 2;
       }
+      
+      // Important: Destroy the stream to prevent hanging connections
+      stream.destroy();
       
       return winner;
     } catch (error) {
