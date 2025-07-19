@@ -20,6 +20,21 @@ interface PokemonInstanceRequest extends Request {
     ivs?: Partial<StatValues>;
     evs?: Partial<StatValues>;
     generation?: number;
+    nature?: string;
+    status?: 'none' | 'paralyzed' | 'burned' | 'frozen' | 'poisoned' | 'badly poisoned' | 'asleep';
+    heldItem?: {
+      mode: 'none' | 'random' | 'specific';
+      item?: string;
+    };
+    ability?: {
+      mode: 'random' | 'specific';
+      ability?: string;
+    };
+    moves?: {
+      mode: 'auto' | 'specific';
+      moveList?: string[];
+    };
+    happiness?: number;
   };
 }
 
@@ -34,6 +49,10 @@ interface PokemonInstanceResponse {
   baseStats: StatValues;
   ivs: StatValues;
   evs: StatValues;
+  nature: string;
+  status: string;
+  heldItem?: string;
+  happiness: number;
   sprites: {
     front: string;
     back: string;
@@ -43,7 +62,19 @@ interface PokemonInstanceResponse {
 
 export const getPokemonInstance = async (req: PokemonInstanceRequest, res: Response) => {
   try {
-    const { pokemonId, level, ivs = {}, evs = {}, generation = 9 } = req.body;
+    const { 
+      pokemonId, 
+      level, 
+      ivs = {}, 
+      evs = {}, 
+      generation = 9,
+      nature,
+      status = 'none',
+      heldItem = { mode: 'random' },
+      ability: abilityConfig,
+      moves: movesConfig,
+      happiness = 255
+    } = req.body;
 
     // Validate input
     if (!pokemonId || typeof pokemonId !== 'number' || pokemonId < 1) {
@@ -113,14 +144,44 @@ export const getPokemonInstance = async (req: PokemonInstanceRequest, res: Respo
       throw new ApiError(400, 'Total EVs cannot exceed 510');
     }
 
-    // Calculate actual stats
-    const calculatedStats = calculateStats(species, level, finalIvs, finalEvs);
+    // Get or select nature
+    const selectedNature = nature || getRandomNature();
 
-    // Get random ability
-    const ability = getRandomAbility(species);
+    // Calculate actual stats with nature
+    const calculatedStats = calculateStats(species, level, finalIvs, finalEvs, selectedNature);
 
-    // Get the 4 highest level moves the Pokemon can learn at this level
-    const moves = await getTopFourMoves(species, level, dex, generation);
+    // Get ability based on configuration
+    let selectedAbility: string;
+    if (abilityConfig && abilityConfig.mode === 'specific' && abilityConfig.ability) {
+      // Validate the ability exists for this Pokemon
+      const availableAbilities = getAvailableAbilities(species);
+      if (!availableAbilities.includes(abilityConfig.ability)) {
+        throw new ApiError(400, `${abilityConfig.ability} is not a valid ability for ${species.name}`);
+      }
+      selectedAbility = abilityConfig.ability;
+    } else {
+      selectedAbility = getRandomAbility(species);
+    }
+
+    // Get moves based on configuration
+    let selectedMoves: string[];
+    if (movesConfig && movesConfig.mode === 'specific' && movesConfig.moveList) {
+      // Validate moves
+      selectedMoves = movesConfig.moveList.slice(0, 4); // Max 4 moves
+      // TODO: Add move validation
+    } else {
+      selectedMoves = await getTopFourMoves(species, level, dex, generation);
+    }
+
+    // Get held item based on configuration
+    let selectedItem: string | undefined;
+    if (heldItem.mode === 'none') {
+      selectedItem = undefined;
+    } else if (heldItem.mode === 'specific' && heldItem.item) {
+      selectedItem = heldItem.item;
+    } else {
+      selectedItem = getRandomItem();
+    }
 
     // Format base stats
     const baseStats: StatValues = {
@@ -140,20 +201,27 @@ export const getPokemonInstance = async (req: PokemonInstanceRequest, res: Respo
       name: species.name,
       level,
       types,
-      ability,
-      moves,
+      ability: selectedAbility,
+      moves: selectedMoves,
       stats: calculatedStats,
       baseStats,
       ivs: finalIvs,
       evs: finalEvs,
+      nature: selectedNature,
+      status,
+      heldItem: selectedItem,
+      happiness,
       sprites: sprites || { front: '', back: '', shiny: '' }
     };
 
     logger.info('Successfully created Pokemon instance', { 
       pokemonName: species.name,
       level,
-      ability,
-      moveCount: moves.length 
+      ability: selectedAbility,
+      moveCount: selectedMoves.length,
+      nature: selectedNature,
+      status,
+      heldItem: selectedItem 
     });
 
     res.json(response);
@@ -168,27 +236,62 @@ export const getPokemonInstance = async (req: PokemonInstanceRequest, res: Respo
   }
 };
 
-// Helper function to calculate stats with IVs and EVs
-function calculateStats(species: any, level: number, ivs: StatValues, evs: StatValues): StatValues {
+// Nature effects on stats
+const NATURE_EFFECTS: { [key: string]: { increase?: string; decrease?: string } } = {
+  hardy: {},
+  lonely: { increase: 'attack', decrease: 'defense' },
+  brave: { increase: 'attack', decrease: 'speed' },
+  adamant: { increase: 'attack', decrease: 'specialAttack' },
+  naughty: { increase: 'attack', decrease: 'specialDefense' },
+  bold: { increase: 'defense', decrease: 'attack' },
+  docile: {},
+  relaxed: { increase: 'defense', decrease: 'speed' },
+  impish: { increase: 'defense', decrease: 'specialAttack' },
+  lax: { increase: 'defense', decrease: 'specialDefense' },
+  timid: { increase: 'speed', decrease: 'attack' },
+  hasty: { increase: 'speed', decrease: 'defense' },
+  serious: {},
+  jolly: { increase: 'speed', decrease: 'specialAttack' },
+  naive: { increase: 'speed', decrease: 'specialDefense' },
+  modest: { increase: 'specialAttack', decrease: 'attack' },
+  mild: { increase: 'specialAttack', decrease: 'defense' },
+  quiet: { increase: 'specialAttack', decrease: 'speed' },
+  bashful: {},
+  rash: { increase: 'specialAttack', decrease: 'specialDefense' },
+  calm: { increase: 'specialDefense', decrease: 'attack' },
+  gentle: { increase: 'specialDefense', decrease: 'defense' },
+  sassy: { increase: 'specialDefense', decrease: 'speed' },
+  careful: { increase: 'specialDefense', decrease: 'specialAttack' },
+  quirky: {}
+};
+
+// Helper function to calculate stats with IVs, EVs, and Nature
+function calculateStats(species: any, level: number, ivs: StatValues, evs: StatValues, nature: string): StatValues {
+  const natureEffect = NATURE_EFFECTS[nature.toLowerCase()] || {};
+  
   // Pokemon stat calculation formula
-  const calculateStat = (baseStat: number, iv: number, ev: number, isHP: boolean = false): number => {
+  const calculateStat = (baseStat: number, iv: number, ev: number, statName: string, isHP: boolean = false): number => {
     if (isHP) {
-      // HP calculation is different
+      // HP calculation is different and unaffected by nature
       if (species.name === 'Shedinja') return 1; // Shedinja always has 1 HP
       return Math.floor(((2 * baseStat + iv + Math.floor(ev / 4)) * level / 100) + level + 10);
     }
+    
     // Other stats calculation
-    const nature = 1.0; // Neutral nature for simplicity
-    return Math.floor((((2 * baseStat + iv + Math.floor(ev / 4)) * level / 100) + 5) * nature);
+    let natureMultiplier = 1.0;
+    if (natureEffect.increase === statName) natureMultiplier = 1.1;
+    else if (natureEffect.decrease === statName) natureMultiplier = 0.9;
+    
+    return Math.floor((((2 * baseStat + iv + Math.floor(ev / 4)) * level / 100) + 5) * natureMultiplier);
   };
 
   return {
-    hp: calculateStat(species.baseStats.hp, ivs.hp, evs.hp, true),
-    attack: calculateStat(species.baseStats.atk, ivs.attack, evs.attack),
-    defense: calculateStat(species.baseStats.def, ivs.defense, evs.defense),
-    specialAttack: calculateStat(species.baseStats.spa, ivs.specialAttack, evs.specialAttack),
-    specialDefense: calculateStat(species.baseStats.spd, ivs.specialDefense, evs.specialDefense),
-    speed: calculateStat(species.baseStats.spe, ivs.speed, evs.speed)
+    hp: calculateStat(species.baseStats.hp, ivs.hp, evs.hp, 'hp', true),
+    attack: calculateStat(species.baseStats.atk, ivs.attack, evs.attack, 'attack'),
+    defense: calculateStat(species.baseStats.def, ivs.defense, evs.defense, 'defense'),
+    specialAttack: calculateStat(species.baseStats.spa, ivs.specialAttack, evs.specialAttack, 'specialAttack'),
+    specialDefense: calculateStat(species.baseStats.spd, ivs.specialDefense, evs.specialDefense, 'specialDefense'),
+    speed: calculateStat(species.baseStats.spe, ivs.speed, evs.speed, 'speed')
   };
 }
 
@@ -211,24 +314,46 @@ function getSpeciesById(dex: any, id: number): any {
   }
 }
 
-// Helper function to get a random ability
-function getRandomAbility(species: any): string {
+// Helper function to get available abilities
+function getAvailableAbilities(species: any): string[] {
   const abilities = [];
   
   if (species.abilities) {
-    // Add all available abilities to the pool
     if (species.abilities['0']) abilities.push(species.abilities['0']);
     if (species.abilities['1']) abilities.push(species.abilities['1']);
     if (species.abilities['H']) abilities.push(species.abilities['H']);
   }
   
-  // If no abilities found, return a default
-  if (abilities.length === 0) {
-    return 'Pressure';
+  return abilities.length > 0 ? abilities : ['Pressure'];
+}
+
+// Helper function to get a random ability
+function getRandomAbility(species: any): string {
+  const abilities = getAvailableAbilities(species);
+  return abilities[Math.floor(Math.random() * abilities.length)];
+}
+
+// Helper function to get a random nature
+function getRandomNature(): string {
+  const natures = Object.keys(NATURE_EFFECTS);
+  return natures[Math.floor(Math.random() * natures.length)];
+}
+
+// Helper function to get a random item
+function getRandomItem(): string | undefined {
+  const items = [
+    'Leftovers', 'Choice Band', 'Choice Scarf', 'Choice Specs',
+    'Life Orb', 'Focus Sash', 'Assault Vest', 'Rocky Helmet',
+    'Black Sludge', 'Sitrus Berry', 'Light Clay', 'Eviolite',
+    'Air Balloon', 'Weakness Policy', 'Expert Belt', 'Lum Berry'
+  ];
+  
+  // 50% chance no item
+  if (Math.random() < 0.5) {
+    return undefined;
   }
   
-  // Return a random ability from all available
-  return abilities[Math.floor(Math.random() * abilities.length)];
+  return items[Math.floor(Math.random() * items.length)];
 }
 
 // Helper function to get the top 4 moves by level
