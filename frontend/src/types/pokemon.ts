@@ -34,13 +34,25 @@ export interface CompletePokemon {
   wins?: number;
 }
 
+import { Teams } from '@pkmn/sim';
+
 // Function to create a team string for Pokemon Showdown
 export function createTeamString(pokemon: CompletePokemon): string {
-  const speciesName = pokemon.species.toLowerCase().replace(/[^a-z0-9]/g, '');
-  const item = pokemon.item || '';
-  const ability = pokemon.ability || '';
-  const moves = pokemon.moves.join(',');
-  
-  // Format: species|item|ability|evs|moves|nature
-  return `${speciesName}|${item}|${ability}||${moves}||`;
+  // Create a proper set object that Teams.pack expects
+  const set = {
+    name: pokemon.name,
+    species: pokemon.species,
+    item: pokemon.item || '',
+    ability: pokemon.ability,
+    moves: pokemon.moves,
+    nature: 'Hardy',
+    evs: { hp: 0, atk: 0, def: 0, spa: 0, spd: 0, spe: 0 },
+    ivs: { hp: 31, atk: 31, def: 31, spa: 31, spd: 31, spe: 31 },
+    level: pokemon.level,
+    gender: ''
+  };
+
+  // Use Teams.pack to create the proper team string
+  const teamString = Teams.pack([set]);
+  return teamString;
 }

@@ -1,4 +1,4 @@
-import { Battle } from '@pkmn/sim';
+import { Battle, Dex } from '@pkmn/sim';
 import type { CompletePokemon } from '../types/pokemon';
 import { createTeamString } from '../types/pokemon';
 
@@ -87,28 +87,38 @@ export async function simulateSingleBattle(
   generation: number
 ): Promise<SingleBattleResult> {
   try {
-    const battle = new Battle({ formatid: `gen${generation}customgame` as any });
+    // Create a proper format ID based on generation
+    const formatId = generation === 1 ? 'gen1customgame' : `gen${generation}singles`;
+    const battle = new Battle({ formatid: formatId as any });
     
     // Create team strings using the pre-created Pokemon data
     const p1team = createTeamString(pokemon1);
     const p2team = createTeamString(pokemon2);
     
+    console.log('Battle format:', formatId);
+    console.log('P1 team string:', p1team);
+    console.log('P2 team string:', p2team);
+    
     try {
       battle.setPlayer('p1', { team: p1team });
       battle.setPlayer('p2', { team: p2team });
     } catch (error) {
+      console.error('Battle setup error:', error);
       // If there's an error setting up the battle, randomly determine winner
       const winner = Math.random() < 0.5 ? 1 : 2;
       return {
         winner,
         events: [],
         finalHP: {
-          p1: pokemon1.stats.hp,
-          p2: pokemon2.stats.hp
+          p1: pokemon1.stats?.hp || 100,
+          p2: pokemon2.stats?.hp || 100
         },
         totalTurns: 0
       };
     }
+    
+    // Start the battle
+    battle.start();
     
     let battleEnded = false;
     let turnCount = 0;
@@ -193,32 +203,50 @@ export async function simulateSingleBattle(
     
     while (!battleEnded && turnCount < maxTurns) {
       turnCount++;
+      
+      // Get current request state for both players
+      const p1Request = battle.p1.request;
+      const p2Request = battle.p2.request;
+      
+      // Make random moves for both players if they can act
+      if (p1Request && p1Request.active) {
+        const active = p1Request.active[0];
+        if (active && active.moves) {
+          const validMoves = active.moves
+            .map((move: any, i: number) => ({ move, index: i + 1 }))
+            .filter((m: any) => !m.move.disabled && m.move.pp > 0);
+          
+          if (validMoves.length > 0) {
+            const randomMove = validMoves[Math.floor(Math.random() * validMoves.length)];
+            battle.choose('p1', `move ${randomMove.index}`);
+          } else {
+            battle.choose('p1', 'pass');
+          }
+        }
+      }
+      
+      if (p2Request && p2Request.active) {
+        const active = p2Request.active[0];
+        if (active && active.moves) {
+          const validMoves = active.moves
+            .map((move: any, i: number) => ({ move, index: i + 1 }))
+            .filter((m: any) => !m.move.disabled && m.move.pp > 0);
+          
+          if (validMoves.length > 0) {
+            const randomMove = validMoves[Math.floor(Math.random() * validMoves.length)];
+            battle.choose('p2', `move ${randomMove.index}`);
+          } else {
+            battle.choose('p2', 'pass');
+          }
+        }
+      }
+      
+      // Get and parse the battle log for this turn
+      const battleLog = (battle as any).log || [];
+      parseBattleLog(battleLog, turnCount);
+      
+      // Clear the log for next turn
       (battle as any).log = [];
-      
-      // Make random moves for both players
-      const p1Active = battle.sides[0].active[0];
-      const p2Active = battle.sides[1].active[0];
-      
-      if (p1Active && p1Active.moveSlots) {
-        const validMoves = p1Active.moveSlots
-          .map((move: any, i: number) => !move.disabled ? i + 1 : -1)
-          .filter((i: number) => i > 0);
-        if (validMoves.length > 0) {
-          battle.choose('p1', `move ${validMoves[Math.floor(Math.random() * validMoves.length)]}`);
-        }
-      }
-      
-      if (p2Active && p2Active.moveSlots) {
-        const validMoves = p2Active.moveSlots
-          .map((move: any, i: number) => !move.disabled ? i + 1 : -1)
-          .filter((i: number) => i > 0);
-        if (validMoves.length > 0) {
-          battle.choose('p2', `move ${validMoves[Math.floor(Math.random() * validMoves.length)]}`);
-        }
-      }
-      
-      // Parse the battle log for this turn
-      parseBattleLog((battle as any).log, turnCount);
       
       if (battle.ended) {
         battleEnded = true;
@@ -227,8 +255,8 @@ export async function simulateSingleBattle(
           winner,
           events,
           finalHP: {
-            p1: battle.sides[0].active[0]?.hp || 0,
-            p2: battle.sides[1].active[0]?.hp || 0
+            p1: battle.p1.pokemon[0]?.hp || 0,
+            p2: battle.p2.pokemon[0]?.hp || 0
           },
           totalTurns: turnCount
         };
@@ -236,8 +264,8 @@ export async function simulateSingleBattle(
     }
     
     // If battle didn't end, determine winner by remaining HP
-    const p1HP = battle.sides[0].active[0]?.hp || 0;
-    const p2HP = battle.sides[1].active[0]?.hp || 0;
+    const p1HP = battle.p1.pokemon[0]?.hp || 0;
+    const p2HP = battle.p2.pokemon[0]?.hp || 0;
     return {
       winner: p1HP > p2HP ? 1 : 2,
       events,

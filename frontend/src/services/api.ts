@@ -120,7 +120,7 @@ export class ApiService {
           aiDifficulty: options?.aiDifficulty || 'random'
         }
       }, {
-        timeout: 15000 // 15 seconds timeout for battle simulations
+        timeout: 15012 // 15 seconds timeout for battle simulations
       });
       return response.data;
     } catch (error) {
