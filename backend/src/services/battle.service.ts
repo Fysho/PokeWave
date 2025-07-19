@@ -134,7 +134,11 @@ class BattleService {
 
       return result;
     } catch (error) {
-      logger.error('Failed to simulate battle:', error);
+      logger.error('Failed to simulate battle:', {
+        error: error instanceof Error ? error.message : error,
+        stack: error instanceof Error ? error.stack : undefined,
+        config
+      });
       throw new ApiError(500, 'Failed to simulate battle');
     }
   }

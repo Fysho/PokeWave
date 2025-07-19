@@ -9,12 +9,18 @@ export const simulateBattle = async (
 ): Promise<void> => {
   try {
     const { pokemon1Id, pokemon2Id, options } = req.body;
-    console.log('Battle controller received request:', { pokemon1Id, pokemon2Id });
+    console.log('Battle controller received request:', { 
+      pokemon1Id, 
+      pokemon2Id,
+      options,
+      timestamp: new Date().toISOString()
+    });
 
     if (!pokemon1Id || !pokemon2Id) {
       throw new ApiError(400, 'Both pokemon1Id and pokemon2Id are required');
     }
 
+    console.log('Calling battleService.simulateBattle...');
     const result = await battleService.simulateBattle({
       pokemon1Id,
       pokemon2Id,
@@ -23,9 +29,13 @@ export const simulateBattle = async (
 
     console.log('Battle controller sending response');
     res.json(result);
-    console.log('Battle controller response sent');
+    console.log('Battle controller response sent successfully');
   } catch (error) {
-    console.error('Battle controller error:', error);
+    console.error('Battle controller caught error:', {
+      error: error instanceof Error ? error.message : error,
+      stack: error instanceof Error ? error.stack : undefined,
+      timestamp: new Date().toISOString()
+    });
     next(error);
   }
 };

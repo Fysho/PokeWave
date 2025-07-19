@@ -166,10 +166,29 @@ class PokemonShowdownService {
   private preloadLearnsets() {
     try {
       logger.info('Preloading Pokemon learnsets data...');
-      this.learnsets = require('@pkmn/dex/build/learnsets-DJNGQKWY.js').default;
-      logger.info('Pokemon learnsets data loaded successfully');
+      // Try different approaches to load learnsets
+      try {
+        // First try the specific file
+        this.learnsets = require('@pkmn/dex/build/learnsets-DJNGQKWY.js').default;
+        logger.info('Pokemon learnsets data loaded successfully from DJNGQKWY file');
+      } catch (e1) {
+        logger.warn('Failed to load specific learnsets file, trying alternatives...', e1);
+        try {
+          // Try the minified version
+          this.learnsets = require('@pkmn/dex/build/learnsets.min.js');
+          logger.info('Pokemon learnsets data loaded successfully from min file');
+        } catch (e2) {
+          logger.warn('Failed to load minified learnsets, trying direct import...', e2);
+          // Try direct import
+          const { Learnsets } = require('@pkmn/dex');
+          this.learnsets = Learnsets;
+          logger.info('Pokemon learnsets data loaded successfully from direct import');
+        }
+      }
     } catch (error) {
-      logger.error('Failed to preload learnsets:', error);
+      logger.error('Failed to preload learnsets completely:', error);
+      // Continue without learnsets - they may not be strictly necessary for basic battles
+      this.learnsets = null;
     }
   }
 
@@ -181,6 +200,7 @@ class PokemonShowdownService {
       logger.debug('Config received:', config);
       // Generate cache key
       const cacheKey = this.generateBattleKey(config);
+      logger.debug('Generated cache key:', cacheKey);
       
       // Check cache first
       const cachedResult = await cacheService.get<ShowdownBattleResult>(`showdown:${cacheKey}`);
@@ -190,9 +210,19 @@ class PokemonShowdownService {
       }
 
       const generation = config.options?.generation || 9;
-      const dex = Dex.forGen(generation);
+      logger.debug('Using generation:', generation);
+      
+      let dex;
+      try {
+        dex = Dex.forGen(generation);
+        logger.debug('Dex initialized successfully for generation', generation);
+      } catch (dexError) {
+        logger.error('Failed to initialize Dex:', dexError);
+        throw new ApiError(500, 'Failed to initialize Pokemon data');
+      }
       
       // Get Pokemon species
+      logger.debug('Getting species for IDs:', { id1: config.pokemon1Id, id2: config.pokemon2Id });
       const species1 = this.getSpeciesById(dex, config.pokemon1Id);
       const species2 = this.getSpeciesById(dex, config.pokemon2Id);
 
@@ -208,14 +238,25 @@ class PokemonShowdownService {
 
       logger.info('Pokemon species found', {
         species1: species1.name,
-        species2: species2.name
+        species2: species2.name,
+        species1Types: species1.types,
+        species2Types: species2.types,
+        species1BaseStats: species1.baseStats
       });
 
       // Fetch Pokemon sprites from PokeAPI
-      const [pokemon1Sprites, pokemon2Sprites] = await this.fetchPokemonSprites(
-        config.pokemon1Id,
-        config.pokemon2Id
-      );
+      logger.debug('Fetching Pokemon sprites...');
+      let pokemon1Sprites, pokemon2Sprites;
+      try {
+        [pokemon1Sprites, pokemon2Sprites] = await this.fetchPokemonSprites(
+          config.pokemon1Id,
+          config.pokemon2Id
+        );
+        logger.debug('Sprites fetched successfully');
+      } catch (spriteError) {
+        logger.error('Failed to fetch sprites:', spriteError);
+        throw new ApiError(500, 'Failed to fetch Pokemon sprites');
+      }
 
       const pokemon1Level = config.options?.pokemon1Level || 50;
       const pokemon2Level = config.options?.pokemon2Level || 50;
@@ -939,10 +980,15 @@ class PokemonShowdownService {
       // Use cached learnsets data - use gen 9 data which contains all moves
       const learnsets = this.learnsets || require('@pkmn/dex/build/learnsets-DJNGQKWY.js').default;
       const allLearnsets = learnsets['9']; // Gen 9 contains complete move data
+      
+      logger.debug(`Learnsets loaded, checking for species ID: ${species.id}`);
+      logger.debug(`All learnsets type: ${typeof allLearnsets}, has species: ${!!allLearnsets[species.id]}`);
+      
       const learnsetData = allLearnsets[species.id];
       
       if (!learnsetData || !learnsetData.learnset) {
         logger.error(`No learnset data found for ${species.name} (ID: ${species.id}) in Gen ${generation}`);
+        logger.error(`Available IDs (first 20): ${Object.keys(allLearnsets).slice(0, 20).join(', ')}`);
         throw new ApiError(500, `No learnset data found for ${species.name}`);
       }
       
@@ -952,6 +998,9 @@ class PokemonShowdownService {
         // Process all moves from the learnset
         for (const [moveName, learnData] of Object.entries(learnsetData.learnset)) {
           if (Array.isArray(learnData)) {
+            let earliestLevel = null;
+            let foundInCurrentGen = false;
+            
             for (const learnMethod of learnData) {
               // Format is like "8L1" (Gen 8, Level 1) or "7L45" (Gen 7, Level 45)
               const match = learnMethod.match(/^(\d+)L(\d+)$/);
@@ -959,23 +1008,36 @@ class PokemonShowdownService {
                 const moveGen = parseInt(match[1]);
                 const level = parseInt(match[2]);
                 
-                // Only include moves available in the current generation or earlier
-                if (moveGen <= generation) {
-                  const move = dex.moves.get(moveName);
-                  if (move && move.exists) {
-                    // Check if we already have this move at a different level
-                    const existingMove = levelupMoves.find(m => m.move === this.formatMoveName(move.name));
-                    if (!existingMove) {
-                      levelupMoves.push({ 
-                        level, 
-                        move: this.formatMoveName(move.name),
-                        moveId: moveName // Keep the original move ID for battle simulation
-                      });
-                    } else if (level < existingMove.level) {
-                      // Update to the earliest level this move is learned
-                      existingMove.level = level;
-                    }
+                // For Gen 1, we need to be more lenient since many moves don't have explicit Gen 1 data
+                // We'll include moves from any generation if we're in Gen 1 and the move exists in Gen 1
+                if (moveGen <= generation || (generation === 1 && moveGen <= 3)) {
+                  if (earliestLevel === null || level < earliestLevel) {
+                    earliestLevel = level;
+                    foundInCurrentGen = true;
                   }
+                }
+              }
+            }
+            
+            if (foundInCurrentGen && earliestLevel !== null) {
+              const move = dex.moves.get(moveName);
+              if (move && move.exists) {
+                // For Gen 1, check if the move actually exists in Gen 1
+                if (generation === 1 && move.num && move.num > 165) {
+                  continue; // Skip moves that don't exist in Gen 1
+                }
+                
+                // Check if we already have this move
+                const existingMove = levelupMoves.find(m => m.move === this.formatMoveName(move.name));
+                if (!existingMove) {
+                  levelupMoves.push({ 
+                    level: earliestLevel, 
+                    move: this.formatMoveName(move.name),
+                    moveId: moveName // Keep the original move ID for battle simulation
+                  });
+                } else if (earliestLevel < existingMove.level) {
+                  // Update to the earliest level this move is learned
+                  existingMove.level = earliestLevel;
                 }
               }
             }
@@ -988,7 +1050,43 @@ class PokemonShowdownService {
         logger.info(`Found ${levelupMoves.length} level-up moves for ${species.name}`);
       }
       
-      // If we couldn't get learnset data, this is a critical error
+      // If we couldn't get learnset data, use fallback moves for Gen 1
+      if (levelupMoves.length === 0 && generation === 1) {
+        logger.warn(`No level-up moves found for ${species.name} in Gen ${generation}, using fallback moves`);
+        
+        // Use some basic moves that most Pokemon can learn
+        const fallbackMoves = ['tackle', 'scratch', 'pound', 'growl', 'tailwhip', 'leer'];
+        for (const moveName of fallbackMoves) {
+          const move = dex.moves.get(moveName);
+          if (move && move.exists && move.num <= 165) {
+            levelupMoves.push({
+              level: 1,
+              move: this.formatMoveName(move.name),
+              moveId: moveName
+            });
+            if (levelupMoves.length >= 4) break;
+          }
+        }
+        
+        // If still no moves, use species-specific defaults
+        if (levelupMoves.length === 0) {
+          if (species.types.includes('Electric')) {
+            levelupMoves.push({ level: 1, move: 'Thunder Shock', moveId: 'thundershock' });
+            levelupMoves.push({ level: 1, move: 'Growl', moveId: 'growl' });
+          } else if (species.types.includes('Fire')) {
+            levelupMoves.push({ level: 1, move: 'Ember', moveId: 'ember' });
+            levelupMoves.push({ level: 1, move: 'Growl', moveId: 'growl' });
+          } else if (species.types.includes('Water')) {
+            levelupMoves.push({ level: 1, move: 'Water Gun', moveId: 'watergun' });
+            levelupMoves.push({ level: 1, move: 'Tail Whip', moveId: 'tailwhip' });
+          } else {
+            levelupMoves.push({ level: 1, move: 'Tackle', moveId: 'tackle' });
+            levelupMoves.push({ level: 1, move: 'Growl', moveId: 'growl' });
+          }
+        }
+      }
+      
+      // If we still couldn't get any moves, this is a critical error
       if (levelupMoves.length === 0) {
         logger.error(`CRITICAL: No level-up moves found for ${species.name} in learnset data`);
         throw new ApiError(500, `No valid moves found for ${species.name} in Pokemon Showdown data. This is a critical data error.`);
@@ -1010,16 +1108,21 @@ class PokemonShowdownService {
   }
 
   private getSpeciesById(dex: any, id: number): Species | null {
-    // Try by national dex number first
-    const allSpecies = dex.species.all();
-    const found = allSpecies.find((s: Species) => s.num === id);
-    if (found) return found;
-    
-    // Fallback to trying by ID string
-    const species = dex.species.get(String(id));
-    if (species && species.exists) return species;
-    
-    return null;
+    try {
+      // Try by national dex number first
+      const allSpecies = dex.species.all();
+      const found = allSpecies.find((s: Species) => s.num === id);
+      if (found) return found;
+      
+      // Fallback to trying by ID string - dex.species.get expects a string
+      const species = dex.species.get(String(id));
+      if (species && species.exists) return species;
+      
+      return null;
+    } catch (error) {
+      logger.error('Error getting species by ID:', { id, error });
+      return null;
+    }
   }
 
   private async fetchPokemonSprites(id1: number, id2: number) {

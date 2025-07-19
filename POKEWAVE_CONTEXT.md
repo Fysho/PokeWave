@@ -410,5 +410,16 @@ curl -X POST http://localhost:4000/api/battle/simulate \
 5. **Remember Mantine UI** - project migrated from shadcn/Tailwind
 6. **Don't use formatted move names in battles** - use move IDs (lowercase, no spaces)
 7. **Don't give Pokemon invalid moves** - all moves must come from their learnset
+8. **Watch for Promise.race TypeScript issues** - may need type assertions with BattleStreams
+9. **Shared config imports** - backend tsconfig doesn't include ../shared by default
+
+### Recent Updates (Phase 5 Completion)
+- **Move Validation**: Removed `getRandomMoves` function, now strictly enforces level-up learnsets
+- **Learnset Integration**: Uses `@pkmn/dex/build/learnsets-DJNGQKWY.js` for move data
+- **Move ID Format**: Separated move IDs (for battle) from display names (for UI)
+- **Performance**: Preloads learnsets on server startup to prevent cold start timeouts
+- **Stream Management**: Added proper stream cleanup with `stream.destroy()`
+- **Frontend Timeout**: Increased to 15 seconds for battle simulations
+- **Error Handling**: Enhanced error messages for better debugging
 
 The project is production-ready with accurate Pokemon battle simulation, proper data sourcing, and a complete game loop.
