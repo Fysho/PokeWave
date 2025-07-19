@@ -888,31 +888,20 @@ class PokemonShowdownService {
     const levelupMoves: Array<{ level: number; move: string }> = [];
     const generation = dex.gen || 9;
     
+    logger.debug(`Getting levelup moves for ${species.name} (ID: ${species.id}) in Gen ${generation}`);
+    
     try {
-      // Check if learnsets are available in dex.sim.dex.data
-      let learnsetData = null;
+      // Load learnsets data directly - use gen 9 data which contains all moves
+      const learnsets = require('@pkmn/dex/build/learnsets-DJNGQKWY.js').default;
+      const allLearnsets = learnsets['9']; // Gen 9 contains complete move data
+      const learnsetData = allLearnsets[species.id];
       
-      // Try multiple locations where learnsets might be stored
-      if ((dex as any).sim?.dex?.data?.Learnsets) {
-        learnsetData = (dex as any).sim.dex.data.Learnsets[species.id];
-        if (learnsetData) {
-          logger.debug('Found learnset in dex.sim.dex.data.Learnsets');
-        }
+      if (!learnsetData || !learnsetData.learnset) {
+        logger.error(`No learnset data found for ${species.name} (ID: ${species.id}) in Gen ${generation}`);
+        throw new ApiError(500, `No learnset data found for ${species.name}`);
       }
       
-      if (!learnsetData && (dex as any).data?.Learnsets) {
-        learnsetData = (dex as any).data.Learnsets[species.id];
-        if (learnsetData) {
-          logger.debug('Found learnset in dex.data.Learnsets');
-        }
-      }
-      
-      if (!learnsetData && (dex as any).learnsets) {
-        learnsetData = (dex as any).learnsets[species.id];
-        if (learnsetData) {
-          logger.debug('Found learnset in dex.learnsets');
-        }
-      }
+      logger.debug(`Found learnset for ${species.name} with ${Object.keys(learnsetData.learnset || {}).length} moves`);
       
       if (learnsetData && learnsetData.learnset) {
         // Process all moves from the learnset
