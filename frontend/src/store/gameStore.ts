@@ -1,7 +1,6 @@
 import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
 import type { GameState, ApiError } from '../types/api';
-import type { CompletePokemon } from '../types/pokemon';
 import { Pokemon } from './pokemon';
 import ApiService from '../services/api';
 // import { simulateMainBattle } from '../utils/mainBattleSimulation'; // Using backend API instead

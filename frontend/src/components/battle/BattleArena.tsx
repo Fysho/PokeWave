@@ -361,6 +361,29 @@ const PokemonBattleCard: React.FC<PokemonBattleCardProps> = ({
               </Box>
             )}
 
+            {/* Nature and IVs */}
+            {pokemon.nature && (
+              <Box>
+                <Group justify="center" gap="xs">
+                  <Badge
+                    variant="dot"
+                    size="md"
+                    color="violet"
+                    tt="capitalize"
+                  >
+                    {pokemon.nature} Nature
+                  </Badge>
+                  <Badge
+                    variant="dot"
+                    size="md"
+                    color="green"
+                  >
+                    Perfect IVs
+                  </Badge>
+                </Group>
+              </Box>
+            )}
+
             {/* Battle Results */}
             {showResults && (
               <ScaleIn delay={0.5}>

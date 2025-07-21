@@ -24,7 +24,7 @@ const PokeInfo: React.FC = () => {
           {/* Basic Info using Pokemon class */}
           <Box>
             <Title order={5}>Basic Info (Using Pokemon Class)</Title>
-            <Table fontSize="xs" withTableBorder>
+            <Table withTableBorder>
               <Table.Tbody>
                 <Table.Tr>
                   <Table.Td fw={600}>ID</Table.Td>
@@ -62,7 +62,7 @@ const PokeInfo: React.FC = () => {
           {/* Battle Performance using getters */}
           <Box>
             <Title order={5}>Battle Performance</Title>
-            <Table fontSize="xs" withTableBorder>
+            <Table withTableBorder>
               <Table.Tbody>
                 <Table.Tr>
                   <Table.Td fw={600}>Wins</Table.Td>
@@ -87,7 +87,7 @@ const PokeInfo: React.FC = () => {
           {/* Stats Breakdown */}
           <Box>
             <Title order={5}>Stats Breakdown</Title>
-            <Table fontSize="xs" withTableBorder withColumnBorders>
+            <Table withTableBorder withColumnBorders>
               <Table.Thead>
                 <Table.Tr>
                   <Table.Th>Stat</Table.Th>
@@ -133,7 +133,7 @@ const PokeInfo: React.FC = () => {
             <Box>
               <Title order={5}>Levelup Moves ({pokemon.levelupMoves.length})</Title>
               <ScrollArea h={200}>
-                <Table fontSize="xs" withTableBorder>
+                <Table withTableBorder>
                   <Table.Thead>
                     <Table.Tr>
                       <Table.Th>Level</Table.Th>

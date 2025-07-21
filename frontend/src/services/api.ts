@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { Pokemon, BattleResult, GuessSubmission, GuessResult, ApiError, GetRandomPokemonWithInstancesResponse, PokemonInstanceData } from '../types/api';
+import type { Pokemon, BattleResult, GuessSubmission, GuessResult, ApiError, GetRandomPokemonWithInstancesResponse } from '../types/api';
 
 const API_BASE_URL = 'http://localhost:4000/api';
 
