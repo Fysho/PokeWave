@@ -428,14 +428,14 @@ class PokemonShowdownService {
       // Process battle synchronously for simplicity
       while (!battleEnded && turnCount < maxTurns) {
         // Read from stream with a simple approach
-        logger.info(`🎮 Battle Tester: Waiting for stream data... (Turn ${turnCount})`);
+        logger.debug(`🎮 Battle Tester: Waiting for stream data... (Turn ${turnCount}, NoData: ${noDataCount})`);
         
         // Add timeout to prevent hanging
         let chunk: string | null | undefined = null;
         try {
           const timeoutPromise = new Promise<null>((resolve) => {
             setTimeout(() => {
-              logger.warn('🎮 Battle Tester: Read timeout after 2 seconds');
+              logger.debug('🎮 Battle Tester: Read timeout after 2 seconds');
               resolve(null);
             }, 2000);
           });
@@ -459,13 +459,8 @@ class PokemonShowdownService {
             break;
           }
           
-          // Try to kickstart the battle if stuck
-          if (noDataCount === 2) {
-            logger.info('🎮 Battle Tester: Attempting to kickstart battle with default moves');
-            await stream.write('>p1 move 1');
-            await stream.write('>p2 move 1');
-          }
-          
+          // Don't try to force moves without proper request data
+          await new Promise(resolve => setTimeout(resolve, 100));
           continue;
         }
         
@@ -518,22 +513,47 @@ class PokemonShowdownService {
             logger.info('🎮 Battle Tester: Critical hit!');
           }
           
-          if (line.includes('sideupdate')) {
-            const playerMatch = line.match(/^>(p[12])/);
-            if (playerMatch) {
-              const player = playerMatch[1];
-              const requestLine = lines.find(l => l.includes('|request|'));
-              if (requestLine) {
-                const requestData = requestLine.split('|')[2];
+          // Better request parsing - look for request data in each line
+          if (line.includes('|request|')) {
+            // Extract the JSON data after |request|
+            const parts = line.split('|request|');
+            if (parts.length > 1) {
+              const requestData = parts[1].trim();
+              if (requestData && requestData.startsWith('{')) {
                 try {
+                  logger.debug(`🎮 Battle Tester: Found request data: ${requestData.substring(0, 100)}...`);
                   const request = JSON.parse(requestData);
-                  if (player === 'p1') {
-                    p1Request = request;
-                  } else {
-                    p2Request = request;
+                  
+                  // Determine which player this is for based on previous line context
+                  // Look for the player indicator in the previous lines
+                  let playerFound = false;
+                  for (let i = lines.indexOf(line) - 1; i >= 0 && i > lines.indexOf(line) - 5; i--) {
+                    if (lines[i] && lines[i].startsWith('>p1')) {
+                      p1Request = request;
+                      playerFound = true;
+                      logger.info(`🎮 Battle Tester: Parsed P1 request with ${request.active?.[0]?.moves?.length || 0} moves`);
+                      break;
+                    } else if (lines[i] && lines[i].startsWith('>p2')) {
+                      p2Request = request;
+                      playerFound = true;
+                      logger.info(`🎮 Battle Tester: Parsed P2 request with ${request.active?.[0]?.moves?.length || 0} moves`);
+                      break;
+                    }
+                  }
+                  
+                  // If we couldn't determine the player from context, check if we can infer it
+                  if (!playerFound) {
+                    // If we don't have a p1 request yet, assume this is for p1
+                    if (!p1Request && !p2Request) {
+                      p1Request = request;
+                      logger.info(`🎮 Battle Tester: Assigned request to P1 by default`);
+                    } else if (p1Request && !p2Request) {
+                      p2Request = request;
+                      logger.info(`🎮 Battle Tester: Assigned request to P2 (P1 already has request)`);
+                    }
                   }
                 } catch (e) {
-                  // Not JSON, skip
+                  logger.error(`🎮 Battle Tester: Failed to parse request JSON:`, e);
                 }
               }
             }
@@ -546,11 +566,14 @@ class PokemonShowdownService {
         }
         
         // Make moves based on requests
+        let madeMove = false;
+        
         if (p1Request && p1Request.active) {
           const choice = this.makeRandomChoice(p1Request);
           logger.info(`🎮 Battle Tester: ${species1.name} choosing action: ${choice}`);
           await stream.write(`>p1 ${choice}`);
           p1Request = null;
+          madeMove = true;
         }
         
         if (p2Request && p2Request.active) {
@@ -558,17 +581,12 @@ class PokemonShowdownService {
           logger.info(`🎮 Battle Tester: ${species2.name} choosing action: ${choice}`);
           await stream.write(`>p2 ${choice}`);
           p2Request = null;
+          madeMove = true;
         }
         
-        // Alternative: Try to make moves if we see specific patterns
-        if (chunk.includes('|request|') && !p1Request && !p2Request) {
-          logger.info('🎮 Battle Tester: Request found but not parsed, trying default moves');
-          if (chunk.includes('>p1')) {
-            await stream.write('>p1 move 1');
-          }
-          if (chunk.includes('>p2')) {
-            await stream.write('>p2 move 1');
-          }
+        // If we made moves, give the stream a moment to process
+        if (madeMove) {
+          await new Promise(resolve => setTimeout(resolve, 50));
         }
         
         if (chunk.includes('|turn|')) {
@@ -938,7 +956,10 @@ class PokemonShowdownService {
 
 
   private makeRandomChoice(request: any): string {
-    if (!request.active || !request.active[0]) return 'pass';
+    if (!request.active || !request.active[0]) {
+      logger.debug('🎮 Battle Tester: No active Pokemon in request');
+      return 'pass';
+    }
     
     const active = request.active[0];
     
@@ -946,12 +967,20 @@ class PokemonShowdownService {
     if (active.moves && active.moves.length > 0) {
       const validMoves = active.moves
         .map((move: any, i: number) => ({ move, index: i + 1 }))
-        .filter((m: any) => !m.move.disabled);
+        .filter((m: any) => !m.move.disabled && (m.move.pp === undefined || m.move.pp > 0));
+      
+      logger.debug(`🎮 Battle Tester: Available moves: ${validMoves.length} out of ${active.moves.length}`);
       
       if (validMoves.length > 0) {
         const randomMove = validMoves[Math.floor(Math.random() * validMoves.length)];
+        const moveName = randomMove.move.move || randomMove.move.id || `Move ${randomMove.index}`;
+        logger.debug(`🎮 Battle Tester: Selected move: ${moveName} (index ${randomMove.index})`);
         return `move ${randomMove.index}`;
+      } else {
+        logger.warn('🎮 Battle Tester: No valid moves available');
       }
+    } else {
+      logger.warn('🎮 Battle Tester: No moves in active Pokemon data');
     }
     
     // If we can switch, maybe switch
@@ -962,10 +991,12 @@ class PokemonShowdownService {
       
       if (switchableTargets.length > 0 && Math.random() < 0.1) { // 10% chance to switch
         const target = switchableTargets[Math.floor(Math.random() * switchableTargets.length)];
+        logger.debug(`🎮 Battle Tester: Switching to Pokemon ${target.index}`);
         return `switch ${target.index}`;
       }
     }
     
+    logger.debug('🎮 Battle Tester: No valid action, passing');
     return 'pass';
   }
 
