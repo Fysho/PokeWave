@@ -199,7 +199,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({
               <Group gap="sm">
                 <Box 
                   component="img"
-                  src="/logo.png" 
+                  src="/PokeWaveLogo256.png" 
                   alt="PokeWave Logo"
                   h={40}
                   style={{ 
