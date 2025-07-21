@@ -179,9 +179,7 @@ class PokemonShowdownService {
       const maxTurns = 50;
       let p1Request: any = null;
       let p2Request: any = null;
-      let noDataCount = 0;
-      const maxNoDataCount = 5;
-      
+
       logger.info('🎮 Battle Tester: Battle started! Processing turns...');
       
       // Give the stream a moment to initialize
@@ -571,123 +569,165 @@ class PokemonShowdownService {
     return lines.join("\n");
   }
 
-
-
-
-  private makeRandomChoice(request: any): string {
-    if (!request.active || !request.active[0]) {
-      logger.debug('🎮 Battle Tester: No active Pokemon in request');
-      return 'pass';
-    }
-    
-    const active = request.active[0];
-    
-    // If we have moves, use a random one
-    if (active.moves && active.moves.length > 0) {
-      const validMoves = active.moves
-        .map((move: any, i: number) => ({ move, index: i + 1 }))
-        .filter((m: any) => !m.move.disabled && (m.move.pp === undefined || m.move.pp > 0));
-      
-      logger.debug(`🎮 Battle Tester: Available moves: ${validMoves.length} out of ${active.moves.length}`);
-      
-      if (validMoves.length > 0) {
-        const randomMove = validMoves[Math.floor(Math.random() * validMoves.length)];
-        const moveName = randomMove.move.move || randomMove.move.id || `Move ${randomMove.index}`;
-        logger.debug(`🎮 Battle Tester: Selected move: ${moveName} (index ${randomMove.index})`);
-        return `move ${randomMove.index}`;
-      } else {
-        logger.warn('🎮 Battle Tester: No valid moves available');
-      }
-    } else {
-      logger.warn('🎮 Battle Tester: No moves in active Pokemon data');
-    }
-    
-    // If we can switch, maybe switch
-    if (request.side && request.side.pokemon) {
-      const switchableTargets = request.side.pokemon
-        .map((p: any, i: number) => ({ pokemon: p, index: i + 1 }))
-        .filter((p: any) => !p.pokemon.active && !p.pokemon.fainted);
-      
-      if (switchableTargets.length > 0 && Math.random() < 0.1) { // 10% chance to switch
-        const target = switchableTargets[Math.floor(Math.random() * switchableTargets.length)];
-        logger.debug(`🎮 Battle Tester: Switching to Pokemon ${target.index}`);
-        return `switch ${target.index}`;
-      }
-    }
-    
-    logger.debug('🎮 Battle Tester: No valid action, passing');
-    return 'pass';
-  }
-
   private parseBattleLog(outputs: string[]): BattleTurn[] {
     const turns: BattleTurn[] = [];
     let currentTurn = 0;
+    const pokemonHP: { [key: string]: { current: number; max: number; lastHP?: number } } = {};
     
+    // First pass - initialize HP values
     for (const output of outputs) {
-      const parts = output.split('|');
-      if (parts.length < 2) continue;
-      
-      const eventType = parts[1];
-      
-      switch (eventType) {
-        case 'turn':
-          currentTurn = parseInt(parts[2]) || 0;
-          break;
+      const lines = output.split('\n');
+      for (const line of lines) {
+        // Look for initial HP values or updates
+        if (line.includes('|switch|') || line.includes('|drag|') || line.includes('|player|')) {
+          const parts = line.split('|');
           
-        case 'move':
-          if (parts.length >= 5) {
-            const attacker = this.extractPokemonName(parts[2]);
-            const move = parts[3];
-            const defender = this.extractPokemonName(parts[4]);
-            
-            turns.push({
-              turn: currentTurn,
-              attacker,
-              defender,
-              move,
-              damage: 0,
-              remainingHP: 0,
-              critical: false,
-              effectiveness: 'normal'
-            });
-          }
-          break;
-          
-        case '-damage':
-          if (parts.length >= 4 && turns.length > 0) {
-            const lastTurn = turns[turns.length - 1];
-            const hpInfo = parts[3];
+          // Check for switch/drag format
+          if ((line.includes('|switch|') || line.includes('|drag|')) && parts.length >= 6) {
+            const pokemonName = this.extractPokemonName(parts[3]);
+            const hpInfo = parts[5];
             if (hpInfo && hpInfo.includes('/')) {
               const [current, max] = hpInfo.split('/').map(h => parseInt(h) || 0);
-              lastTurn.remainingHP = current;
-              lastTurn.damage = Math.max(0, max - current);
+              pokemonHP[pokemonName] = { current, max };
+              logger.info(`Battle Tester: Initialized HP for ${pokemonName}: ${current}/${max}`);
             }
           }
-          break;
           
-        case '-crit':
-          if (turns.length > 0) {
-            turns[turns.length - 1].critical = true;
+          // Also check for any line with HP info
+          for (let i = 0; i < parts.length; i++) {
+            if (parts[i] && parts[i].includes('/') && /^\d+\/\d+$/.test(parts[i])) {
+              // Found HP format, try to get Pokemon name from previous parts
+              if (i > 0) {
+                const pokemonName = this.extractPokemonName(parts[i-1]);
+                if (pokemonName && !pokemonHP[pokemonName]) {
+                  const [current, max] = parts[i].split('/').map(h => parseInt(h) || 0);
+                  pokemonHP[pokemonName] = { current, max };
+                  logger.info(`Battle Tester: Found HP for ${pokemonName}: ${current}/${max}`);
+                }
+              }
+            }
           }
-          break;
-          
-        case '-supereffective':
-          if (turns.length > 0) {
-            turns[turns.length - 1].effectiveness = 'super';
-          }
-          break;
-          
-        case '-resisted':
-          if (turns.length > 0) {
-            turns[turns.length - 1].effectiveness = 'not very';
-          }
-          break;
-          
-        case '-immune':
-          if (turns.length > 0) {
-            turns[turns.length - 1].effectiveness = 'no';
-          }
-          break;
+        }
+      }
+    }
+    
+    // Second pass - parse battle events
+    for (const output of outputs) {
+      const lines = output.split('\n');
+      for (const line of lines) {
+        const parts = line.split('|');
+        if (parts.length < 2) continue;
+        
+        const eventType = parts[1];
+        
+        switch (eventType) {
+          case 'turn':
+            currentTurn = parseInt(parts[2]) || 0;
+            break;
+            
+          case 'move':
+            if (parts.length >= 5) {
+              const attacker = this.extractPokemonName(parts[2]);
+              const move = parts[3];
+              const defender = this.extractPokemonName(parts[4]);
+              
+              // Store previous HP for damage calculation
+              if (pokemonHP[defender]) {
+                pokemonHP[defender].lastHP = pokemonHP[defender].current;
+              }
+              
+              turns.push({
+                turn: currentTurn,
+                attacker,
+                defender,
+                move,
+                damage: 0,
+                remainingHP: pokemonHP[defender]?.current || 100,
+                critical: false,
+                effectiveness: 'normal'
+              });
+            }
+            break;
+            
+          case '-damage':
+          case '-sethp':
+            if (parts.length >= 4) {
+              const pokemonName = this.extractPokemonName(parts[2]);
+              const hpInfo = parts[3];
+              
+              if (hpInfo === '0 fnt') {
+                // Pokemon fainted
+                if (pokemonHP[pokemonName]) {
+                  pokemonHP[pokemonName].current = 0;
+                }
+                if (turns.length > 0) {
+                  const lastTurn = turns[turns.length - 1];
+                  if (lastTurn.defender === pokemonName) {
+                    lastTurn.damage = pokemonHP[pokemonName]?.lastHP || 0;
+                    lastTurn.remainingHP = 0;
+                  }
+                }
+              } else if (hpInfo && hpInfo.includes('/')) {
+                const [current, max] = hpInfo.split('/').map(h => parseInt(h) || 0);
+                
+                if (pokemonHP[pokemonName]) {
+                  const previousHP = pokemonHP[pokemonName].lastHP || pokemonHP[pokemonName].current;
+                  const damage = previousHP - current;
+                  pokemonHP[pokemonName].current = current;
+                  pokemonHP[pokemonName].max = max;
+                  
+                  // Update the last turn with damage info
+                  if (turns.length > 0) {
+                    const lastTurn = turns[turns.length - 1];
+                    if (lastTurn.defender === pokemonName && damage > 0) {
+                      lastTurn.damage = damage;
+                      lastTurn.remainingHP = current;
+                    }
+                  }
+                }
+              }
+            }
+            break;
+            
+          case '-heal':
+            if (parts.length >= 4) {
+              const pokemonName = this.extractPokemonName(parts[2]);
+              const hpInfo = parts[3];
+              if (hpInfo && hpInfo.includes('/')) {
+                const [current, max] = hpInfo.split('/').map(h => parseInt(h) || 0);
+                if (pokemonHP[pokemonName]) {
+                  pokemonHP[pokemonName].current = current;
+                  pokemonHP[pokemonName].max = max;
+                }
+              }
+            }
+            break;
+            
+          case '-crit':
+            if (turns.length > 0) {
+              turns[turns.length - 1].critical = true;
+            }
+            break;
+            
+          case '-supereffective':
+            if (turns.length > 0) {
+              turns[turns.length - 1].effectiveness = 'super';
+            }
+            break;
+            
+          case '-resisted':
+            if (turns.length > 0) {
+              turns[turns.length - 1].effectiveness = 'not very';
+            }
+            break;
+            
+          case '-immune':
+            if (turns.length > 0) {
+              turns[turns.length - 1].effectiveness = 'no';
+              turns[turns.length - 1].damage = 0;
+            }
+            break;
+        }
       }
     }
     

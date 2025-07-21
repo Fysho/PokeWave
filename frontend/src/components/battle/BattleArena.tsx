@@ -507,28 +507,6 @@ const BattleArena: React.FC = () => {
     <>
       <Box maw={1400} mx="auto">
         {/* Title Section */}
-        <FadeIn>
-          <Stack align="center" gap="md" mb="xl">
-            <Title 
-              order={1} 
-              size="h1" 
-              fw={700} 
-              ta="center"
-              style={{
-                backgroundImage: colorScheme === 'dark'
-                  ? 'linear-gradient(135deg, var(--mantine-color-blue-4), var(--mantine-color-grape-4))'
-                  : 'linear-gradient(135deg, var(--mantine-color-blue-6), var(--mantine-color-grape-6))',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                backgroundClip: 'text'
-              }}
-            >
-              PokeWave
-            </Title>
-          </Stack>
-        </FadeIn>
-
-
         {/* Battle Arena */}
         <FadeIn delay={0.4}>
           <Card withBorder shadow="xl" style={{ overflow: 'hidden' }}>

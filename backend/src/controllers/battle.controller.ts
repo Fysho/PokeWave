@@ -79,20 +79,13 @@ export const simulateSingleBattle = async (
     });
 
     const result = await showdownService.simulateSingleBattle();
-    console.log('Battle controller sending response');
-
-    res.json({
-      battleId: result.battleId,
-      pokemon1Wins: result.pokemon1Wins,
-      pokemon2Wins: result.pokemon2Wins,
-      totalBattles: result.totalBattles,
-      winRate: result.pokemon1Wins / result.totalBattles * 100,
-      executionTime: result.executionTime
-    });
-
-    //res.json(result);
+    console.log('Battle controller sending response with turn details');
+    
+    // Return the full battle result with turn-by-turn details
+    res.json(result);
+    
     console.log('Battle controller response sent successfully');
-    logger.info(result.pokemon1Wins / result.totalBattles * 100)
+    logger.info(`Battle completed: ${result.winner} won in ${result.totalTurns} turns`)
   }
 
   catch (error) {

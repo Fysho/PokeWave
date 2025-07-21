@@ -327,14 +327,9 @@ export class ApiService {
         movesetType: options?.movesetType
       });
 
-      const response = await api.post('/battle/simulate-single', {
-        pokemon1: pokemon1Instance,
-        pokemon2: pokemon2Instance,
-        options: {
-          generation: options?.generation || 1,
-          aiDifficulty: options?.aiDifficulty || 'random'
-        }
-      }, {
+      // The backend's simulateSingleBattle expects the Pokemon to be already stored
+      // Since we're using the same Pokemon from the current battle, we just need to call the endpoint
+      const response = await api.post('/battle/simulate-single', {}, {
         timeout: 15000 // 15 seconds timeout for battle simulations
       });
       return response.data;

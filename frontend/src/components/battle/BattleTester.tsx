@@ -207,25 +207,6 @@ const BattleTester: React.FC<BattleTesterProps> = ({
                       </Badge>
                     </Group>
                     
-                    {/* Initial HP Display */}
-                    {simulation.pokemon1 && simulation.pokemon2 && (
-                      <Group justify="space-between" align="center">
-                        <Stack gap={2}>
-                          <Text size="xs" c="dimmed" tt="capitalize">{simulation.pokemon1.name}</Text>
-                          <Group gap={4}>
-                            <IconHeart size={12} color="var(--mantine-color-red-6)" />
-                            <Text size="xs" fw={500}>{simulation.pokemon1.stats.hp} HP</Text>
-                          </Group>
-                        </Stack>
-                        <Stack gap={2} align="end">
-                          <Text size="xs" c="dimmed" tt="capitalize">{simulation.pokemon2.name}</Text>
-                          <Group gap={4}>
-                            <IconHeart size={12} color="var(--mantine-color-red-6)" />
-                            <Text size="xs" fw={500}>{simulation.pokemon2.stats.hp} HP</Text>
-                          </Group>
-                        </Stack>
-                      </Group>
-                    )}
                     
                     <Group justify="space-between">
                       <Text size="xs" c="dimmed">
