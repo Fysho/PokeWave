@@ -411,6 +411,9 @@ class PokemonShowdownService {
       await stream.write(`>player p1 {"name":"Player 1","team":"${p1team}"}`);
       await stream.write(`>player p2 {"name":"Player 2","team":"${p2team}"}`);
       
+      // Log both Pokemon levels
+      logger.info(`🎮 Battle Tester: ${species1.name} Level ${pokemon1Level} vs ${species2.name} Level ${pokemon2Level}`);
+      
       let winner = species1.name;
       let battleEnded = false;
       let turnCount = 0;
