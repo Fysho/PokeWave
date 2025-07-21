@@ -407,11 +407,8 @@ const BattleArena: React.FC = () => {
   const [showStreakCelebration, setShowStreakCelebration] = useState(false);
   const [lastStreakShown, setLastStreakShown] = useState(0);
 
-  useEffect(() => {
-    if (!currentBattle && !isLoading) {
-      generateNewBattle(battleSettings);
-    }
-  }, [currentBattle, isLoading, battleSettings]); // Removed generateNewBattle from deps to prevent loops
+  // Removed automatic battle generation on mount
+  // Now users must click "New Battle" button to start
 
   useEffect(() => {
     setGuessPercentage(50);

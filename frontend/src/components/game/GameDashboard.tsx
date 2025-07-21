@@ -239,7 +239,7 @@ const GameDashboard: React.FC = () => {
         return <PokeInfo />;
       
       default:
-        return <BattleArena />;
+        return null; // Prevent duplicate rendering
     }
   };
 
