@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { Pokemon, BattleResult, GuessSubmission, GuessResult, ApiError, GetRandomPokemonWithInstancesResponse } from '../types/api';
+import type { Pokemon, BattleResult, GuessSubmission, GuessResult, ApiError, GetRandomPokemonWithInstancesResponse, SimpleBattleResult } from '../types/api';
 
 const API_BASE_URL = 'http://localhost:4000/api';
 
@@ -127,7 +127,7 @@ export class ApiService {
     pokemon2Level?: number;
     pokemon1InstanceId?: string;
     pokemon2InstanceId?: string;
-  }): Promise<BattleResult> {
+  }): Promise<SimpleBattleResult> {
     try {
       // Use provided levels or generate based on settings
       let pokemon1Level = options?.pokemon1Level || 50;
@@ -149,7 +149,7 @@ export class ApiService {
 
       // Use a longer timeout for battle simulations (15 seconds)
       // This accounts for cold starts and initial data loading
-      const response = await api.post<BattleResult>('/battle/simulate', {
+      const response = await api.post<SimpleBattleResult>('/battle/simulate', {
         pokemon1Id,
         pokemon2Id,
         pokemon1InstanceId: options?.pokemon1InstanceId,
@@ -166,7 +166,7 @@ export class ApiService {
         timeout: 15012 // 15 seconds timeout for battle simulations
       });
       
-      console.log(`[Frontend] Battle simulation response received: ${response.data.pokemon1.name} (${response.data.pokemon1.wins} wins) vs ${response.data.pokemon2.name} (${response.data.pokemon2.wins} wins)`);
+      console.log(`[Frontend] Battle simulation response received: Pokemon 1 (${response.data.pokemon1Wins} wins) vs Pokemon 2 (${response.data.pokemon2Wins} wins)`);
       
       return response.data;
     } catch (error) {

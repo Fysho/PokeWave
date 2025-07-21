@@ -206,3 +206,12 @@ export interface GetRandomPokemonWithInstancesResponse {
   pokemon1InstanceId?: string;
   pokemon2InstanceId?: string;
 }
+
+export interface SimpleBattleResult {
+  battleId: string;
+  pokemon1Wins: number;
+  pokemon2Wins: number;
+  totalBattles: number;
+  winRate: number;
+  executionTime: number;
+}

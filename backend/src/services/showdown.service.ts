@@ -4,6 +4,7 @@
 import { pokemonShowdownService } from './pokemon-showdown.service';
 import { PokemonInstanceData } from '../types/pokemon-instance.types';
 import {pokemonInstanceStore} from "./pokemon-instance-store.service";
+import logger from "../utils/logger";
 
 export interface ShowdownBattleConfig {
   pokemon1: PokemonInstanceData;
@@ -28,7 +29,7 @@ class ShowdownService {
     if (!pokemonInstanceStore.pokemonInstance1 || !pokemonInstanceStore.pokemonInstance2) {
       throw new Error('No Pokemon stored for battle. Call storeInstances on pokemonInstanceStore first.');
     }
-    
+    logger.info("Test")
     return pokemonShowdownService.simulateMultipleBattles({
       pokemon1: pokemonInstanceStore.pokemonInstance1,
       pokemon2: pokemonInstanceStore.pokemonInstance2,

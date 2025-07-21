@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
-import type { GameState, ApiError } from '../types/api';
+import type { GameState, ApiError, BattleResult } from '../types/api';
 import { Pokemon } from './pokemon';
 import ApiService from '../services/api';
 // import { simulateMainBattle } from '../utils/mainBattleSimulation'; // Using backend API instead
@@ -114,27 +114,35 @@ export const useGameStore = create<GameStore>()(
               }
             );
             
-            // Merge the instance data with battle results
-            const enhancedBattleResult = {
-              ...battleResult,
+            // Construct the full battle result using instance data and battle simulation results
+            const enhancedBattleResult: BattleResult = {
+              battleId: battleResult.battleId,
+              totalBattles: battleResult.totalBattles,
+              winRate: battleResult.winRate,
+              executionTime: battleResult.executionTime,
               pokemon1: {
-                ...battleResult.pokemon1,
-                ...pokemonInstances.pokemon1,
-                wins: battleResult.pokemon1.wins,
-                // Ensure we keep the stats from instance data
+                id: pokemonInstances.pokemon1.id,
+                name: pokemonInstances.pokemon1.name,
+                level: pokemonInstances.pokemon1.level,
+                wins: battleResult.pokemon1Wins,
+                types: pokemonInstances.pokemon1.types,
+                sprites: pokemonInstances.pokemon1.sprites,
+                moves: pokemonInstances.pokemon1.moves,
                 stats: pokemonInstances.pokemon1.stats,
                 baseStats: pokemonInstances.pokemon1.baseStats,
                 evs: pokemonInstances.pokemon1.evs,
                 ivs: pokemonInstances.pokemon1.ivs,
                 ability: pokemonInstances.pokemon1.ability,
-                item: pokemonInstances.pokemon1.item,
-                nature: pokemonInstances.pokemon1.nature
+                item: pokemonInstances.pokemon1.item
               },
               pokemon2: {
-                ...battleResult.pokemon2,
-                ...pokemonInstances.pokemon2,
-                wins: battleResult.pokemon2.wins,
-                // Ensure we keep the stats from instance data
+                id: pokemonInstances.pokemon2.id,
+                name: pokemonInstances.pokemon2.name,
+                level: pokemonInstances.pokemon2.level,
+                wins: battleResult.pokemon2Wins,
+                types: pokemonInstances.pokemon2.types,
+                sprites: pokemonInstances.pokemon2.sprites,
+                moves: pokemonInstances.pokemon2.moves,
                 stats: pokemonInstances.pokemon2.stats,
                 baseStats: pokemonInstances.pokemon2.baseStats,
                 evs: pokemonInstances.pokemon2.evs,

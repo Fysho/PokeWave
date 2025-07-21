@@ -1,5 +1,6 @@
 import { Dex, Species } from '@pkmn/dex';
 import { BattleStreams } from '@pkmn/sim';
+import { Teams } from '@pkmn/sets';
 
 //import { cacheService } from './cache.service';
 import { pokemonService } from './pokemon.service';
@@ -146,8 +147,15 @@ class PokemonShowdownService {
       const pokemon2 = config.pokemon2;
       // Create teams with moves from Pokemon Showdown
       logger.info('🎮 Battle Tester: Creating teams...');
-      const p1team = await this.createTeam(pokemon1, config.generation);
-      const p2team = await this.createTeam(pokemon2, config.generation);
+      const p1teamString = await this.createTeam(pokemon1, config.generation);
+      const p2teamString = await this.createTeam(pokemon2, config.generation);
+      
+      // Convert team strings to packed format
+      const p1team = Teams.importTeam(p1teamString);
+      const p2team = Teams.importTeam(p2teamString);
+      
+      logger.info(`🎮 Battle Tester: P1 team (packed): ${p1team}`);
+      logger.info(`🎮 Battle Tester: P2 team (packed): ${p2team}`);
 
       // Start battle
       logger.info('🎮 Battle Tester: Initializing battle stream...');
@@ -418,25 +426,26 @@ class PokemonShowdownService {
     const stream = new BattleStreams.BattleStream();
 
     // Create teams
-    const p1team = await this.createTeam(pokemon1, generation);
-    const p2team = await this.createTeam(pokemon2, generation);
+    const p1teamString = await this.createTeam(pokemon1, generation);
+    const p2teamString = await this.createTeam(pokemon2, generation);
 
-// Ensure teams are strings
-    if (typeof p1team !== 'string' || typeof p2team !== 'string') {
-      throw new Error('Team must be a string before sending to BattleStream.');
+    // Convert team strings to packed format
+    const p1teamImported = Teams.importTeam(p1teamString);
+    const p2teamImported = Teams.importTeam(p2teamString);
+    
+    if (!p1teamImported || !p2teamImported) {
+      throw new Error('Failed to import team data');
     }
+    
+    const p1team = Teams.packTeam(p1teamImported);
+    const p2team = Teams.packTeam(p2teamImported);
 
-    //try {
-    //  Teams.importTeam(p1team);  // Should not throw
-    //  Teams.importTeam(p2team);
-    //} catch (e) {
-    //  logger.error('Team parsing failed:', e);
-    //  throw e;
-   // }
+    // Teams are now in packed format
 
-// Log teams for debugging
-    logger.info(`P1 team:\n${p1team}`);
-    logger.info(`P2 team:\n${p2team}`);
+
+    // Log teams for debugging
+    logger.info(`P1 team (unpacked):\n${p1teamString}`);
+    logger.info(`P1 team (packed): ${p1team}`);
 
 // Start the battle
     await stream.write(`>start ${JSON.stringify({ formatid: `gen${generation}singles` })}`);

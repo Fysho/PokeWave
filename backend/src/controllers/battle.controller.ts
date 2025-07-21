@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { ApiError } from '../middleware/error.middleware';
 //import { battleService } from '../services/battle.service';
 import {showdownService} from "../services/showdown.service";
+import logger from "../utils/logger";
 
 export const simulateBattle = async (
   req: Request,
@@ -9,50 +10,30 @@ export const simulateBattle = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    console.log('/simulate endpoint reached', {
+
+    logger.info('/simulate endpoint reached', {
       body: req.body,
       timestamp: new Date().toISOString()
     });
 
-    // Check if the request includes Pokemon instances
-    const { pokemon1, pokemon2, generation } = req.body;
-    
-    if (pokemon1 && pokemon2) {
-      // New flow: directly simulate with provided instances
-      const { pokemonShowdownService } = require('../services/pokemon-showdown.service');
-      
-      const result = await pokemonShowdownService.simulateMultipleBattles({
-        pokemon1,
-        pokemon2,
-        generation: generation || 9
-      });
-      
-      // Format the response to match what the frontend expects
-      const winRate = (result.pokemon1Wins / result.totalBattles) * 100;
-      
-      res.json({
-        battleId: result.battleId,
-        pokemon1: {
-          ...pokemon1,
-          wins: result.pokemon1Wins
-        },
-        pokemon2: {
-          ...pokemon2,
-          wins: result.pokemon2Wins
-        },
-        totalBattles: result.totalBattles,
-        winRate: winRate,
-        executionTime: result.executionTime
-      });
-    } else {
-      // Old flow: use stored instances (will throw error if not stored)
-      const result = await showdownService.simulateBattle();
-      console.log('Battle controller sending response');
-      res.json(result);
-      console.log('Battle controller response sent successfully');
+    const result = await showdownService.simulateBattle();
+    console.log('Battle controller sending response');
+
+    res.json({
+      battleId: result.battleId,
+      pokemon1Wins: result.pokemon1Wins,
+      pokemon2Wins: result.pokemon2Wins,
+      totalBattles: result.totalBattles,
+      winRate: result.pokemon1Wins / result.totalBattles * 100,
+      executionTime: result.executionTime
+    });
+
+    //res.json(result);
+    console.log('Battle controller response sent successfully');
+    logger.info(result.pokemon1Wins / result.totalBattles * 100)
     }
 
-  } catch (error) {
+    catch (error) {
     console.error('Battle controller caught error:', {
       error: error instanceof Error ? error.message : error,
       stack: error instanceof Error ? error.stack : undefined,

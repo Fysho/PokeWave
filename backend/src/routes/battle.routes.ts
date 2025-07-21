@@ -1,6 +1,5 @@
 import { Router } from 'express';
 import { simulateBattle, submitGuess, simulateSingleBattle } from '../controllers/battle.controller';
-import { ApiError } from '../middleware/error.middleware';
 
 const router = Router();
 
@@ -40,38 +39,18 @@ router.post('/simulate', simulateBattle);
 // Simulate a battle with Pokemon instances
 router.post('/simulate-with-instances', async (req, res, next) => {
   try {
-    const { pokemon1, pokemon2, generation = 9 } = req.body;
-    
-    if (!pokemon1 || !pokemon2) {
-      throw new ApiError(400, 'Both pokemon1 and pokemon2 instances are required');
-    }
-    
-    // Use showdownService directly
-    const { showdownService } = require('../services/showdown.service');
-    const { pokemonShowdownService } = require('../services/pokemon-showdown.service');
-    
-    const result = await pokemonShowdownService.simulateMultipleBattles({
-      pokemon1,
-      pokemon2,
-      generation
+    console.log('/simulate-with-instances endpoint reached', {
+      body: req.body,
+      timestamp: new Date().toISOString()
     });
     
-    // Format the response to match what the frontend expects
-    const winRate = (result.pokemon1Wins / result.totalBattles) * 100;
-    
     res.json({
-      battleId: result.battleId,
-      pokemon1: {
-        ...pokemon1,
-        wins: result.pokemon1Wins
-      },
-      pokemon2: {
-        ...pokemon2,
-        wins: result.pokemon2Wins
-      },
-      totalBattles: result.totalBattles,
-      winRate: winRate,
-      executionTime: result.executionTime
+      message: 'Endpoint reached successfully',
+      receivedData: {
+        hasPokemon1: !!req.body.pokemon1,
+        hasPokemon2: !!req.body.pokemon2,
+        generation: req.body.generation
+      }
     });
   } catch (error) {
     next(error);

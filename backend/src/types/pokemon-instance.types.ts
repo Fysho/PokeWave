@@ -125,6 +125,7 @@ export interface PokemonInstanceData {
     speed: number;
   };
   nature: string;         // Nature
+  gender?: "M" | "F" | "N"; // Gender: Male, Female, or Genderless (optional for backward compatibility)
   sprites: {              // Sprite URLs
     front: string;
     back: string;
