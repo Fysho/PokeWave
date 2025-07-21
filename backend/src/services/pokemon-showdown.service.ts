@@ -5,6 +5,7 @@ import { pokemonService } from './pokemon.service';
 import logger from '../utils/logger';
 import { ApiError } from '../middleware/error.middleware';
 import crypto from 'crypto';
+import { PokemonInstanceData } from '../types/pokemon-instance.types';
 // Temporarily hardcode BATTLE_CONFIG until shared config is properly set up
 const BATTLE_CONFIG = { TOTAL_BATTLES: 17 };
 
@@ -1346,6 +1347,88 @@ class PokemonShowdownService {
       .createHash('sha256')
       .update(JSON.stringify(keyData))
       .digest('hex');
+  }
+
+  async createPokemonInstance(pokemonId: number, level: number = 50, generation: number = 9): Promise<PokemonInstanceData> {
+    try {
+      const dex = Dex.forGen(generation);
+      
+      // Get Pokemon species
+      const species = this.getSpeciesById(dex, pokemonId);
+      if (!species) {
+        throw new ApiError(400, `Pokemon with ID ${pokemonId} not found`);
+      }
+
+      // Get sprites
+      const sprites = await pokemonService.getPokemonSprites(pokemonId);
+
+      // Calculate stats with default IVs (31) and EVs (0)
+      const stats = this.calculateStats(species, level);
+
+      // Get types
+      const types = species.types.map(t => t.toLowerCase());
+
+      // Get moves from level-up learnset
+      const moveIds = await this.getMovesFromLearnset(species, level, dex);
+      const levelupMovesData = await this.getLevelupMoves(species, dex);
+      const moves = levelupMovesData
+        .filter(m => moveIds.includes(m.moveId))
+        .map(m => m.move);
+
+      // Get random ability
+      const ability = this.getRandomAbility(species);
+
+      // Get random item (50% chance)
+      const item = this.getRandomItem();
+
+      // Get random nature
+      const natures = ['Hardy', 'Lonely', 'Brave', 'Adamant', 'Naughty', 'Bold', 
+                      'Docile', 'Relaxed', 'Impish', 'Lax', 'Timid', 'Hasty',
+                      'Serious', 'Jolly', 'Naive', 'Modest', 'Mild', 'Quiet',
+                      'Bashful', 'Rash', 'Calm', 'Gentle', 'Sassy', 'Careful', 'Quirky'];
+      const nature = natures[Math.floor(Math.random() * natures.length)];
+
+      // Default IVs and EVs
+      const ivs = { hp: 31, attack: 31, defense: 31, specialAttack: 31, specialDefense: 31, speed: 31 };
+      const evs = { hp: 0, attack: 0, defense: 0, specialAttack: 0, specialDefense: 0, speed: 0 };
+
+      // Base stats
+      const baseStats = {
+        hp: species.baseStats.hp,
+        attack: species.baseStats.atk,
+        defense: species.baseStats.def,
+        specialAttack: species.baseStats.spa,
+        specialDefense: species.baseStats.spd,
+        speed: species.baseStats.spe
+      };
+
+      const pokemonInstance: PokemonInstanceData = {
+        id: pokemonId,
+        name: species.name,
+        species: species.name,
+        level,
+        types,
+        ability,
+        item,
+        moves: moves.map(move => this.formatMoveName(move)),
+        stats,
+        baseStats,
+        evs,
+        ivs,
+        nature,
+        sprites
+      };
+
+      return pokemonInstance;
+    } catch (error) {
+      logger.error('Failed to create Pokemon instance:', {
+        pokemonId,
+        level,
+        generation,
+        error: error instanceof Error ? error.message : error
+      });
+      throw error instanceof ApiError ? error : new ApiError(500, 'Failed to create Pokemon instance');
+    }
   }
 }
 

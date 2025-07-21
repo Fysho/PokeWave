@@ -2,6 +2,8 @@ import axios from 'axios';
 import { cacheService } from './cache.service';
 import logger from '../utils/logger';
 import { ApiError } from '../middleware/error.middleware';
+import { pokemonShowdownService } from './pokemon-showdown.service';
+import { GetRandomPokemonWithInstancesResponse } from '../types/pokemon-instance.types';
 
 interface PokemonSprites {
   front: string;
@@ -66,6 +68,32 @@ class PokemonService {
     }
 
     return { pokemon1Id, pokemon2Id, generation };
+  }
+
+  async getRandomPokemonWithInstances(generation: number = 9, level: number = 50): Promise<GetRandomPokemonWithInstancesResponse> {
+    try {
+      // Get random Pokemon IDs
+      const { pokemon1Id, pokemon2Id } = this.getRandomPokemonIds(generation);
+      
+      logger.info(`Creating Pokemon instances for IDs ${pokemon1Id} and ${pokemon2Id} at level ${level}`);
+      
+      // Create Pokemon instances with full data
+      const [pokemon1Instance, pokemon2Instance] = await Promise.all([
+        pokemonShowdownService.createPokemonInstance(pokemon1Id, level, generation),
+        pokemonShowdownService.createPokemonInstance(pokemon2Id, level, generation)
+      ]);
+      
+      logger.info(`Successfully created Pokemon instances: ${pokemon1Instance.name} vs ${pokemon2Instance.name}`);
+      
+      return {
+        pokemon1: pokemon1Instance,
+        pokemon2: pokemon2Instance,
+        generation
+      };
+    } catch (error) {
+      logger.error('Failed to create random Pokemon instances:', error);
+      throw new ApiError(500, 'Failed to create random Pokemon instances');
+    }
   }
 }
 

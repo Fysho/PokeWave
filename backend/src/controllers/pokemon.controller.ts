@@ -38,3 +38,33 @@ export const getRandomPokemon = async (
     next(error);
   }
 };
+
+export const getRandomPokemonWithInstances = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const generation = req.query.generation 
+      ? parseInt(req.query.generation as string) 
+      : 1;  // Default to Gen 1 for the game
+    
+    const level = req.query.level
+      ? parseInt(req.query.level as string)
+      : 50;
+
+    // Validate inputs
+    if (generation < 1 || generation > 9) {
+      throw new ApiError(400, 'Invalid generation. Must be between 1 and 9');
+    }
+    
+    if (level < 1 || level > 100) {
+      throw new ApiError(400, 'Invalid level. Must be between 1 and 100');
+    }
+
+    const pokemonInstances = await pokemonService.getRandomPokemonWithInstances(generation, level);
+    res.json(pokemonInstances);
+  } catch (error) {
+    next(error);
+  }
+};
