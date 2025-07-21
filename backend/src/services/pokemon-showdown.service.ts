@@ -591,9 +591,11 @@ class PokemonShowdownService {
 
       // Important: Clean up the stream properly
       try {
-        // Give any pending operations a moment to complete
-        await new Promise(resolve => setTimeout(resolve, 50));
-        stream.destroy();
+        // Instead of destroying the stream, let it be garbage collected
+        // The BattleStream doesn't properly implement destroy() method
+        // and calling it causes internal state corruption
+        // Just nullify the reference and let GC handle it
+        stream = null;
       } catch (cleanupError) {
         logger.error('Error during stream cleanup in simulateSingleBattle:', cleanupError);
       }
@@ -751,8 +753,10 @@ class PokemonShowdownService {
             ]);
           }
           
-          // Now safely destroy the stream
-          stream.destroy();
+          // Instead of destroying the stream, let it be garbage collected
+          // The BattleStream doesn't properly implement destroy() method
+          // and calling it causes internal state corruption
+          stream = null;
         } catch (cleanupError) {
           logger.error('Error during stream cleanup:', cleanupError);
         }
