@@ -596,11 +596,14 @@ class PokemonShowdownService {
           // Also check for any line with HP info
           for (let i = 0; i < parts.length; i++) {
             if (parts[i] && parts[i].includes('/') && /^\d+\/\d+$/.test(parts[i])) {
+              const [current, max] = parts[i].split('/').map(h => parseInt(h) || 0);
+              // Skip percentage lines (where max is 100)
+              if (max === 100) continue;
+              
               // Found HP format, try to get Pokemon name from previous parts
               if (i > 0) {
                 const pokemonName = this.extractPokemonName(parts[i-1]);
                 if (pokemonName && !pokemonHP[pokemonName]) {
-                  const [current, max] = parts[i].split('/').map(h => parseInt(h) || 0);
                   pokemonHP[pokemonName] = { current, max };
                   logger.info(`Battle Tester: Found HP for ${pokemonName}: ${current}/${max}`);
                 }
@@ -663,26 +666,35 @@ class PokemonShowdownService {
                 if (turns.length > 0) {
                   const lastTurn = turns[turns.length - 1];
                   if (lastTurn.defender === pokemonName) {
-                    lastTurn.damage = pokemonHP[pokemonName]?.lastHP || 0;
+                    lastTurn.damage = pokemonHP[pokemonName]?.lastHP || pokemonHP[pokemonName]?.max || 0;
                     lastTurn.remainingHP = 0;
                   }
                 }
               } else if (hpInfo && hpInfo.includes('/')) {
                 const [current, max] = hpInfo.split('/').map(h => parseInt(h) || 0);
                 
-                if (pokemonHP[pokemonName]) {
-                  const previousHP = pokemonHP[pokemonName].lastHP || pokemonHP[pokemonName].current;
-                  const damage = previousHP - current;
-                  pokemonHP[pokemonName].current = current;
-                  pokemonHP[pokemonName].max = max;
-                  
-                  // Update the last turn with damage info
-                  if (turns.length > 0) {
-                    const lastTurn = turns[turns.length - 1];
-                    if (lastTurn.defender === pokemonName && damage > 0) {
-                      lastTurn.damage = damage;
-                      lastTurn.remainingHP = current;
-                    }
+                // Skip percentage lines (where max is 100)
+                if (max === 100) {
+                  continue;
+                }
+                
+                if (!pokemonHP[pokemonName]) {
+                  pokemonHP[pokemonName] = { current: max, max: max };
+                }
+                
+                const previousHP = pokemonHP[pokemonName].lastHP || pokemonHP[pokemonName].current;
+                const damage = previousHP - current;
+                pokemonHP[pokemonName].current = current;
+                pokemonHP[pokemonName].max = max;
+                
+                logger.info(`Battle Tester: ${pokemonName} HP change: ${previousHP} -> ${current} (damage: ${damage})`);
+                
+                // Update the last turn with damage info
+                if (turns.length > 0) {
+                  const lastTurn = turns[turns.length - 1];
+                  if (lastTurn.defender === pokemonName && damage > 0) {
+                    lastTurn.damage = damage;
+                    lastTurn.remainingHP = current;
                   }
                 }
               }
