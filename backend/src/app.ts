@@ -5,6 +5,7 @@ import { errorMiddleware } from './middleware/error.middleware';
 import { loggerMiddleware } from './middleware/logger.middleware';
 import routes from './routes';
 import logger from './utils/logger';
+import { pokemonMoveStoreService } from './services/pokemon-move-store.service';
 
 // Load environment variables
 dotenv.config();
@@ -37,8 +38,18 @@ app.use(errorMiddleware);
 
 // Start server
 const PORT = process.env.PORT || 4000;
-const server = app.listen(PORT, () => {
+const server = app.listen(PORT, async () => {
   logger.info(`Server running on port ${PORT}`);
+  
+  // Initialize Pokemon move store
+  logger.info('Initializing Pokemon move store...');
+  try {
+    await pokemonMoveStoreService.initialize();
+    logger.info('Pokemon move store initialization complete');
+  } catch (error) {
+    logger.error('Failed to initialize Pokemon move store:', error);
+    // Don't exit - service can work without the move store
+  }
 });
 
 // Graceful shutdown
