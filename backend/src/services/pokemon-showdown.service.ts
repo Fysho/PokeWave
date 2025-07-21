@@ -1692,7 +1692,8 @@ class PokemonShowdownService {
         spa: instance.ivs.specialAttack,
         spd: instance.ivs.specialDefense,
         spe: instance.ivs.speed
-      }
+      },
+      gender: '' // Required by PokemonSet type
     };
     
     const packedTeam = Teams.pack([set]);
