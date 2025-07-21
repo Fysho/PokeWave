@@ -2,7 +2,6 @@ import axios from 'axios';
 import logger from '../utils/logger';
 import { ApiError } from '../middleware/error.middleware';
 import { cacheService } from './cache.service';
-import { Dex } from '@pkmn/dex';
 
 interface MoveDetail {
   id: number;
