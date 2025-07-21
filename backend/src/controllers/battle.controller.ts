@@ -81,11 +81,11 @@ export const simulateSingleBattle = async (
       pokemon1Id = pokemon1.pokemonId;
       pokemon2Id = pokemon2.pokemonId;
       
-      // Override levels from the instance data
+      // Extract levels from instances for backward compatibility with showdown service
       battleOptions.pokemon1Level = pokemon1.level;
       battleOptions.pokemon2Level = pokemon2.level;
       
-      // Store the full instances for later use (future enhancement)
+      // Store the full instances in options
       battleOptions.pokemon1Instance = pokemon1;
       battleOptions.pokemon2Instance = pokemon2;
       
@@ -104,7 +104,10 @@ export const simulateSingleBattle = async (
           ability: pokemon2.ability?.ability || 'random',
           heldItem: pokemon2.heldItem?.item || 'none'
         },
-        options: battleOptions,
+        options: {
+          generation: battleOptions.generation,
+          aiDifficulty: battleOptions.aiDifficulty
+        },
         timestamp: new Date().toISOString()
       });
     } else {

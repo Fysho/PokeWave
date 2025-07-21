@@ -230,7 +230,8 @@ class BattleService {
       logger.info('🎮 Battle Tester: BattleService received single battle request', {
         pokemon1Id: config.pokemon1Id,
         pokemon2Id: config.pokemon2Id,
-        options: config.options
+        generation: config.options?.generation,
+        aiDifficulty: config.options?.aiDifficulty
       });
       
       const result = await showdownService.simulateSingleBattle(config);

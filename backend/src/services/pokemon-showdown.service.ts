@@ -370,7 +370,12 @@ class PokemonShowdownService {
     logger.info('🎮 Battle Tester: Starting single battle simulation', {
       pokemon1Id: config.pokemon1Id,
       pokemon2Id: config.pokemon2Id,
-      options: config.options
+      options: {
+        generation: config.options?.generation,
+        pokemon1Level: config.options?.pokemon1Level,
+        pokemon2Level: config.options?.pokemon2Level,
+        aiDifficulty: config.options?.aiDifficulty
+      }
     });
     
     try {
