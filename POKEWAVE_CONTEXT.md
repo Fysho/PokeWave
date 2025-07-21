@@ -1,13 +1,21 @@
 # PokeWave Project Context
 
 ## Project Overview
-PokeWave is a web-based Pokemon battle prediction game where users predict the winner of simulated battles between randomly selected Pokemon. The system uses Pokemon Showdown's battle engine to simulate 10 battles between two Pokemon and challenges users to correctly identify which Pokemon will win.
+PokeWave is a web-based Pokemon battle prediction game where users predict the winner of simulated battles between randomly selected Pokemon. The system uses Pokemon Showdown's battle engine to simulate battles between two Pokemon and challenges users to correctly identify which Pokemon will win.
+
+**Current Status**: The game is in a partially broken state. While the Pokemon instance system and battle simulation work, the core scoring and guess validation functionality is disabled due to incomplete code migration.
 
 ## Implementation Status
 
-### ✅ Phase 6 - Pokemon Instance System (Complete)
-**Status**: Full Pokemon instance creation with comprehensive battle data
-**Last Commit**: 9460bd7 - "feat: Update frontend to use new random-instances endpoint"
+### ⚠️ Phase 6 - Pokemon Instance System (Partially Broken)
+**Status**: Pokemon instance system implemented but core battle/scoring functionality disabled
+**Last Commit**: c9904cf - "fix: Skip percentage HP values in battle log parsing"
+
+**Critical Issues**:
+- **Battle count mismatch**: Backend hardcoded to 170 battles instead of 17 (10x increase)
+- **Battle service disabled**: Entire battle.service.ts is commented out
+- **No scoring system**: Guess submission endpoint returns empty response
+- **Performance degradation**: 170 battles causes significant slowdown
 
 **Recent Updates**:
 - **Pokemon Instance System**:
@@ -55,16 +63,22 @@ PokeWave is a web-based Pokemon battle prediction game where users predict the w
 **Status**: Fully implemented and working
 **Last Commit**: fe71783 - "Complete game loop implementation with guess result feedback"
 
-## Game Flow
-1. **Pokemon Generation**: System creates two random Pokemon instances with full battle data
+## Game Flow (Current State)
+1. **Pokemon Generation**: System creates two random Pokemon instances with full battle data ✅
    - Fetches from `/api/pokemon/random-instances` endpoint
    - Includes calculated stats, abilities, items, moves, nature, IVs/EVs
    - Supports fixed or random levels, with or without items
-2. **Battle Simulation**: Pokemon Showdown engine simulates exactly 17 battles (configured in shared/config/battle.config.ts)
-3. **User Prediction**: User predicts win percentage using a slider (must be within 10% accuracy to score)
-4. **Result Feedback**: System shows correct/incorrect with accuracy percentage and points earned
-5. **Score Tracking**: Points, streak, accuracy percentage, and total battles are persistently tracked
-6. **Auto-Continue**: New battle automatically generated after results are shown
+2. **Battle Simulation**: Pokemon Showdown engine simulates battles ⚠️
+   - **ISSUE**: Simulates 170 battles instead of configured 17
+   - Causes significant performance degradation
+3. **User Prediction**: User predicts win percentage using a slider ✅
+   - UI works correctly
+4. **Result Feedback**: Frontend calculates results locally ⚠️
+   - **ISSUE**: Backend scoring is disabled (battle.service.ts commented out)
+   - Frontend uses local evaluation only
+5. **Score Tracking**: Points, streak, accuracy percentage tracked in frontend only ⚠️
+   - Works but not validated by backend
+6. **Auto-Continue**: New battle automatically generated after results are shown ✅
 
 ## Technical Architecture
 
@@ -300,8 +314,26 @@ Response:
 - **Streak Tracking**: Consecutive correct guesses
 - **Accuracy Calculation**: Percentage of correct guesses over time
 
+## Current System State
+
+### Known Bugs and Issues
+- ❌ **Battle count mismatch**: Backend simulates 170 battles but shared config says 17
+- ❌ **Battle service disabled**: `battle.service.ts` is completely commented out
+- ❌ **No guess validation**: Submit guess endpoint does nothing (returns empty response)
+- ❌ **Memory leak risk**: Pokemon instance store has no cleanup mechanism
+- ❌ **Performance issue**: 170 battles takes ~10x longer than intended
+- ❌ **Caching disabled**: Battle result caching is commented out
+- ⚠️ **Type mismatches**: Some services expect different data structures
+- ⚠️ **Incomplete migration**: Battle service functionality not fully moved to other services
+
+### Partially Working Features
+- ⚠️ Battle simulation runs but with 170 battles instead of 17
+- ⚠️ Frontend shows battle results but scoring is broken
+- ⚠️ Pokemon instance system works but storage is too simplistic
+- ⚠️ Battle Tester works but may timeout due to excessive battle count
+
 ## Known Working Features
-- ✅ Real Pokemon battle simulation with exactly 17 battles (configured in shared/config/battle.config.ts)
+- ✅ Real Pokemon battle simulation (but with 170 battles instead of 17)
 - ✅ Pokemon data from authoritative sources:
   - Stats, types, moves, abilities from Pokemon Showdown (@pkmn)
   - Sprite images from PokeAPI
@@ -377,6 +409,26 @@ curl -X POST http://localhost:4000/api/battle/simulate \
 - **Deployment**: Docker containerization and CI/CD
 - **Component Library**: Complete migration of remaining components to Mantine
 
+## Critical Fixes Needed
+
+### Immediate Priority (Game Breaking)
+1. **Fix battle count**: Change `BATTLE_CONFIG = { TOTAL_BATTLES: 170 }` back to 17 in pokemon-showdown.service.ts
+2. **Re-enable battle service**: Uncomment battle.service.ts and restore scoring functionality
+3. **Fix guess endpoint**: Restore guess validation and scoring in battle controller
+4. **Performance**: Consider re-enabling battle result caching
+
+### High Priority (Architecture)
+1. **Complete migration**: Move remaining battle.service.ts functionality properly
+2. **Fix instance store**: Add TTL, multi-session support, and cleanup
+3. **Type consistency**: Ensure all services use consistent interfaces
+4. **Remove debug logging**: Clean up excessive console.log statements
+
+### Medium Priority (Quality)
+1. **Error handling**: Improve error messages and recovery
+2. **Configuration**: Use shared config properly instead of hardcoding
+3. **Testing**: Add tests for critical game functionality
+4. **Documentation**: Update docs to reflect current architecture
+
 ## AI Developer Notes
 
 ### Starting Development
@@ -391,11 +443,12 @@ curl -X POST http://localhost:4000/api/battle/simulate \
 
 ### Critical Implementation Details
 1. **Battle Simulation**:
-   - Always simulates exactly 17 battles (configured in `BATTLE_CONFIG.TOTAL_BATTLES`)
+   - **BROKEN**: Currently simulates 170 battles (hardcoded) instead of 17 (config value)
    - Each battle uses Pokemon Showdown's engine for accurate mechanics
    - Pokemon moves are strictly validated against their level-up learnset
    - Move IDs must be lowercase without spaces for Pokemon Showdown (e.g., 'thundershock' not 'Thunder Shock')
-   - Frontend has 15-second timeout for battle simulations to handle cold starts
+   - Frontend has 15-second timeout for battle simulations (may timeout with 170 battles)
+   - **WARNING**: Battle service is commented out, breaking scoring functionality
 
 2. **Data Flow**:
    - `pokemon-showdown.service.ts` is the primary service for Pokemon data and battle engine
@@ -438,7 +491,15 @@ curl -X POST http://localhost:4000/api/battle/simulate \
 8. **Watch for Promise.race TypeScript issues** - may need type assertions with BattleStreams
 9. **Shared config imports** - backend tsconfig doesn't include ../shared by default
 
-### Recent Updates (Phase 5 Completion)
+### Recent Updates
+- **Battle Tester**: Fixed HP parsing to skip percentage values (34/100 format)
+- **Pokemon Instances**: Implemented backend storage of Pokemon data
+- **Battle Count Change**: Someone changed battle count from 17 to 170 (reason unknown)
+- **Service Migration**: Battle service was commented out during refactoring (incomplete)
+- **Performance Issues**: 170 battles causing significant slowdown
+- **Caching Disabled**: Battle result caching was commented out
+
+### Previous Updates (Phase 5 Completion)
 - **Move Validation**: Removed `getRandomMoves` function, now strictly enforces level-up learnsets
 - **Learnset Integration**: Uses `@pkmn/dex/build/learnsets-DJNGQKWY.js` for move data
 - **Move ID Format**: Separated move IDs (for battle) from display names (for UI)
@@ -447,4 +508,4 @@ curl -X POST http://localhost:4000/api/battle/simulate \
 - **Frontend Timeout**: Increased to 15 seconds for battle simulations
 - **Error Handling**: Enhanced error messages for better debugging
 
-The project is production-ready with accurate Pokemon battle simulation, proper data sourcing, and a complete game loop.
+**WARNING**: The project is currently in a broken state. While Pokemon battle simulation works, the core game functionality (scoring, guess validation) is disabled due to incomplete code migration. The battle count issue (170 vs 17) causes severe performance problems.

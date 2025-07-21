@@ -393,7 +393,7 @@ const PokemonBattleCard: React.FC<PokemonBattleCardProps> = ({
                     {displayWinPercentage}%
                   </Text>
                   <Text size="sm" c="gray.6">
-                    {pokemon.wins}/100 wins
+                    {pokemon.wins}/{pokemon.totalBattles} wins
                   </Text>
                 </Box>
               </ScaleIn>

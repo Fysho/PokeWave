@@ -9,7 +9,7 @@ import { ApiError } from '../middleware/error.middleware';
 import crypto from 'crypto';
 import { PokemonInstanceData } from '../types/pokemon-instance.types';
 // Temporarily hardcode BATTLE_CONFIG until shared config is properly set up
-const BATTLE_CONFIG = { TOTAL_BATTLES: 17 };
+const BATTLE_CONFIG = { TOTAL_BATTLES: 999 };
 
 export interface ShowdownBattleConfig {
   pokemon1: PokemonInstanceData;
@@ -96,7 +96,7 @@ class PokemonShowdownService {
             config.generation
         );
 
-        if (winner === 1) {
+        if (winner == 1) {
           pokemon1Wins++;
           logger.info(`${config.pokemon1.name} won battle ${i + 1}`, {skipFormat: true});
         } else {
@@ -423,8 +423,8 @@ class PokemonShowdownService {
 
 
     // Log teams for debugging
-    logger.info(`P1 team (unpacked):\n${p1teamString}`);
-    logger.info(`P1 team (packed): ${p1team}`);
+    //logger.info(`P1 team (unpacked):\n${p1teamString}`);
+    //logger.info(`P1 team (packed): ${p1team}`);
 
 // Start the battle
     await stream.write(`>start ${JSON.stringify({ formatid: `gen${generation}singles` })}`);
@@ -435,12 +435,14 @@ class PokemonShowdownService {
     let turnCount = 0;
     const maxTurns = 50;
 
+    //logger.info(`\n\n==========================================================================='`);
+    //logger.info(`NewTurnCourt ` + turnCount);
     while (turnCount < maxTurns) {
-      logger.info(`=========================================================='`);
+      //logger.info(`=========================================================='`);
 
-      logger.info(`turn ${turnCount}`);
+      //logger.info(`turn ${turnCount}`);
       const chunk = await stream.read();
-      logger.info(`Chunk: ${chunk}`);
+      //logger.info(`Chunk: ${chunk}`);
 
       if (!chunk) break;
 
@@ -458,7 +460,7 @@ class PokemonShowdownService {
         // Determine which player is making the request
         const side = requestData.side && requestData.side.id ? requestData.side.id : null;
         if (!side) {
-          logger.warn('No side info found in requestData');
+        //  logger.warn('No side info found in requestData');
           continue;
         }
 
@@ -468,7 +470,7 @@ class PokemonShowdownService {
           const validMoves: (number | 'struggle')[] = [];
 
           active.moves.forEach((move: any, i: number) => {
-            logger.info(`Available move for ${side}: ${move.move}`);
+         //   logger.info(`Available move for ${side}: ${move.move}`);
             if (!move.disabled && (move.pp === undefined || move.pp > 0)) {
               validMoves.push(i + 1); // Moves are 1-indexed in Showdown
             }
@@ -478,14 +480,14 @@ class PokemonShowdownService {
               ? validMoves[Math.floor(Math.random() * validMoves.length)]
               : 'struggle';
 
-          logger.info(`>>> ${side} chose move: ${moveChoice}`);
+         // logger.info(`>>> ${side} chose move: ${moveChoice}`);
           await stream.write(`>${side} move ${moveChoice}`);
         }
       }
       if (chunk.includes('|turn|')) {
         turnCount++;
-        logger.info(`==========================================================================='`);
-        logger.info(`NewTurnCourt ` + turnCount);
+       // logger.info(`\n\n==========================================================================='`);
+      //  logger.info(`NewTurnCourt ` + turnCount);
 
       }
 
@@ -494,7 +496,7 @@ class PokemonShowdownService {
         const bst1 = Object.values(pokemon1.baseStats).reduce((a, b) => a + b, 0);
         const bst2 = Object.values(pokemon2.baseStats).reduce((a, b) => a + b, 0);
         winner = bst1 >= bst2 ? 1 : 2;
-        logger.info(`MAX TURN COUNT EXCEEDED`);
+       // logger.info(`MAX TURN COUNT EXCEEDED`);
         return winner;
       }
     }
