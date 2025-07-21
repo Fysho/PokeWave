@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Button, Badge, Slider, Group, Text, Grid, Box, Stack, Title, Center, Loader, useMantineTheme, useMantineColorScheme } from '@mantine/core';
+import { Card, Button, Badge, Slider, Group, Text, Grid, Box, Stack, Title, Center, Loader, useMantineTheme, useMantineColorScheme, Tooltip } from '@mantine/core';
 import { useGameStore } from '../../store/gameStore';
 import { useSettingsStore } from '../../store/settingsStore';
 import { BattleLoading } from '../ui/loading';
 import { FadeIn, SlideIn, ResultReveal, BounceIn, ScaleIn } from '../ui/transitions';
 import StreakCelebration from '../ui/streak-celebration';
+import { getTypeColor, getCategoryIcon } from '../../utils/typeColors';
 import { 
   IconSwords, 
   IconTrophy, 
@@ -56,29 +57,6 @@ const PokemonBattleCard: React.FC<PokemonBattleCardProps> = ({
     return itemNames[item.toLowerCase()] || item.replace(/([A-Z])/g, ' $1').trim();
   };
 
-  const getTypeColor = (type: string): string => {
-    const typeColors: { [key: string]: string } = {
-      normal: 'gray',
-      fire: 'red',
-      water: 'blue',
-      electric: 'yellow',
-      grass: 'green',
-      ice: 'cyan',
-      fighting: 'red',
-      poison: 'grape',
-      ground: 'orange',
-      flying: 'indigo',
-      psychic: 'pink',
-      bug: 'lime',
-      rock: 'orange',
-      ghost: 'violet',
-      dragon: 'indigo',
-      dark: 'dark',
-      steel: 'gray',
-      fairy: 'pink',
-    };
-    return typeColors[type.toLowerCase()] || 'gray';
-  };
 
   const displayWinPercentage = winPercentage !== undefined ? winPercentage.toFixed(1) : showResults ? ((pokemon.wins / 100) * 100).toFixed(1) : null;
 
@@ -296,31 +274,82 @@ const PokemonBattleCard: React.FC<PokemonBattleCardProps> = ({
               <Box>
                 <Text size="sm" c="gray.6" ta="center" mb="xs">Moves</Text>
                 <Grid gutter="xs">
-                  {pokemon.moves.slice(0, 4).map((move: string, index: number) => (
-                    <Grid.Col key={index} span={6}>
-                      <Box 
-                        ta="center" 
-                        p="sm" 
-                        style={{ 
-                          backgroundColor: colorScheme === 'dark' ? theme.colors.dark[6] : theme.colors.gray[0], 
-                          borderRadius: '4px', 
-                          border: colorScheme === 'dark' ? `1px solid ${theme.colors.gray[8]}` : `1px solid ${theme.colors.gray[3]}`,
-                          cursor: 'pointer',
-                          transition: 'all 0.2s ease'
-                        }}
-                        onMouseEnter={(e: React.MouseEvent<HTMLDivElement>) => {
-                          e.currentTarget.style.transform = 'scale(1.02)';
-                          e.currentTarget.style.boxShadow = 'var(--mantine-shadow-sm)';
-                        }}
-                        onMouseLeave={(e: React.MouseEvent<HTMLDivElement>) => {
-                          e.currentTarget.style.transform = 'scale(1)';
-                          e.currentTarget.style.boxShadow = 'none';
-                        }}
-                      >
-                        <Text size="sm" fw={600} tt="capitalize">{move}</Text>
-                      </Box>
-                    </Grid.Col>
-                  ))}
+                  {pokemon.moveDetails ? (
+                    // If we have move details, show colored buttons with tooltips
+                    pokemon.moveDetails.slice(0, 4).map((moveDetail: any, index: number) => (
+                      <Grid.Col key={index} span={6}>
+                        <Tooltip
+                          label={
+                            <Box>
+                              <Text size="xs" fw={600} tt="capitalize">{moveDetail.name}</Text>
+                              <Text size="xs">Type: {moveDetail.type}</Text>
+                              <Text size="xs">Category: {getCategoryIcon(moveDetail.category)} {moveDetail.category}</Text>
+                              {moveDetail.power && <Text size="xs">Power: {moveDetail.power}</Text>}
+                              {moveDetail.accuracy && <Text size="xs">Accuracy: {moveDetail.accuracy}%</Text>}
+                              <Text size="xs">PP: {moveDetail.pp}</Text>
+                            </Box>
+                          }
+                          position="top"
+                          withArrow
+                          multiline
+                          width={200}
+                        >
+                          <Box 
+                            ta="center" 
+                            p="sm" 
+                            style={{ 
+                              backgroundColor: `color-mix(in srgb, var(--mantine-color-${getTypeColor(moveDetail.type)}-${colorScheme === 'dark' ? 8 : 6}) 15%, transparent)`,
+                              borderRadius: '4px', 
+                              border: `1px solid ${theme.colors[getTypeColor(moveDetail.type)][colorScheme === 'dark' ? 7 : 5]}`,
+                              cursor: 'pointer',
+                              transition: 'all 0.2s ease'
+                            }}
+                            onMouseEnter={(e: React.MouseEvent<HTMLDivElement>) => {
+                              e.currentTarget.style.transform = 'scale(1.02)';
+                              e.currentTarget.style.boxShadow = 'var(--mantine-shadow-sm)';
+                              e.currentTarget.style.backgroundColor = `color-mix(in srgb, var(--mantine-color-${getTypeColor(moveDetail.type)}-${colorScheme === 'dark' ? 8 : 6}) 25%, transparent)`;
+                            }}
+                            onMouseLeave={(e: React.MouseEvent<HTMLDivElement>) => {
+                              e.currentTarget.style.transform = 'scale(1)';
+                              e.currentTarget.style.boxShadow = 'none';
+                              e.currentTarget.style.backgroundColor = `color-mix(in srgb, var(--mantine-color-${getTypeColor(moveDetail.type)}-${colorScheme === 'dark' ? 8 : 6}) 15%, transparent)`;
+                            }}
+                          >
+                            <Text size="sm" fw={600} tt="capitalize" c={theme.colors[getTypeColor(moveDetail.type)][colorScheme === 'dark' ? 4 : 7]}>
+                              {moveDetail.name}
+                            </Text>
+                          </Box>
+                        </Tooltip>
+                      </Grid.Col>
+                    ))
+                  ) : (
+                    // Fallback to regular moves if no details
+                    pokemon.moves.slice(0, 4).map((move: string, index: number) => (
+                      <Grid.Col key={index} span={6}>
+                        <Box 
+                          ta="center" 
+                          p="sm" 
+                          style={{ 
+                            backgroundColor: colorScheme === 'dark' ? theme.colors.dark[6] : theme.colors.gray[0], 
+                            borderRadius: '4px', 
+                            border: colorScheme === 'dark' ? `1px solid ${theme.colors.gray[8]}` : `1px solid ${theme.colors.gray[3]}`,
+                            cursor: 'pointer',
+                            transition: 'all 0.2s ease'
+                          }}
+                          onMouseEnter={(e: React.MouseEvent<HTMLDivElement>) => {
+                            e.currentTarget.style.transform = 'scale(1.02)';
+                            e.currentTarget.style.boxShadow = 'var(--mantine-shadow-sm)';
+                          }}
+                          onMouseLeave={(e: React.MouseEvent<HTMLDivElement>) => {
+                            e.currentTarget.style.transform = 'scale(1)';
+                            e.currentTarget.style.boxShadow = 'none';
+                          }}
+                        >
+                          <Text size="sm" fw={600} tt="capitalize">{move}</Text>
+                        </Box>
+                      </Grid.Col>
+                    ))
+                  )}
                 </Grid>
               </Box>
             )}

@@ -4,6 +4,7 @@ import { Teams } from '@pkmn/sets';
 
 //import { cacheService } from './cache.service';
 import { pokemonService } from './pokemon.service';
+import { pokemonMoveStoreService } from './pokemon-move-store.service';
 import logger from '../utils/logger';
 import { ApiError } from '../middleware/error.middleware';
 import crypto from 'crypto';
@@ -1067,6 +1068,36 @@ class PokemonShowdownService {
         .filter(m => moveIds.includes(m.moveId))
         .map(m => m.move);
 
+      // Get move details from move store
+      const moveDetails = [];
+      for (const moveId of moveIds) {
+        const moveData = pokemonMoveStoreService.getMove(moveId);
+        if (!moveData) {
+          // Fallback to Showdown data if move store doesn't have the move
+          const dexMove = dex.moves.get(moveId);
+          if (dexMove) {
+            moveDetails.push({
+              name: this.formatMoveName(dexMove.name),
+              type: dexMove.type.toLowerCase(),
+              category: dexMove.category.toLowerCase() as 'physical' | 'special' | 'status',
+              power: dexMove.basePower || null,
+              accuracy: dexMove.accuracy === true ? null : dexMove.accuracy,
+              pp: dexMove.pp || 10
+            });
+          }
+        } else {
+          // Use move store data
+          moveDetails.push({
+            name: this.formatMoveName(moveData.name),
+            type: moveData.type,
+            category: moveData.category,
+            power: moveData.power,
+            accuracy: moveData.accuracy,
+            pp: moveData.pp
+          });
+        }
+      }
+
       // Get random ability
       const ability = this.getRandomAbility(species);
 
@@ -1109,6 +1140,7 @@ class PokemonShowdownService {
         ability,
         item,
         moves: moves.map(move => this.formatMoveName(move)),
+        moveDetails,
         stats,
         baseStats,
         evs,

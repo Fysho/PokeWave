@@ -92,6 +92,14 @@ export interface PokemonInstanceData {
   ability: string;        // Active ability
   item?: string;          // Held item (optional)
   moves: string[];        // Move names
+  moveDetails?: {         // Detailed move information (optional)
+    name: string;
+    type: string;
+    category: 'physical' | 'special' | 'status';
+    power: number | null;
+    accuracy: number | null;
+    pp: number;
+  }[];
   stats: {                // Calculated stats (with IVs, EVs, Nature)
     hp: number;
     attack: number;
