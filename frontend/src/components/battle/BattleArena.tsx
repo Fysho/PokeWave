@@ -328,7 +328,6 @@ const PokemonBattleCard: React.FC<PokemonBattleCardProps> = ({
             {/* Stats */}
             {pokemon.stats && (
               <Box>
-                <Text size="sm" c="gray.6" ta="center" mb="xs">Stats (Level {pokemon.level})</Text>
                 <Group gap="xs" justify="center">
                   <Box ta="center" px="md" py="xs" style={{ backgroundColor: colorScheme === 'dark' ? theme.colors.dark[6] : theme.colors.red[0], borderRadius: '4px', border: colorScheme === 'dark' ? `1px solid ${theme.colors.red[8]}` : 'none', minWidth: '60px' }}>
                     <Text size="xs" fw={600} c={colorScheme === 'dark' ? 'red.4' : 'red.7'}>HP</Text>
