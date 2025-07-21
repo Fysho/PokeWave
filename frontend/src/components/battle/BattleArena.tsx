@@ -358,9 +358,9 @@ const PokemonBattleCard: React.FC<PokemonBattleCardProps> = ({
             )}
 
             {/* Nature and IVs */}
-            {pokemon.nature && (
-              <Box>
-                <Group justify="center" gap="xs">
+            <Box>
+              <Group justify="center" gap="xs">
+                {pokemon.nature && (
                   <Badge
                     variant="dot"
                     size="md"
@@ -369,16 +369,16 @@ const PokemonBattleCard: React.FC<PokemonBattleCardProps> = ({
                   >
                     {pokemon.nature} Nature
                   </Badge>
-                  <Badge
-                    variant="dot"
-                    size="md"
-                    color="green"
-                  >
-                    Perfect IVs
-                  </Badge>
-                </Group>
-              </Box>
-            )}
+                )}
+                <Badge
+                  variant="dot"
+                  size="md"
+                  color="green"
+                >
+                  Perfect IVs
+                </Badge>
+              </Group>
+            </Box>
 
             {/* Battle Results */}
             {showResults && (
