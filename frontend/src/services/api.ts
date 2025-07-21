@@ -106,6 +106,9 @@ export class ApiService {
         pokemon2Level = Math.floor(Math.random() * 100) + 1;
       }
 
+      console.log(`[Frontend] Requesting battle simulation: Pokemon ${pokemon1Id} vs ${pokemon2Id} at ${new Date().toISOString()}`);
+      console.trace('[Frontend] Battle request stack trace');
+
       // Use a longer timeout for battle simulations (15 seconds)
       // This accounts for cold starts and initial data loading
       const response = await api.post<BattleResult>('/battle/simulate', {
@@ -122,6 +125,9 @@ export class ApiService {
       }, {
         timeout: 15012 // 15 seconds timeout for battle simulations
       });
+      
+      console.log(`[Frontend] Battle simulation response received: ${response.data.pokemon1.name} (${response.data.pokemon1.wins} wins) vs ${response.data.pokemon2.name} (${response.data.pokemon2.wins} wins)`);
+      
       return response.data;
     } catch (error) {
       throw error;

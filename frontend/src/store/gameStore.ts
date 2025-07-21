@@ -83,6 +83,9 @@ export const useGameStore = create<GameStore>()(
           movesetType?: 'random' | 'competitive';
           aiDifficulty?: 'random' | 'elite';
         }) => {
+          console.log(`[GameStore] generateNewBattle called at ${new Date().toISOString()}`);
+          console.trace('[GameStore] generateNewBattle stack trace');
+          
           set({ isLoading: true, error: null });
           
           try {
