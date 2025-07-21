@@ -394,7 +394,7 @@ class PokemonShowdownService {
       const pokemon2Level = config.options?.pokemon2Level || 50;
 
       // Create battle stream
-      const stream = new BattleStreams.BattleStream();
+      let stream: BattleStreams.BattleStream | null = new BattleStreams.BattleStream();
       const outputs: string[] = [];
       
       // Create teams with moves from Pokemon Showdown
