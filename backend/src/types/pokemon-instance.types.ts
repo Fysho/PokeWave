@@ -144,4 +144,5 @@ export interface RandomPokemonSettings {
   level?: number;        // Used when levelMode is 'fixed'
   minLevel?: number;     // Used when levelMode is 'random'
   maxLevel?: number;     // Used when levelMode is 'random'
+  itemMode?: 'random' | 'none';  // Held item mode
 }

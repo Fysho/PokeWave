@@ -1349,7 +1349,7 @@ class PokemonShowdownService {
       .digest('hex');
   }
 
-  async createPokemonInstance(pokemonId: number, level: number = 50, generation: number = 9): Promise<PokemonInstanceData> {
+  async createPokemonInstance(pokemonId: number, level: number = 50, generation: number = 9, itemMode: 'random' | 'none' = 'random'): Promise<PokemonInstanceData> {
     try {
       const dex = Dex.forGen(generation);
       
@@ -1378,8 +1378,14 @@ class PokemonShowdownService {
       // Get random ability
       const ability = this.getRandomAbility(species);
 
-      // Get random item (50% chance)
-      const item = this.getRandomItem();
+      // Get item based on item mode
+      let item: string | undefined;
+      if (itemMode === 'none') {
+        item = undefined;
+      } else {
+        // Random mode - 50% chance of having an item
+        item = this.getRandomItem();
+      }
 
       // Get random nature
       const natures = ['Hardy', 'Lonely', 'Brave', 'Adamant', 'Naughty', 'Bold', 

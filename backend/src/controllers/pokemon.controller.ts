@@ -86,6 +86,18 @@ export const getRandomPokemonWithInstances = async (
         }
       }
     }
+    
+    // Item settings
+    if (req.query.item_mode) {
+      const itemMode = req.query.item_mode as string;
+      if (itemMode !== 'random' && itemMode !== 'none') {
+        throw new ApiError(400, 'Invalid item_mode. Must be "random" or "none"');
+      }
+      settings.itemMode = itemMode;
+    } else if (req.query.no_items === 'true') {
+      // Alternative way to set no items
+      settings.itemMode = 'none';
+    }
 
     const pokemonInstances = await pokemonService.getRandomPokemonWithInstances(settings);
     res.json(pokemonInstances);

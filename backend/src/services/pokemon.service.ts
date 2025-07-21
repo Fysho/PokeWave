@@ -75,6 +75,7 @@ class PokemonService {
       // Apply default settings
       const generation = settings.generation || 1;
       const levelMode = settings.levelMode || 'fixed';
+      const itemMode = settings.itemMode || 'random';
       
       // Get random Pokemon IDs
       const { pokemon1Id, pokemon2Id } = this.getRandomPokemonIds(generation);
@@ -115,8 +116,8 @@ class PokemonService {
       
       // Create Pokemon instances with full data
       const [pokemon1Instance, pokemon2Instance] = await Promise.all([
-        pokemonShowdownService.createPokemonInstance(pokemon1Id, pokemon1Level, generation),
-        pokemonShowdownService.createPokemonInstance(pokemon2Id, pokemon2Level, generation)
+        pokemonShowdownService.createPokemonInstance(pokemon1Id, pokemon1Level, generation, itemMode),
+        pokemonShowdownService.createPokemonInstance(pokemon2Id, pokemon2Level, generation, itemMode)
       ]);
       
       logger.info(`Successfully created Pokemon instances: ${pokemon1Instance.name} (Lv.${pokemon1Level}) vs ${pokemon2Instance.name} (Lv.${pokemon2Level})`);

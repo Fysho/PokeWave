@@ -14,6 +14,8 @@ This endpoint returns two random Pokemon with complete battle-ready data includi
 | `level` | number | 50 | Fixed level when using fixed mode (1-100) |
 | `min_level` | number | 1 | Minimum level when using random mode (1-100) |
 | `max_level` | number | 100 | Maximum level when using random mode (1-100) |
+| `item_mode` | string | "random" | Item mode: "random" or "none" |
+| `no_items` | boolean | false | Alternative way to disable items (sets item_mode to "none") |
 
 ## Examples
 
@@ -39,6 +41,22 @@ GET /api/pokemon/random-instances?level_mode=random&min_level=50&max_level=80
 
 # Gen 5 Pokemon with random levels 25-75
 GET /api/pokemon/random-instances?generation=5&random_levels=true&min_level=25&max_level=75
+```
+
+### Item Settings
+```bash
+# No held items
+GET /api/pokemon/random-instances?item_mode=none
+
+# No items (alternative)
+GET /api/pokemon/random-instances?no_items=true
+
+# Random items (default - 50% chance)
+GET /api/pokemon/random-instances?item_mode=random
+
+# Combine with other settings
+GET /api/pokemon/random-instances?generation=3&level=100&no_items=true
+GET /api/pokemon/random-instances?random_levels=true&min_level=45&max_level=55&item_mode=none
 ```
 
 ## Response Format
@@ -108,7 +126,9 @@ Each Pokemon instance includes:
 - **Battle Stats**: Calculated stats including IVs, EVs, and nature effects
 - **Base Stats**: Raw species base stats
 - **Abilities**: Randomly selected from available abilities
-- **Items**: 50% chance of having a competitive held item
+- **Items**: Based on item_mode:
+  - "random": 50% chance of having a competitive held item
+  - "none": No held items
 - **Moves**: Up to 4 moves from the Pokemon's level-up learnset
 - **IVs**: Always perfect (31) for all stats
 - **EVs**: Always untrained (0) for all stats
