@@ -163,6 +163,7 @@ pokewave/
 │   ├── package.json
 │   └── tailwind.config.js
 ├── POKEWAVE_CONTEXT.md   # This file
+├── BATTLETESTER_CONTEXT.md # Battle Tester feature documentation
 ├── ImplementationSpec.md # Technical specification
 └── README.md            # Setup instructions
 ```
@@ -310,6 +311,18 @@ Response:
 - ✅ Comprehensive analytics and game statistics
 - ✅ 15-second timeout for battle API calls (handles cold starts)
 - ✅ Preloaded learnset data for improved performance
+- ✅ Battle Tester tool for turn-by-turn battle visualization
+
+## Battle Tester Feature
+The Battle Tester is a debugging tool that shows detailed turn-by-turn breakdowns of individual battles.
+For comprehensive documentation, see [BATTLETESTER_CONTEXT.md](./BATTLETESTER_CONTEXT.md).
+
+### Quick Overview:
+- **Purpose**: Visualize individual battle mechanics turn-by-turn
+- **Access**: Click the sword icon on the right side of the battle screen
+- **Data Flow**: Frontend → Backend API → Pokemon Showdown simulation → Turn data → Display
+- **Endpoint**: `POST /api/battle/simulate-single`
+- **Shows**: Moves used, damage dealt, HP remaining, critical hits, type effectiveness
 
 ## Testing Current State
 
