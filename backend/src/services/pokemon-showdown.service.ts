@@ -598,8 +598,14 @@ class PokemonShowdownService {
       const pokemon1Stats = this.calculateStats(species1, pokemon1Level);
       const pokemon2Stats = this.calculateStats(species2, pokemon2Level);
 
-      // Important: Destroy the stream to prevent hanging connections
-      stream.destroy();
+      // Important: Clean up the stream properly
+      try {
+        // Give any pending operations a moment to complete
+        await new Promise(resolve => setTimeout(resolve, 50));
+        stream.destroy();
+      } catch (cleanupError) {
+        logger.error('Error during stream cleanup in simulateSingleBattle:', cleanupError);
+      }
 
       return {
         winner: winner || species1.name,
@@ -636,8 +642,11 @@ class PokemonShowdownService {
     level2: number,
     generation: number
   ): Promise<1 | 2> {
+    let stream: BattleStreams.BattleStream | null = null;
+    let pendingRead: Promise<string | null | undefined> | null = null;
+    
     try {
-      const stream = new BattleStreams.BattleStream();
+      stream = new BattleStreams.BattleStream();
       
       // Create simple teams
       const p1team = await this.createTeam(species1, level1, generation);
@@ -655,17 +664,39 @@ class PokemonShowdownService {
       
       // Process battle quickly
       while (!battleEnded && turnCount < maxTurns) {
-        let chunk: string | null = null;
+        let chunk: string | null | undefined = null;
         try {
-          // Add timeout to prevent hanging on stream.read()
+          // Create a cancellable timeout
+          let timeoutId: NodeJS.Timeout | null = null;
+          const timeoutPromise = new Promise<string | null>((resolve) => {
+            timeoutId = setTimeout(() => resolve(null), 1000);
+          });
+          
+          // Store the pending read promise
+          pendingRead = stream.read();
+          
+          // Race between read and timeout
           chunk = await Promise.race([
-            stream.read(),
-            new Promise<string | null>((resolve) => setTimeout(() => resolve(null), 1000)) // 1 second timeout per read
-          ]) as string | null;
+            pendingRead,
+            timeoutPromise
+          ]);
+          
+          // Clear the timeout if read completed
+          if (timeoutId) clearTimeout(timeoutId);
+          
+          // If we got a timeout, mark pendingRead as handled
+          if (chunk === null) {
+            // The read is still pending, we'll handle it in cleanup
+            break;
+          }
+          
+          // Clear pendingRead since it completed
+          pendingRead = null;
         } catch (readError) {
           logger.error('Error reading from stream:', readError);
           break;
         }
+        
         if (!chunk) continue;
         
         // Check for winner
@@ -706,9 +737,6 @@ class PokemonShowdownService {
         winner = bst1 >= bst2 ? 1 : 2;
       }
       
-      // Important: Destroy the stream to prevent hanging connections
-      stream.destroy();
-      
       return winner;
     } catch (error) {
       logger.error('Error in runSingleShowdownBattle:', {
@@ -720,6 +748,24 @@ class PokemonShowdownService {
       const bst1 = Object.values(species1.baseStats).reduce((a, b) => a + b, 0);
       const bst2 = Object.values(species2.baseStats).reduce((a, b) => a + b, 0);
       return bst1 >= bst2 ? 1 : 2;
+    } finally {
+      // Clean up stream properly
+      if (stream) {
+        try {
+          // Wait for any pending read to complete or timeout
+          if (pendingRead) {
+            await Promise.race([
+              pendingRead.catch(() => null), // Ignore errors from pending read
+              new Promise(resolve => setTimeout(resolve, 100)) // Give it 100ms max
+            ]);
+          }
+          
+          // Now safely destroy the stream
+          stream.destroy();
+        } catch (cleanupError) {
+          logger.error('Error during stream cleanup:', cleanupError);
+        }
+      }
     }
   }
 
