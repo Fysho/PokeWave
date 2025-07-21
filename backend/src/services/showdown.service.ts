@@ -29,7 +29,6 @@ class ShowdownService {
     if (!pokemonInstanceStore.pokemonInstance1 || !pokemonInstanceStore.pokemonInstance2) {
       throw new Error('No Pokemon stored for battle. Call storeInstances on pokemonInstanceStore first.');
     }
-    logger.info("Test")
     return pokemonShowdownService.simulateMultipleBattles({
       pokemon1: pokemonInstanceStore.pokemonInstance1,
       pokemon2: pokemonInstanceStore.pokemonInstance2,
@@ -37,9 +36,17 @@ class ShowdownService {
     });
   }
 
-  async simulateSingleBattle(config: ShowdownBattleConfig): Promise<any> {
-    return pokemonShowdownService.simulateSingleBattleTester(config);
-  }
+  async simulateSingleBattle(): Promise<any> {
+    if (!pokemonInstanceStore.pokemonInstance1 || !pokemonInstanceStore.pokemonInstance2) {
+      throw new Error('No Pokemon stored for battle. Call storeInstances on pokemonInstanceStore first.');
+    }
+    logger.info("Test")
+
+    return pokemonShowdownService.simulateSingleBattleTester({
+      pokemon1: pokemonInstanceStore.pokemonInstance1,
+      pokemon2: pokemonInstanceStore.pokemonInstance2,
+      generation: this.storedGeneration
+    });  }
 
 }
 

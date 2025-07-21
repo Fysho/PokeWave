@@ -151,8 +151,15 @@ class PokemonShowdownService {
       const p2teamString = await this.createTeam(pokemon2, config.generation);
       
       // Convert team strings to packed format
-      const p1team = Teams.importTeam(p1teamString);
-      const p2team = Teams.importTeam(p2teamString);
+      const p1teamImported = Teams.importTeam(p1teamString);
+      const p2teamImported = Teams.importTeam(p2teamString);
+      
+      if (!p1teamImported || !p2teamImported) {
+        throw new Error('Failed to import team data');
+      }
+      
+      const p1team = Teams.packTeam(p1teamImported);
+      const p2team = Teams.packTeam(p2teamImported);
       
       logger.info(`🎮 Battle Tester: P1 team (packed): ${p1team}`);
       logger.info(`🎮 Battle Tester: P2 team (packed): ${p2team}`);
@@ -182,49 +189,17 @@ class PokemonShowdownService {
       
       // Process battle synchronously for simplicity
       while (!battleEnded && turnCount < maxTurns) {
-        // Read from stream with a simple approach
-        logger.debug(`🎮 Battle Tester: Waiting for stream data... (Turn ${turnCount}, NoData: ${noDataCount})`);
+        logger.info(`🎮 Battle Tester: ========================================================`);
+        logger.info(`🎮 Battle Tester: Turn ${turnCount}`);
         
-        // Add timeout to prevent hanging
-        let chunk: string | null | undefined = null;
-        try {
-          const timeoutPromise = new Promise<null>((resolve) => {
-            setTimeout(() => {
-              logger.debug('🎮 Battle Tester: Read timeout after 2 seconds');
-              resolve(null);
-            }, 2000);
-          });
-          
-          chunk = await Promise.race([
-            stream.read(),
-            timeoutPromise
-          ]) as string | null | undefined;
-        } catch (readError) {
-          logger.error('🎮 Battle Tester: Error reading from stream:', readError);
-          break;
-        }
+        // Read from stream
         
-        if (!chunk) {
-          noDataCount++;
-          logger.info(`🎮 Battle Tester: No chunk received (${noDataCount}/${maxNoDataCount})`);
-          
-          if (noDataCount >= maxNoDataCount) {
-            logger.warn('🎮 Battle Tester: Too many empty reads, forcing battle end');
-            battleEnded = true;
-            break;
-          }
-          
-          // Don't try to force moves without proper request data
-          await new Promise(resolve => setTimeout(resolve, 100));
-          continue;
-        }
+        const chunk = await stream.read();
+        if (!chunk) break;
         
-        noDataCount = 0; // Reset counter on successful read
+        logger.info(`🎮 Battle Tester: Chunk received: ${chunk}`);
         
-        logger.info(`🎮 Battle Tester: Received chunk (${chunk.length} chars)`);
         outputs.push(chunk);
-        // Log first 200 chars of chunk for debugging
-        logger.debug(`🎮 Battle Tester: Chunk preview: ${chunk.substring(0, 200).replace(/\n/g, '\\n')}`);
         
         
         // Check for winner
@@ -315,46 +290,52 @@ class PokemonShowdownService {
           }
         }
         
-        // Check if we need to make moves based on the chunk content
+        // Handle requests similar to runSingleShowdownBattle
         if (chunk.includes('|request|')) {
-          logger.info('🎮 Battle Tester: Found request in chunk, processing moves...');
-        }
-        
-        // Make moves based on requests
-        let madeMove = false;
-        
-        if (p1Request && p1Request.active) {
-          const choice = this.makeRandomChoice(p1Request);
-          logger.info(`🎮 Battle Tester: ${pokemon1.name} choosing action: ${choice}`);
-          await stream.write(`>p1 ${choice}`);
-          p1Request = null;
-          madeMove = true;
-        }
-        
-        if (p2Request && p2Request.active) {
-          const choice = this.makeRandomChoice(p2Request);
-          logger.info(`🎮 Battle Tester: ${pokemon2.name} choosing action: ${choice}`);
-          await stream.write(`>p2 ${choice}`);
-          p2Request = null;
-          madeMove = true;
-        }
-        
-        // If we made moves, give the stream a moment to process
-        if (madeMove) {
-          await new Promise(resolve => setTimeout(resolve, 50));
+          const requestData = JSON.parse(chunk.split('|request|')[1]);
+          
+          // Determine which player is making the request
+          const side = requestData.side && requestData.side.id ? requestData.side.id : null;
+          if (!side) {
+            logger.warn('🎮 Battle Tester: No side info found in requestData');
+            continue;
+          }
+          
+          // Choose a move for the appropriate player
+          if (requestData.active && requestData.active[0]) {
+            const active = requestData.active[0];
+            const validMoves: (number | 'struggle')[] = [];
+            
+            active.moves.forEach((move: any, i: number) => {
+              logger.info(`🎮 Battle Tester: Available move for ${side}: ${move.move}`);
+              if (!move.disabled && (move.pp === undefined || move.pp > 0)) {
+                validMoves.push(i + 1); // Moves are 1-indexed in Showdown
+              }
+            });
+            
+            const moveChoice = validMoves.length > 0
+                ? validMoves[Math.floor(Math.random() * validMoves.length)]
+                : 'struggle';
+            
+            logger.info(`🎮 Battle Tester: >>> ${side} chose move: ${moveChoice}`);
+            await stream.write(`>${side} move ${moveChoice}`);
+          }
         }
         
         if (chunk.includes('|turn|')) {
           turnCount++;
-          logger.info(`🎮 Battle Tester: === Turn ${turnCount} ===`);
+          logger.info(`🎮 Battle Tester: ========================================================`);
+          logger.info(`🎮 Battle Tester: NEW TURN ${turnCount}`);
         }
       }
       
       // Force end if battle takes too long
-      if (!battleEnded) {
-        logger.warn('🎮 Battle Tester: Battle timed out after 50 turns, forcing winner');
-        await stream.write('>forcewin p1');
-        winner = pokemon1.name;
+      if (turnCount >= maxTurns) {
+        // Decide winner based on base stat totals
+        const bst1 = Object.values(pokemon1.baseStats).reduce((a, b) => a + b, 0);
+        const bst2 = Object.values(pokemon2.baseStats).reduce((a, b) => a + b, 0);
+        winner = bst1 >= bst2 ? pokemon1.name : pokemon2.name;
+        logger.info(`🎮 Battle Tester: MAX TURN COUNT EXCEEDED - Winner: ${winner}`);
       }
 
       // Parse battle log
@@ -457,38 +438,69 @@ class PokemonShowdownService {
     const maxTurns = 50;
 
     while (turnCount < maxTurns) {
+      logger.info(`=========================================================='`);
+
+      logger.info(`turn ${turnCount}`);
       const chunk = await stream.read();
+      logger.info(`Chunk: ${chunk}`);
+
       if (!chunk) break;
 
       if (chunk.includes('|win|')) {
         winner = chunk.includes('Player 1') ? 1 : 2;
         break;
       }
-
       if (chunk.includes('|teampreview')) {
         await stream.write('>p1 team 1');
         await stream.write('>p2 team 1');
       }
-
       if (chunk.includes('|request|')) {
-        // Randomly choose move 1-4
-        const moveIndex1 = Math.floor(Math.random() * pokemon1.moves.length) + 1;
-        const moveIndex2 = Math.floor(Math.random() * pokemon2.moves.length) + 1;
-        await stream.write(`>p1 move ${moveIndex1}`);
-        await stream.write(`>p2 move ${moveIndex2}`);
-      }
+        const requestData = JSON.parse(chunk.split('|request|')[1]);
 
+        // Determine which player is making the request
+        const side = requestData.side && requestData.side.id ? requestData.side.id : null;
+        if (!side) {
+          logger.warn('No side info found in requestData');
+          continue;
+        }
+
+        // Choose a move for the appropriate player
+        if (requestData.active && requestData.active[0]) {
+          const active = requestData.active[0];
+          const validMoves: (number | 'struggle')[] = [];
+
+          active.moves.forEach((move: any, i: number) => {
+            logger.info(`Available move for ${side}: ${move.move}`);
+            if (!move.disabled && (move.pp === undefined || move.pp > 0)) {
+              validMoves.push(i + 1); // Moves are 1-indexed in Showdown
+            }
+          });
+
+          const moveChoice = validMoves.length > 0
+              ? validMoves[Math.floor(Math.random() * validMoves.length)]
+              : 'struggle';
+
+          logger.info(`>>> ${side} chose move: ${moveChoice}`);
+          await stream.write(`>${side} move ${moveChoice}`);
+        }
+      }
       if (chunk.includes('|turn|')) {
         turnCount++;
+        logger.info(`==========================================================================='`);
+        logger.info(`NewTurnCourt ` + turnCount);
+
+      }
+
+      if (turnCount >= maxTurns) {
+        // Decide winner based on base stat totals
+        const bst1 = Object.values(pokemon1.baseStats).reduce((a, b) => a + b, 0);
+        const bst2 = Object.values(pokemon2.baseStats).reduce((a, b) => a + b, 0);
+        winner = bst1 >= bst2 ? 1 : 2;
+        logger.info(`MAX TURN COUNT EXCEEDED`);
+        return winner;
       }
     }
 
-    if (turnCount >= maxTurns) {
-      // Decide winner based on base stat totals
-      const bst1 = Object.values(pokemon1.baseStats).reduce((a, b) => a + b, 0);
-      const bst2 = Object.values(pokemon2.baseStats).reduce((a, b) => a + b, 0);
-      winner = bst1 >= bst2 ? 1 : 2;
-    }
 
     return winner;
   }
