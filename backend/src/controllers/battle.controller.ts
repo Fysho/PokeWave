@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { ApiError } from '../middleware/error.middleware';
-import { battleService } from '../services/battle.service';
+//import { battleService } from '../services/battle.service';
+import {showdownService} from "../services/showdown.service";
 
 export const simulateBattle = async (
   req: Request,
@@ -8,44 +9,49 @@ export const simulateBattle = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const { pokemon1Id, pokemon2Id, pokemon1InstanceId, pokemon2InstanceId, options } = req.body;
-    console.log('Battle controller received request:', { 
-      pokemon1Id, 
-      pokemon2Id,
-      pokemon1InstanceId,
-      pokemon2InstanceId,
-      options,
+    console.log('/simulate endpoint reached', {
+      body: req.body,
       timestamp: new Date().toISOString()
     });
 
-    // Support both instance IDs and regular Pokemon IDs
-    if (pokemon1InstanceId && pokemon2InstanceId) {
-      // Use instance IDs if provided
-      console.log('Using Pokemon instance IDs for battle simulation');
-      const result = await battleService.simulateBattleWithInstances({
-        pokemon1InstanceId,
-        pokemon2InstanceId,
-        options
+    // Check if the request includes Pokemon instances
+    const { pokemon1, pokemon2, generation } = req.body;
+    
+    if (pokemon1 && pokemon2) {
+      // New flow: directly simulate with provided instances
+      const { pokemonShowdownService } = require('../services/pokemon-showdown.service');
+      
+      const result = await pokemonShowdownService.simulateMultipleBattles({
+        pokemon1,
+        pokemon2,
+        generation: generation || 9
       });
       
-      console.log('Battle controller sending response');
-      res.json(result);
-      console.log('Battle controller response sent successfully');
-    } else if (pokemon1Id && pokemon2Id) {
-      // Fallback to regular Pokemon IDs
-      console.log('Using regular Pokemon IDs for battle simulation');
-      const result = await battleService.simulateBattle({
-        pokemon1Id,
-        pokemon2Id,
-        options
-      });
+      // Format the response to match what the frontend expects
+      const winRate = (result.pokemon1Wins / result.totalBattles) * 100;
       
-      console.log('Battle controller sending response');
-      res.json(result);
-      console.log('Battle controller response sent successfully');
+      res.json({
+        battleId: result.battleId,
+        pokemon1: {
+          ...pokemon1,
+          wins: result.pokemon1Wins
+        },
+        pokemon2: {
+          ...pokemon2,
+          wins: result.pokemon2Wins
+        },
+        totalBattles: result.totalBattles,
+        winRate: winRate,
+        executionTime: result.executionTime
+      });
     } else {
-      throw new ApiError(400, 'Either instance IDs or Pokemon IDs are required');
+      // Old flow: use stored instances (will throw error if not stored)
+      const result = await showdownService.simulateBattle();
+      console.log('Battle controller sending response');
+      res.json(result);
+      console.log('Battle controller response sent successfully');
     }
+
   } catch (error) {
     console.error('Battle controller caught error:', {
       error: error instanceof Error ? error.message : error,
@@ -72,8 +78,8 @@ export const submitGuess = async (
       throw new ApiError(400, 'guessPercentage must be a number between 0 and 100');
     }
 
-    const result = await battleService.submitGuess(battleId, guessPercentage);
-    res.json(result);
+    //const result = await battleService.submitGuess(battleId, guessPercentage);
+    //res.json(result);
   } catch (error) {
     next(error);
   }
@@ -132,11 +138,16 @@ export const simulateSingleBattle = async (
       throw new ApiError(400, 'Both pokemon1 and pokemon2 are required');
     }
 
-    console.log('🎮 Battle Tester: Calling battleService.simulateSingleBattle...');
-    const result = await battleService.simulateSingleBattle({
-      pokemon1Id,
-      pokemon2Id,
-      options: battleOptions
+    // Ensure we have the instances
+    if (!battleOptions.pokemon1Instance || !battleOptions.pokemon2Instance) {
+      throw new ApiError(400, 'Pokemon instances are required for battle simulation');
+    }
+
+    console.log('🎮 Battle Tester: Calling showdownService.simulateSingleBattle...');
+    const result = await showdownService.simulateSingleBattle({
+      pokemon1: battleOptions.pokemon1Instance,
+      pokemon2: battleOptions.pokemon2Instance,
+      generation: battleOptions.generation || 9
     });
 
     console.log('🎮 Battle Tester: Controller sending response with', {

@@ -1,6 +1,7 @@
 import { Dex, Species } from '@pkmn/dex';
-import { Teams, BattleStreams } from '@pkmn/sim';
-import { cacheService } from './cache.service';
+import { BattleStreams } from '@pkmn/sim';
+
+//import { cacheService } from './cache.service';
 import { pokemonService } from './pokemon.service';
 import logger from '../utils/logger';
 import { ApiError } from '../middleware/error.middleware';
@@ -10,120 +11,16 @@ import { PokemonInstanceData } from '../types/pokemon-instance.types';
 const BATTLE_CONFIG = { TOTAL_BATTLES: 17 };
 
 export interface ShowdownBattleConfig {
-  pokemon1Id: number;
-  pokemon2Id: number;
-  options?: {
-    generation?: number;
-    pokemon1Level?: number;
-    pokemon2Level?: number;
-    withItems?: boolean;
-    movesetType?: 'random' | 'competitive';
-    aiDifficulty?: 'random' | 'elite';
-    pokemon1Instance?: any;
-    pokemon2Instance?: any;
-  };
+  pokemon1: PokemonInstanceData;
+  pokemon2: PokemonInstanceData;
+  generation: number;
 }
 
 export interface ShowdownBattleResult {
   battleId: string;
-  pokemon1: {
-    id: number;
-    name: string;
-    level: number;
-    wins: number;
-    types: string[];
-    sprites: {
-      front: string;
-      back: string;
-      shiny: string;
-    };
-    moves: string[];
-    stats: {
-      hp: number;
-      attack: number;
-      defense: number;
-      specialAttack: number;
-      specialDefense: number;
-      speed: number;
-    };
-    baseStats: {
-      hp: number;
-      attack: number;
-      defense: number;
-      specialAttack: number;
-      specialDefense: number;
-      speed: number;
-    };
-    evs: {
-      hp: number;
-      attack: number;
-      defense: number;
-      specialAttack: number;
-      specialDefense: number;
-      speed: number;
-    };
-    ivs: {
-      hp: number;
-      attack: number;
-      defense: number;
-      specialAttack: number;
-      specialDefense: number;
-      speed: number;
-    };
-    ability?: string;
-    item?: string;
-    levelupMoves?: Array<{ level: number; move: string }>;
-  };
-  pokemon2: {
-    id: number;
-    name: string;
-    level: number;
-    wins: number;
-    types: string[];
-    sprites: {
-      front: string;
-      back: string;
-      shiny: string;
-    };
-    moves: string[];
-    stats: {
-      hp: number;
-      attack: number;
-      defense: number;
-      specialAttack: number;
-      specialDefense: number;
-      speed: number;
-    };
-    baseStats: {
-      hp: number;
-      attack: number;
-      defense: number;
-      specialAttack: number;
-      specialDefense: number;
-      speed: number;
-    };
-    evs: {
-      hp: number;
-      attack: number;
-      defense: number;
-      specialAttack: number;
-      specialDefense: number;
-      speed: number;
-    };
-    ivs: {
-      hp: number;
-      attack: number;
-      defense: number;
-      specialAttack: number;
-      specialDefense: number;
-      speed: number;
-    };
-    ability?: string;
-    item?: string;
-    levelupMoves?: Array<{ level: number; move: string }>;
-  };
+  pokemon1Wins: number;
+  pokemon2Wins: number;
   totalBattles: number;
-  winRate: number;
   executionTime: number;
 }
 
@@ -148,214 +45,79 @@ interface SingleBattleResult {
   pokemon1: {
     name: string;
     level: number;
-    stats: any;
   };
   pokemon2: {
     name: string;
     level: number;
-    stats: any;
   };
+}
+
+// Helper to convert stat keys to Showdown stat names
+function statToShowdownName(stat: string): string {
+  switch (stat) {
+    case "hp": return "HP";
+    case "attack": return "Atk";
+    case "defense": return "Def";
+    case "specialAttack": return "SpA";
+    case "specialDefense": return "SpD";
+    case "speed": return "Spe";
+    default: return stat;
+  }
 }
 
 class PokemonShowdownService {
   private readonly NUM_BATTLES = BATTLE_CONFIG.TOTAL_BATTLES; // Number of battles to simulate from central config
 
-  async simulateBattle(config: ShowdownBattleConfig): Promise<ShowdownBattleResult> {
+  async simulateMultipleBattles(config: ShowdownBattleConfig): Promise<ShowdownBattleResult> {
     const startTime = Date.now();
-    // Reduced logging - moved to battle start
-    
+
     try {
-      // logger.debug('Config received:', config);
-      // Generate cache key
-      const cacheKey = this.generateBattleKey(config);
-      // logger.debug('Generated cache key:', cacheKey);
-      
+      // Generate cache key disabled
+      //const cacheKey = this.generateBattleKey(config);
+
       // Check cache first
-      const cachedResult = await cacheService.get<ShowdownBattleResult>(`showdown:${cacheKey}`);
-      if (cachedResult) {
-        logger.info(`Battle found in cache: ${cacheKey}`);
-        return cachedResult;
-      }
-
-      const generation = config.options?.generation || 9;
-      // logger.debug('Using generation:', generation);
-      
-      let dex;
-      try {
-        dex = Dex.forGen(generation);
-        // logger.debug('Dex initialized successfully for generation', generation);
-      } catch (dexError) {
-        logger.error('Failed to initialize Dex:', dexError);
-        throw new ApiError(500, 'Failed to initialize Pokemon data');
-      }
-      
-      // Get Pokemon species
-      // logger.debug('Getting species for IDs:', { id1: config.pokemon1Id, id2: config.pokemon2Id });
-      const species1 = this.getSpeciesById(dex, config.pokemon1Id);
-      const species2 = this.getSpeciesById(dex, config.pokemon2Id);
-
-      if (!species1 || !species2) {
-        logger.error('Pokemon not found', {
-          pokemon1Id: config.pokemon1Id,
-          pokemon2Id: config.pokemon2Id,
-          species1Found: !!species1,
-          species2Found: !!species2
-        });
-        throw new ApiError(400, `Invalid Pokemon IDs provided: ${config.pokemon1Id}, ${config.pokemon2Id}`);
-      }
-
-      // logger.debug('Pokemon species found', {
-      //   species1: species1.name,
-      //   species2: species2.name,
-      //   species1Types: species1.types,
-      //   species2Types: species2.types,
-      //   species1BaseStats: species1.baseStats
-      // });
-
-      // Fetch Pokemon sprites from PokeAPI
-      // logger.debug('Fetching Pokemon sprites...');
-      let pokemon1Sprites, pokemon2Sprites;
-      try {
-        [pokemon1Sprites, pokemon2Sprites] = await this.fetchPokemonSprites(
-          config.pokemon1Id,
-          config.pokemon2Id
-        );
-        // logger.debug('Sprites fetched successfully');
-      } catch (spriteError) {
-        logger.error('Failed to fetch sprites:', spriteError);
-        throw new ApiError(500, 'Failed to fetch Pokemon sprites');
-      }
-
-      const pokemon1Level = config.options?.pokemon1Level || 50;
-      const pokemon2Level = config.options?.pokemon2Level || 50;
+      //const cachedResult = await cacheService.get<ShowdownBattleResult>(`showdown:${cacheKey}`);
+      //if (cachedResult) {
+      //  logger.info(`Battle found in cache: ${cacheKey}`);
+      //  return cachedResult;
+      //}
 
       // Run multiple battles
       let pokemon1Wins = 0;
       let pokemon2Wins = 0;
 
-      logger.info(`Beginning simulation: ${species1.name} vs ${species2.name}`, { skipFormat: true });
+      logger.info(`Beginning simulation: ${config.pokemon1.name} vs ${config.pokemon2.name}`, {skipFormat: true});
 
       for (let i = 0; i < this.NUM_BATTLES; i++) {
         const winner = await this.runSingleShowdownBattle(
-          species1,
-          species2,
-          pokemon1Level,
-          pokemon2Level,
-          generation
+            config.pokemon1,
+            config.pokemon2,
+            config.generation
         );
-        
+
         if (winner === 1) {
           pokemon1Wins++;
-          logger.info(`${species1.name} won battle ${i + 1}`, { skipFormat: true });
+          logger.info(`${config.pokemon1.name} won battle ${i + 1}`, {skipFormat: true});
         } else {
           pokemon2Wins++;
-          logger.info(`${species2.name} won battle ${i + 1}`, { skipFormat: true });
+          logger.info(`${config.pokemon2.name} won battle ${i + 1}`, {skipFormat: true});
         }
       }
 
-      const winRate = (pokemon1Wins / this.NUM_BATTLES) * 100;
       const executionTime = Date.now() - startTime;
-
-      // Calculate stats for display
-      const pokemon1Stats = this.calculateStats(species1, pokemon1Level);
-      const pokemon2Stats = this.calculateStats(species2, pokemon2Level);
-
-      // Get types from Pokemon Showdown
-      const pokemon1Types = species1.types.map(t => t.toLowerCase());
-      const pokemon2Types = species2.types.map(t => t.toLowerCase());
-
-      // Get moves from level-up learnset only
-      const pokemon1MoveIds = await this.getMovesFromLearnset(species1, pokemon1Level, dex);
-      const pokemon2MoveIds = await this.getMovesFromLearnset(species2, pokemon2Level, dex);
-      
-      // Get formatted move names for display
-      const pokemon1LevelupMovesData = await this.getLevelupMoves(species1, dex);
-      const pokemon1Moves = pokemon1LevelupMovesData
-        .filter(m => pokemon1MoveIds.includes(m.moveId))
-        .map(m => m.move);
-      const pokemon2LevelupMovesData = await this.getLevelupMoves(species2, dex);
-      const pokemon2Moves = pokemon2LevelupMovesData
-        .filter(m => pokemon2MoveIds.includes(m.moveId))
-        .map(m => m.move);
-
-      // Get random abilities
-      const pokemon1Ability = this.getRandomAbility(species1);
-      const pokemon2Ability = this.getRandomAbility(species2);
-
-      // Get random items
-      const pokemon1Item = this.getRandomItem();
-      const pokemon2Item = this.getRandomItem();
-
-      // Get levelup moves
-      const pokemon1LevelupMoves = await this.getLevelupMoves(species1, dex);
-      const pokemon2LevelupMoves = await this.getLevelupMoves(species2, dex);
-
-      // Base stats
-      const pokemon1BaseStats = {
-        hp: species1.baseStats.hp,
-        attack: species1.baseStats.atk,
-        defense: species1.baseStats.def,
-        specialAttack: species1.baseStats.spa,
-        specialDefense: species1.baseStats.spd,
-        speed: species1.baseStats.spe
-      };
-
-      const pokemon2BaseStats = {
-        hp: species2.baseStats.hp,
-        attack: species2.baseStats.atk,
-        defense: species2.baseStats.def,
-        specialAttack: species2.baseStats.spa,
-        specialDefense: species2.baseStats.spd,
-        speed: species2.baseStats.spe
-      };
-
-      // EVs and IVs (currently fixed values)
-      const evs = { hp: 0, attack: 0, defense: 0, specialAttack: 0, specialDefense: 0, speed: 0 };
-      const ivs = { hp: 31, attack: 31, defense: 31, specialAttack: 31, specialDefense: 31, speed: 31 };
 
       const result: ShowdownBattleResult = {
         battleId: crypto.randomUUID(),
-        pokemon1: {
-          id: config.pokemon1Id,
-          name: species1.name,
-          level: pokemon1Level,
-          wins: pokemon1Wins,
-          types: pokemon1Types,
-          sprites: pokemon1Sprites || { front: '', back: '', shiny: '' },
-          moves: pokemon1Moves.map((move: string) => this.formatMoveName(move)),
-          stats: pokemon1Stats,
-          baseStats: pokemon1BaseStats,
-          evs: evs,
-          ivs: ivs,
-          ability: pokemon1Ability,
-          item: pokemon1Item,
-          levelupMoves: pokemon1LevelupMoves
-        },
-        pokemon2: {
-          id: config.pokemon2Id,
-          name: species2.name,
-          level: pokemon2Level,
-          wins: pokemon2Wins,
-          types: pokemon2Types,
-          sprites: pokemon2Sprites || { front: '', back: '', shiny: '' },
-          moves: pokemon2Moves.map((move: string) => this.formatMoveName(move)),
-          stats: pokemon2Stats,
-          baseStats: pokemon2BaseStats,
-          evs: evs,
-          ivs: ivs,
-          ability: pokemon2Ability,
-          item: pokemon2Item,
-          levelupMoves: pokemon2LevelupMoves
-        },
+        pokemon1Wins: pokemon1Wins,
+        pokemon2Wins: pokemon2Wins,
         totalBattles: this.NUM_BATTLES,
-        winRate,
-        executionTime
+        executionTime: executionTime,
       };
 
-      // Cache the result
-      await cacheService.set(`showdown:${cacheKey}`, result, 3600);
+      // Cache the result disabled
+      // await cacheService.set(`showdown:${cacheKey}`, result, 3600);
 
-      logger.info(`Simulation complete: ${species1.name} won ${pokemon1Wins}, ${species2.name} won ${pokemon2Wins}`, { skipFormat: true });
+      logger.info(`Simulation complete: ${config.pokemon1.name} won ${pokemon1Wins}, ${config.pokemon2.name} won ${pokemon2Wins}`, {skipFormat: true});
       return result;
     } catch (error) {
       logger.error('Failed to simulate battle with Pokemon Showdown:', {
@@ -367,60 +129,36 @@ class PokemonShowdownService {
     }
   }
 
-  async simulateSingleBattle(config: ShowdownBattleConfig): Promise<SingleBattleResult> {
+  async simulateSingleBattleTester(config: ShowdownBattleConfig): Promise<SingleBattleResult> {
     const startTime = Date.now();
     
     logger.info('🎮 Battle Tester: Starting single battle simulation', {
-      pokemon1Id: config.pokemon1Id,
-      pokemon2Id: config.pokemon2Id,
-      generation: config.options?.generation || 9,
-      aiDifficulty: config.options?.aiDifficulty || 'random',
-      pokemon1Instance: config.options?.pokemon1Instance || null,
-      pokemon2Instance: config.options?.pokemon2Instance || null
+      generation: config.generation || 9,
+      pokemon1Instance: config.pokemon1 || null,
+      pokemon2Instance: config.pokemon2 || null
     });
     
     try {
-      const generation = config.options?.generation || 9;
-      const dex = Dex.forGen(generation);
-      
-      // Get Pokemon species
-      const species1 = this.getSpeciesById(dex, config.pokemon1Id);
-      const species2 = this.getSpeciesById(dex, config.pokemon2Id);
-
-      if (!species1 || !species2) {
-        logger.error('Pokemon not found', {
-          pokemon1Id: config.pokemon1Id,
-          pokemon2Id: config.pokemon2Id,
-          species1Found: !!species1,
-          species2Found: !!species2
-        });
-        throw new ApiError(400, `Invalid Pokemon IDs provided: ${config.pokemon1Id}, ${config.pokemon2Id}`);
-      }
-
-      logger.info(`🎮 Battle Tester: ${species1.name} (Lv.${config.options?.pokemon1Level || 50}) vs ${species2.name} (Lv.${config.options?.pokemon2Level || 50})`);
-
-      const pokemon1Level = config.options?.pokemon1Level || 50;
-      const pokemon2Level = config.options?.pokemon2Level || 50;
-
-      // Create battle stream
       let stream: BattleStreams.BattleStream | null = new BattleStreams.BattleStream();
       const outputs: string[] = [];
-      
+
+      const pokemon1 = config.pokemon1;
+      const pokemon2 = config.pokemon2;
       // Create teams with moves from Pokemon Showdown
       logger.info('🎮 Battle Tester: Creating teams...');
-      const p1team = await this.createTeam(species1, pokemon1Level, generation);
-      const p2team = await this.createTeam(species2, pokemon2Level, generation);
+      const p1team = await this.createTeam(pokemon1, config.generation);
+      const p2team = await this.createTeam(pokemon2, config.generation);
 
       // Start battle
       logger.info('🎮 Battle Tester: Initializing battle stream...');
-      await stream.write(`>start {"formatid":"gen${generation}singles"}`);
-      await stream.write(`>player p1 {"name":"Player 1","team":"${p1team}"}`);
-      await stream.write(`>player p2 {"name":"Player 2","team":"${p2team}"}`);
+      await stream.write(`>start {"formatid":"gen${config.generation}singles"}`);
+      await stream.write(`>player p1 ${JSON.stringify({ name: 'Player 1', team: p1team })}`);
+      await stream.write(`>player p2 ${JSON.stringify({ name: 'Player 2', team: p2team })}`);
       
       // Log both Pokemon levels
-      logger.info(`🎮 Battle Tester: ${species1.name} Level ${pokemon1Level} vs ${species2.name} Level ${pokemon2Level}`);
+      logger.info(`🎮 Battle Tester: ${pokemon1.name} Level ${pokemon1.level} vs ${pokemon2.name} Level ${pokemon2.level}`);
       
-      let winner = species1.name;
+      let winner = config.pokemon1.name;
       let battleEnded = false;
       let turnCount = 0;
       const maxTurns = 50;
@@ -484,7 +222,7 @@ class PokemonShowdownService {
         // Check for winner
         if (chunk.includes('|win|')) {
           battleEnded = true;
-          winner = chunk.includes('Player 1') ? species1.name : species2.name;
+          winner = chunk.includes('Player 1') ? pokemon1.name : pokemon2.name;
           logger.info(`🎮 Battle Tester: Battle ended! Winner: ${winner}`);
           break;
         }
@@ -579,7 +317,7 @@ class PokemonShowdownService {
         
         if (p1Request && p1Request.active) {
           const choice = this.makeRandomChoice(p1Request);
-          logger.info(`🎮 Battle Tester: ${species1.name} choosing action: ${choice}`);
+          logger.info(`🎮 Battle Tester: ${pokemon1.name} choosing action: ${choice}`);
           await stream.write(`>p1 ${choice}`);
           p1Request = null;
           madeMove = true;
@@ -587,7 +325,7 @@ class PokemonShowdownService {
         
         if (p2Request && p2Request.active) {
           const choice = this.makeRandomChoice(p2Request);
-          logger.info(`🎮 Battle Tester: ${species2.name} choosing action: ${choice}`);
+          logger.info(`🎮 Battle Tester: ${pokemon2.name} choosing action: ${choice}`);
           await stream.write(`>p2 ${choice}`);
           p2Request = null;
           madeMove = true;
@@ -608,7 +346,7 @@ class PokemonShowdownService {
       if (!battleEnded) {
         logger.warn('🎮 Battle Tester: Battle timed out after 50 turns, forcing winner');
         await stream.write('>forcewin p1');
-        winner = species1.name;
+        winner = pokemon1.name;
       }
 
       // Parse battle log
@@ -623,90 +361,15 @@ class PokemonShowdownService {
       
       // If no turns were parsed, create a simple turn for demo purposes
       if (turns.length === 0) {
-        logger.warn('🎮 Battle Tester: No turns parsed from battle, creating demo turns');
-        
-        // Create a simple battle turn for demonstration
-        const pokemon1Stats = this.calculateStats(species1, pokemon1Level);
-        const pokemon2Stats = this.calculateStats(species2, pokemon2Level);
-        
-        turns.push({
-          turn: 1,
-          attacker: species1.name,
-          defender: species2.name,
-          move: 'Tackle',
-          damage: Math.floor(pokemon2Stats.hp * 0.3),
-          remainingHP: Math.floor(pokemon2Stats.hp * 0.7),
-          critical: false,
-          effectiveness: 'normal'
-        });
-        
-        turns.push({
-          turn: 1,
-          attacker: species2.name,
-          defender: species1.name,
-          move: 'Tackle',
-          damage: Math.floor(pokemon1Stats.hp * 0.3),
-          remainingHP: Math.floor(pokemon1Stats.hp * 0.7),
-          critical: false,
-          effectiveness: 'normal'
-        });
-        
-        // Simulate a few more turns
-        let hp1 = pokemon1Stats.hp * 0.7;
-        let hp2 = pokemon2Stats.hp * 0.7;
-        let turn = 2;
-        
-        while (hp1 > 0 && hp2 > 0 && turn <= 5) {
-          // Pokemon 1 attacks
-          const damage1 = Math.floor(pokemon2Stats.hp * 0.2);
-          hp2 -= damage1;
-          turns.push({
-            turn,
-            attacker: species1.name,
-            defender: species2.name,
-            move: 'Tackle',
-            damage: damage1,
-            remainingHP: Math.max(0, Math.floor(hp2)),
-            critical: false,
-            effectiveness: 'normal'
-          });
-          
-          if (hp2 <= 0) break;
-          
-          // Pokemon 2 attacks
-          const damage2 = Math.floor(pokemon1Stats.hp * 0.2);
-          hp1 -= damage2;
-          turns.push({
-            turn,
-            attacker: species2.name,
-            defender: species1.name,
-            move: 'Tackle',
-            damage: damage2,
-            remainingHP: Math.max(0, Math.floor(hp1)),
-            critical: false,
-            effectiveness: 'normal'
-          });
-          
-          turn++;
-        }
-        
-        // Set winner based on remaining HP
-        if (hp1 <= 0) {
-          winner = species2.name;
-        } else if (hp2 <= 0) {
-          winner = species1.name;
-        }
+        logger.info(`🎮 Battle Tester: Battle simulation had zero turn!!!`);
+
       }
-      
+
       // Extract final HP from the last turn or set to 0 for the loser
-      const finalHP1 = winner === species1.name ? turns[turns.length - 1]?.remainingHP || 0 : 0;
-      const finalHP2 = winner === species2.name ? turns[turns.length - 1]?.remainingHP || 0 : 0;
+      const finalHP1 = winner === pokemon1.name ? turns[turns.length - 1]?.remainingHP || 0 : 0;
+      const finalHP2 = winner === pokemon2.name ? turns[turns.length - 1]?.remainingHP || 0 : 0;
       
       const executionTime = Date.now() - startTime;
-
-      // Calculate stats for display
-      const pokemon1Stats = this.calculateStats(species1, pokemon1Level);
-      const pokemon2Stats = this.calculateStats(species2, pokemon2Level);
 
       // Important: Clean up the stream properly
       try {
@@ -722,21 +385,19 @@ class PokemonShowdownService {
       logger.info(`🎮 Battle Tester: Returning battle result. Winner: ${winner}, Total turns: ${turns.length}, Execution time: ${executionTime}ms`);
 
       return {
-        winner: winner || species1.name,
+        winner: winner || pokemon1.name,
         turns: turns,
         totalTurns: turns.length,
         finalHP1,
         finalHP2,
         executionTime,
         pokemon1: {
-          name: species1.name,
-          level: pokemon1Level,
-          stats: pokemon1Stats
+          name: pokemon1.name,
+          level: pokemon1.level,
         },
         pokemon2: {
-          name: species2.name,
-          level: pokemon2Level,
-          stats: pokemon2Stats
+          name: pokemon2.name,
+          level: pokemon2.level,
         }
       };
     } catch (error) {
@@ -750,218 +411,146 @@ class PokemonShowdownService {
   }
 
   private async runSingleShowdownBattle(
-    species1: Species,
-    species2: Species,
-    level1: number,
-    level2: number,
-    generation: number
+      pokemon1: PokemonInstanceData,
+      pokemon2: PokemonInstanceData,
+      generation: number
   ): Promise<1 | 2> {
-    let stream: BattleStreams.BattleStream | null = null;
-    let pendingRead: Promise<string | null | undefined> | null = null;
-    
-    try {
-      stream = new BattleStreams.BattleStream();
-      
-      // Create simple teams
-      const p1team = await this.createTeam(species1, level1, generation);
-      const p2team = await this.createTeam(species2, level2, generation);
-      
-      // Start battle
-      await stream.write(`>start {"formatid":"gen${generation}singles","seed":[${Math.floor(Math.random() * 65536)},${Math.floor(Math.random() * 65536)},${Math.floor(Math.random() * 65536)},${Math.floor(Math.random() * 65536)}]}`);
-      await stream.write(`>player p1 {"name":"Player 1","team":"${p1team}"}`);
-      await stream.write(`>player p2 {"name":"Player 2","team":"${p2team}"}`);
-      
-      let winner: 1 | 2 = 1;
-      let battleEnded = false;
-      let turnCount = 0;
-      const maxTurns = 50;
-      
-      // Process battle quickly
-      while (!battleEnded && turnCount < maxTurns) {
-        let chunk: string | null | undefined = null;
-        try {
-          // Create a cancellable timeout
-          let timeoutId: NodeJS.Timeout | null = null;
-          const timeoutPromise = new Promise<string | null>((resolve) => {
-            timeoutId = setTimeout(() => resolve(null), 1000);
-          });
-          
-          // Store the pending read promise
-          pendingRead = stream.read();
-          
-          // Race between read and timeout
-          chunk = await Promise.race([
-            pendingRead,
-            timeoutPromise
-          ]);
-          
-          // Clear the timeout if read completed
-          if (timeoutId) clearTimeout(timeoutId);
-          
-          // If we got a timeout, mark pendingRead as handled
-          if (chunk === null) {
-            // The read is still pending, we'll handle it in cleanup
-            break;
-          }
-          
-          // Clear pendingRead since it completed
-          pendingRead = null;
-        } catch (readError) {
-          logger.error('Error reading from stream:', readError);
-          break;
-        }
-        
-        if (!chunk) continue;
-        
-        // Check for winner
-        if (chunk.includes('|win|')) {
-          battleEnded = true;
-          winner = chunk.includes('Player 1') ? 1 : 2;
-          break;
-        }
-        
-        // Handle team preview
-        if (chunk.includes('|teampreview')) {
-          await stream.write('>p1 team 1');
-          await stream.write('>p2 team 1');
-        }
-        
-        // Make random moves for both players
-        if (chunk.includes('|request|')) {
-          const lines = chunk.split('\n');
-          for (const line of lines) {
-            if (line.includes('p1') && line.includes('|request|')) {
-              await stream.write('>p1 move 1');
-            } else if (line.includes('p2') && line.includes('|request|')) {
-              await stream.write('>p2 move 1');
-            }
-          }
-        }
-        
-        if (chunk.includes('|turn|')) {
-          turnCount++;
-        }
+    const stream = new BattleStreams.BattleStream();
+
+    // Create teams
+    const p1team = await this.createTeam(pokemon1, generation);
+    const p2team = await this.createTeam(pokemon2, generation);
+
+// Ensure teams are strings
+    if (typeof p1team !== 'string' || typeof p2team !== 'string') {
+      throw new Error('Team must be a string before sending to BattleStream.');
+    }
+
+    //try {
+    //  Teams.importTeam(p1team);  // Should not throw
+    //  Teams.importTeam(p2team);
+    //} catch (e) {
+    //  logger.error('Team parsing failed:', e);
+    //  throw e;
+   // }
+
+// Log teams for debugging
+    logger.info(`P1 team:\n${p1team}`);
+    logger.info(`P2 team:\n${p2team}`);
+
+// Start the battle
+    await stream.write(`>start ${JSON.stringify({ formatid: `gen${generation}singles` })}`);
+    await stream.write(`>player p1 ${JSON.stringify({ name: 'Player 1', team: p1team })}`);
+    await stream.write(`>player p2 ${JSON.stringify({ name: 'Player 2', team: p2team })}`);
+
+    let winner: 1 | 2 = 1;
+    let turnCount = 0;
+    const maxTurns = 50;
+
+    while (turnCount < maxTurns) {
+      const chunk = await stream.read();
+      if (!chunk) break;
+
+      if (chunk.includes('|win|')) {
+        winner = chunk.includes('Player 1') ? 1 : 2;
+        break;
       }
-      
-      // Force end if battle takes too long
-      if (!battleEnded) {
-        // Determine winner based on base stats as fallback
-        const bst1 = Object.values(species1.baseStats).reduce((a, b) => a + b, 0);
-        const bst2 = Object.values(species2.baseStats).reduce((a, b) => a + b, 0);
-        winner = bst1 >= bst2 ? 1 : 2;
+
+      if (chunk.includes('|teampreview')) {
+        await stream.write('>p1 team 1');
+        await stream.write('>p2 team 1');
       }
-      
-      return winner;
-    } catch (error) {
-      logger.error('Error in runSingleShowdownBattle:', {
-        error: error instanceof Error ? error.message : error,
-        species1: species1.name,
-        species2: species2.name
-      });
-      // Fallback to BST comparison on error
-      const bst1 = Object.values(species1.baseStats).reduce((a, b) => a + b, 0);
-      const bst2 = Object.values(species2.baseStats).reduce((a, b) => a + b, 0);
-      return bst1 >= bst2 ? 1 : 2;
-    } finally {
-      // Clean up stream properly
-      if (stream) {
-        try {
-          // Wait for any pending read to complete or timeout
-          if (pendingRead) {
-            await Promise.race([
-              pendingRead.catch(() => null), // Ignore errors from pending read
-              new Promise(resolve => setTimeout(resolve, 100)) // Give it 100ms max
-            ]);
-          }
-          
-          // Instead of destroying the stream, let it be garbage collected
-          // The BattleStream doesn't properly implement destroy() method
-          // and calling it causes internal state corruption
-          stream = null;
-        } catch (cleanupError) {
-          logger.error('Error during stream cleanup:', cleanupError);
-        }
+
+      if (chunk.includes('|request|')) {
+        // Randomly choose move 1-4
+        const moveIndex1 = Math.floor(Math.random() * pokemon1.moves.length) + 1;
+        const moveIndex2 = Math.floor(Math.random() * pokemon2.moves.length) + 1;
+        await stream.write(`>p1 move ${moveIndex1}`);
+        await stream.write(`>p2 move ${moveIndex2}`);
+      }
+
+      if (chunk.includes('|turn|')) {
+        turnCount++;
       }
     }
-  }
 
-  private async createTeam(species: Species, level: number, generation: number): Promise<string> {
-    const dex = Dex.forGen(generation);
-    
-    // Debug: Check what's available on dex at creation
-    // logger.debug('Dex root keys:', Object.keys(dex).slice(0, 20));
-    
-    // Get moves from level-up learnset only
-    const moves = await this.getMovesFromLearnset(species, level, dex);
-    // logger.debug(`Using moves for ${species.name}:`, moves);
-    
-    // Get random ability and item
-    const ability = this.getRandomAbility(species);
-    const item = this.getRandomItem();
-    
-    // Create a simple set
-    const set = {
-      name: species.name,
-      species: species.name as any,
-      item: item || '',
-      ability: ability,
-      moves: moves,
-      nature: 'Hardy',
-      evs: { hp: 0, atk: 0, def: 0, spa: 0, spd: 0, spe: 0 },
-      ivs: { hp: 31, atk: 31, def: 31, spa: 31, spd: 31, spe: 31 },
-      level: level,
-      gender: ''
-    };
-
-    // Pack into team string using Teams utility
-    const team = Teams.pack([set]);
-    return team;
-  }
-
-
-  private async getMovesFromLearnset(species: Species, level: number, dex: any): Promise<string[]> {
-    try {
-      // Get all level-up moves for this Pokemon
-      const levelupMoves = await this.getLevelupMoves(species, dex);
-      
-      // Filter moves that the Pokemon can know at the given level
-      const availableMoves = levelupMoves
-        .filter(moveData => moveData.level <= level);
-      
-      if (availableMoves.length === 0) {
-        logger.error(`No moves found in learnset for ${species.name} at level ${level}`);
-        throw new ApiError(500, `Pokemon ${species.name} has no valid moves at level ${level}. This is a critical data error.`);
-      }
-      
-      // If we have more than 4 moves, select the 4 most recent ones (highest level)
-      if (availableMoves.length > 4) {
-        // Sort by level (descending) and take the last 4 learned
-        const sortedMoves = availableMoves
-          .sort((a, b) => b.level - a.level)
-          .slice(0, 4);
-        
-        // logger.debug(`Selected 4 most recent moves for ${species.name} at level ${level}:`, sortedMoves.map(m => m.move));
-        // Return move IDs (not formatted names) for battle simulation
-        return sortedMoves.map(moveData => moveData.moveId);
-      }
-      
-      // logger.debug(`Using all ${availableMoves.length} available moves for ${species.name} at level ${level}:`, availableMoves.map(m => m.move));
-      // Return move IDs (not formatted names) for battle simulation
-      return availableMoves.map(moveData => moveData.moveId);
-    } catch (error) {
-      logger.error('Critical error getting moves from learnset:', {
-        species: species.name,
-        level: level,
-        error: error instanceof Error ? error.message : error
-      });
-      
-      // This is a critical error - we cannot proceed without valid moves
-      if (error instanceof ApiError) {
-        throw error;
-      }
-      throw new ApiError(500, `Failed to get valid moves for ${species.name}. Pokemon must have moves from their learnset.`);
+    if (turnCount >= maxTurns) {
+      // Decide winner based on base stat totals
+      const bst1 = Object.values(pokemon1.baseStats).reduce((a, b) => a + b, 0);
+      const bst2 = Object.values(pokemon2.baseStats).reduce((a, b) => a + b, 0);
+      winner = bst1 >= bst2 ? 1 : 2;
     }
+
+    return winner;
   }
+
+  // Fish Editing Function
+  private async createTeam(pokemon: PokemonInstanceData, generation: number): Promise<string> {
+    const lines: string[] = [];
+
+    // Name and item (items exist from Gen 2 onwards)
+    const nameLine = (generation >= 2 && pokemon.item)
+        ? `${pokemon.name} @ ${pokemon.item}`
+        : `${pokemon.name}`;
+    lines.push(nameLine);
+
+    // Ability (Gen 3+)
+    if (generation >= 3 && pokemon.ability) {
+      lines.push(`Ability: ${pokemon.ability}`);
+    }
+
+    // Level (always valid)
+    if (pokemon.level && pokemon.level !== 100) {
+      lines.push(`Level: ${pokemon.level}`);
+    }
+
+    // Shiny (Gen 2+)
+    if (generation >= 2 && pokemon.sprites.shiny) {
+      lines.push(`Shiny: Yes`);
+    }
+
+    // EVs (Gen 3+)
+    if (generation >= 3) {
+      const evParts: string[] = [];
+      for (const [stat, value] of Object.entries(pokemon.evs)) {
+        if (value > 0) {
+          const statName = statToShowdownName(stat);
+          evParts.push(`${value} ${statName}`);
+        }
+      }
+      if (evParts.length > 0) {
+        lines.push(`EVs: ${evParts.join(" / ")}`);
+      }
+    }
+
+    // Nature (Gen 3+)
+    if (generation >= 3 && pokemon.nature) {
+      lines.push(`${pokemon.nature} Nature`);
+    }
+
+    // IVs (Gen 3+)
+    if (generation >= 3) {
+      const ivParts: string[] = [];
+      for (const [stat, value] of Object.entries(pokemon.ivs)) {
+        if (value < 31) {
+          const statName = statToShowdownName(stat);
+          ivParts.push(`${value} ${statName}`);
+        }
+      }
+      if (ivParts.length > 0) {
+        lines.push(`IVs: ${ivParts.join(" / ")}`);
+      }
+    }
+
+    // Moves - keep the display names as they are
+    pokemon.moves.forEach(move => {
+      lines.push(`- ${move}`);
+    });
+
+    return lines.join("\n");
+  }
+
+
 
 
   private makeRandomChoice(request: any): string {
@@ -1112,6 +701,50 @@ class PokemonShowdownService {
     };
   }
 
+  private async getMovesFromLearnset(species: Species, level: number, dex: any): Promise<string[]> {
+    try {
+      // Get all level-up moves for this Pokemon
+      const levelupMoves = await this.getLevelupMoves(species, dex);
+
+      // Filter moves that the Pokemon can know at the given level
+      const availableMoves = levelupMoves
+          .filter(moveData => moveData.level <= level);
+
+      if (availableMoves.length === 0) {
+        logger.error(`No moves found in learnset for ${species.name} at level ${level}`);
+        throw new ApiError(500, `Pokemon ${species.name} has no valid moves at level ${level}. This is a critical data error.`);
+      }
+
+      // If we have more than 4 moves, select the 4 most recent ones (highest level)
+      if (availableMoves.length > 4) {
+        // Sort by level (descending) and take the last 4 learned
+        const sortedMoves = availableMoves
+            .sort((a, b) => b.level - a.level)
+            .slice(0, 4);
+
+        // logger.debug(`Selected 4 most recent moves for ${species.name} at level ${level}:`, sortedMoves.map(m => m.move));
+        // Return move IDs (not formatted names) for battle simulation
+        return sortedMoves.map(moveData => moveData.moveId);
+      }
+
+      // logger.debug(`Using all ${availableMoves.length} available moves for ${species.name} at level ${level}:`, availableMoves.map(m => m.move));
+      // Return move IDs (not formatted names) for battle simulation
+      return availableMoves.map(moveData => moveData.moveId);
+    } catch (error) {
+      logger.error('Critical error getting moves from learnset:', {
+        species: species.name,
+        level: level,
+        error: error instanceof Error ? error.message : error
+      });
+
+      // This is a critical error - we cannot proceed without valid moves
+      if (error instanceof ApiError) {
+        throw error;
+      }
+      throw new ApiError(500, `Failed to get valid moves for ${species.name}. Pokemon must have moves from their learnset.`);
+    }
+  }
+
   private async getLevelupMoves(species: Species, dex: any): Promise<Array<{ level: number; move: string; moveId: string }>> {
     const levelupMoves: Array<{ level: number; move: string; moveId: string }> = [];
     const generation = dex.gen || 9;
@@ -1260,7 +893,7 @@ class PokemonShowdownService {
     }
   }
 
-  private async fetchPokemonSprites(id1: number, id2: number) {
+ /* private async fetchPokemonSprites(id1: number, id2: number) {
     try {
       const [pokemon1Sprites, pokemon2Sprites] = await Promise.all([
         pokemonService.getPokemonSprites(id1),
@@ -1274,7 +907,7 @@ class PokemonShowdownService {
         { front: '', back: '', shiny: '' }
       ];
     }
-  }
+  }*/
 
   private formatMoveName(move: string): string {
     // Convert from camelCase or lowercase to Title Case
@@ -1331,22 +964,6 @@ class PokemonShowdownService {
     
     // Return a random item
     return itemPool[Math.floor(Math.random() * itemPool.length)];
-  }
-
-  private generateBattleKey(config: ShowdownBattleConfig): string {
-    const keyData = {
-      pokemon1Id: config.pokemon1Id,
-      pokemon2Id: config.pokemon2Id,
-      generation: config.options?.generation || 9,
-      pokemon1Level: config.options?.pokemon1Level || 50,
-      pokemon2Level: config.options?.pokemon2Level || 50,
-      version: 'v6-learnset-moveids' // Add version to invalidate old cache
-    };
-
-    return crypto
-      .createHash('sha256')
-      .update(JSON.stringify(keyData))
-      .digest('hex');
   }
 
   async createPokemonInstance(pokemonId: number, level: number = 50, generation: number = 9, itemMode: 'random' | 'none' = 'random'): Promise<PokemonInstanceData> {
@@ -1435,269 +1052,6 @@ class PokemonShowdownService {
       });
       throw error instanceof ApiError ? error : new ApiError(500, 'Failed to create Pokemon instance');
     }
-  }
-
-  async simulateBattleWithInstances(config: {
-    pokemon1Instance: PokemonInstanceData;
-    pokemon2Instance: PokemonInstanceData;
-    generation: number;
-  }): Promise<ShowdownBattleResult> {
-    const startTime = Date.now();
-    const battleId = crypto.randomUUID();
-    
-    logger.info(`Starting battle simulation with instances: ${config.pokemon1Instance.name} vs ${config.pokemon2Instance.name}`);
-    
-    try {
-      const dex = Dex.forGen(config.generation);
-      
-      let pokemon1Wins = 0;
-      let pokemon2Wins = 0;
-      
-      // Run battles using the instance data
-      for (let i = 0; i < this.NUM_BATTLES; i++) {
-        const winner = await this.runSingleShowdownBattleWithInstances(
-          config.pokemon1Instance,
-          config.pokemon2Instance,
-          config.generation,
-          dex
-        );
-        
-        if (winner === 1) {
-          pokemon1Wins++;
-          logger.debug(`${config.pokemon1Instance.name} won battle ${i + 1}`);
-        } else {
-          pokemon2Wins++;
-          logger.debug(`${config.pokemon2Instance.name} won battle ${i + 1}`);
-        }
-      }
-      
-      const winRate = (pokemon1Wins / this.NUM_BATTLES) * 100;
-      const executionTime = Date.now() - startTime;
-      
-      const result: ShowdownBattleResult = {
-        battleId,
-        pokemon1: {
-          id: config.pokemon1Instance.id,
-          name: config.pokemon1Instance.name,
-          level: config.pokemon1Instance.level,
-          wins: pokemon1Wins,
-          types: config.pokemon1Instance.types,
-          sprites: config.pokemon1Instance.sprites,
-          moves: config.pokemon1Instance.moves,
-          stats: config.pokemon1Instance.stats,
-          baseStats: config.pokemon1Instance.baseStats,
-          evs: config.pokemon1Instance.evs,
-          ivs: config.pokemon1Instance.ivs,
-          ability: config.pokemon1Instance.ability,
-          item: config.pokemon1Instance.item,
-          levelupMoves: [] // Not needed for instance-based battles
-        },
-        pokemon2: {
-          id: config.pokemon2Instance.id,
-          name: config.pokemon2Instance.name,
-          level: config.pokemon2Instance.level,
-          wins: pokemon2Wins,
-          types: config.pokemon2Instance.types,
-          sprites: config.pokemon2Instance.sprites,
-          moves: config.pokemon2Instance.moves,
-          stats: config.pokemon2Instance.stats,
-          baseStats: config.pokemon2Instance.baseStats,
-          evs: config.pokemon2Instance.evs,
-          ivs: config.pokemon2Instance.ivs,
-          ability: config.pokemon2Instance.ability,
-          item: config.pokemon2Instance.item,
-          levelupMoves: [] // Not needed for instance-based battles
-        },
-        totalBattles: this.NUM_BATTLES,
-        winRate,
-        executionTime
-      };
-      
-      logger.info(`Battle completed with instances in ${executionTime}ms`, {
-        pokemon1: `${config.pokemon1Instance.name} (${pokemon1Wins} wins)`,
-        pokemon2: `${config.pokemon2Instance.name} (${pokemon2Wins} wins)`,
-        winRate: `${winRate.toFixed(1)}%`
-      });
-      
-      return result;
-    } catch (error) {
-      logger.error('Failed to simulate battle with instances:', error);
-      throw error instanceof ApiError ? error : new ApiError(500, 'Failed to simulate battle with instances');
-    }
-  }
-
-  private async runSingleShowdownBattleWithInstances(
-    pokemon1Instance: PokemonInstanceData,
-    pokemon2Instance: PokemonInstanceData,
-    generation: number,
-    dex: any
-  ): Promise<1 | 2> {
-    let stream: BattleStreams.BattleStream | null = null;
-    let pendingRead: Promise<string | null | undefined> | null = null;
-    
-    try {
-      stream = new BattleStreams.BattleStream();
-      
-      // Create teams from instance data
-      const p1team = await this.createTeamFromInstance(pokemon1Instance, generation, dex);
-      const p2team = await this.createTeamFromInstance(pokemon2Instance, generation, dex);
-      
-      // Start battle
-      await stream.write(`>start {"formatid":"gen${generation}singles","seed":[${Math.floor(Math.random() * 65536)},${Math.floor(Math.random() * 65536)},${Math.floor(Math.random() * 65536)},${Math.floor(Math.random() * 65536)}]}`);
-      await stream.write(`>player p1 {"name":"Player 1","team":"${p1team}"}`);
-      await stream.write(`>player p2 {"name":"Player 2","team":"${p2team}"}`);
-      
-      let winner: 1 | 2 = 1;
-      let battleEnded = false;
-      let turnCount = 0;
-      const maxTurns = 50;
-      
-      // Process battle quickly
-      while (!battleEnded && turnCount < maxTurns) {
-        let chunk: string | null | undefined = null;
-        try {
-          // Create a cancellable timeout
-          let timeoutId: NodeJS.Timeout | null = null;
-          const timeoutPromise = new Promise<string | null>((resolve) => {
-            timeoutId = setTimeout(() => resolve(null), 1000);
-          });
-          
-          // Store the pending read promise
-          pendingRead = stream.read();
-          
-          // Race between read and timeout
-          chunk = await Promise.race([
-            pendingRead,
-            timeoutPromise
-          ]);
-          
-          // Clear the timeout if read completed
-          if (timeoutId) clearTimeout(timeoutId);
-          
-          // If we got a timeout, mark pendingRead as handled
-          if (chunk === null) {
-            pendingRead = null;
-            continue;
-          }
-        } catch (readError) {
-          logger.error('Error reading from stream:', readError);
-          break;
-        }
-        
-        if (!chunk) continue;
-        
-        const lines = chunk.split('\n');
-        
-        for (const line of lines) {
-          if (line.includes('|turn|')) {
-            turnCount++;
-          }
-          
-          if (line.includes('|win|')) {
-            const winnerMatch = line.match(/\|win\|(.+)/);
-            if (winnerMatch) {
-              winner = winnerMatch[1].includes('Player 1') ? 1 : 2;
-              battleEnded = true;
-              break;
-            }
-          }
-          
-          if (line.includes('|tie')) {
-            winner = Math.random() < 0.5 ? 1 : 2;
-            battleEnded = true;
-            break;
-          }
-          
-          if (line.startsWith('|request|') || line.startsWith('>')) {
-            continue;
-          }
-        }
-        
-        if (!battleEnded && chunk.includes('|request|')) {
-          await stream.write(`>p1 default`);
-          await stream.write(`>p2 default`);
-        }
-      }
-      
-      if (!battleEnded) {
-        // Fallback to stats comparison if battle doesn't end
-        const total1 = Object.values(pokemon1Instance.stats).reduce((a, b) => a + b, 0);
-        const total2 = Object.values(pokemon2Instance.stats).reduce((a, b) => a + b, 0);
-        winner = total1 >= total2 ? 1 : 2;
-      }
-      
-      return winner;
-    } catch (error) {
-      logger.error('Error in runSingleShowdownBattleWithInstances:', {
-        error: error instanceof Error ? error.message : error,
-        pokemon1: pokemon1Instance.name,
-        pokemon2: pokemon2Instance.name
-      });
-      // Fallback to stats comparison on error
-      const total1 = Object.values(pokemon1Instance.stats).reduce((a, b) => a + b, 0);
-      const total2 = Object.values(pokemon2Instance.stats).reduce((a, b) => a + b, 0);
-      return total1 >= total2 ? 1 : 2;
-    } finally {
-      // Clean up stream properly
-      if (stream) {
-        try {
-          // Wait for any pending read to complete or timeout
-          if (pendingRead) {
-            await Promise.race([
-              pendingRead.catch(() => null), // Ignore errors from pending read
-              new Promise(resolve => setTimeout(resolve, 100)) // Give it 100ms max
-            ]);
-          }
-          
-          // Instead of destroying the stream, let it be garbage collected
-          // The BattleStream doesn't properly implement destroy() method
-          // and calling it causes internal state corruption
-          stream = null;
-        } catch (cleanupError) {
-          logger.error('Error during stream cleanup:', cleanupError);
-        }
-      }
-    }
-  }
-
-  private async createTeamFromInstance(instance: PokemonInstanceData, generation: number, dex: any): Promise<string> {
-    // Use the moves from the instance data (they're already move IDs)
-    const moves = instance.moves.slice(0, 4).map(move => {
-      // Convert move names back to IDs if needed
-      const moveId = move.toLowerCase().replace(/\s+/g, '');
-      return moveId;
-    });
-    
-    // Create a set from the instance data
-    const set = {
-      name: instance.name,
-      species: instance.species,
-      item: instance.item || '',
-      ability: instance.ability || 'No Ability',
-      level: instance.level,
-      moves: moves,
-      nature: instance.nature || 'Hardy',
-      evs: {
-        hp: instance.evs.hp,
-        atk: instance.evs.attack,
-        def: instance.evs.defense,
-        spa: instance.evs.specialAttack,
-        spd: instance.evs.specialDefense,
-        spe: instance.evs.speed
-      },
-      ivs: {
-        hp: instance.ivs.hp,
-        atk: instance.ivs.attack,
-        def: instance.ivs.defense,
-        spa: instance.ivs.specialAttack,
-        spd: instance.ivs.specialDefense,
-        spe: instance.ivs.speed
-      },
-      gender: '' // Required by PokemonSet type
-    };
-    
-    const packedTeam = Teams.pack([set]);
-    return packedTeam;
   }
 }
 

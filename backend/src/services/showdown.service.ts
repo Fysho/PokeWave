@@ -3,92 +3,43 @@
 
 import { pokemonShowdownService } from './pokemon-showdown.service';
 import { PokemonInstanceData } from '../types/pokemon-instance.types';
+import {pokemonInstanceStore} from "./pokemon-instance-store.service";
 
 export interface ShowdownBattleConfig {
-  pokemon1Id: number;
-  pokemon2Id: number;
-  options?: {
-    generation?: number;
-    pokemon1Level?: number;
-    pokemon2Level?: number;
-    withItems?: boolean;
-    movesetType?: 'random' | 'competitive';
-    aiDifficulty?: 'random' | 'elite';
-    pokemon1Instance?: any;
-    pokemon2Instance?: any;
-  };
+  pokemon1: PokemonInstanceData;
+  pokemon2: PokemonInstanceData;
+  generation: number;
 }
 
 export interface ShowdownBattleResult {
   battleId: string;
-  pokemon1: {
-    id: number;
-    name: string;
-    level: number;
-    wins: number;
-    types: string[];
-    sprites: {
-      front: string;
-      back: string;
-      shiny: string;
-    };
-    moves: string[];
-    stats: {
-      hp: number;
-      attack: number;
-      defense: number;
-      specialAttack: number;
-      specialDefense: number;
-      speed: number;
-    };
-    ability?: string;
-    item?: string;
-  };
-  pokemon2: {
-    id: number;
-    name: string;
-    level: number;
-    wins: number;
-    types: string[];
-    sprites: {
-      front: string;
-      back: string;
-      shiny: string;
-    };
-    moves: string[];
-    stats: {
-      hp: number;
-      attack: number;
-      defense: number;
-      specialAttack: number;
-      specialDefense: number;
-      speed: number;
-    };
-    ability?: string;
-    item?: string;
-  };
+  pokemon1Wins: number;
+  pokemon2Wins: number;
   totalBattles: number;
-  winRate: number;
   executionTime: number;
 }
 
 class ShowdownService {
-  // All battle simulation is delegated to Pokemon Showdown
-  async simulateBattle(config: ShowdownBattleConfig): Promise<ShowdownBattleResult> {
-    return pokemonShowdownService.simulateBattle(config);
+  //private storedPokemon1: PokemonInstanceData | null = null;
+  //private storedPokemon2: PokemonInstanceData | null = null;
+  private storedGeneration: number = 1;
+
+  async simulateBattle(): Promise<ShowdownBattleResult> {
+    if (!pokemonInstanceStore.pokemonInstance1 || !pokemonInstanceStore.pokemonInstance2) {
+      throw new Error('No Pokemon stored for battle. Call storeInstances on pokemonInstanceStore first.');
+    }
+    
+    return pokemonShowdownService.simulateMultipleBattles({
+      pokemon1: pokemonInstanceStore.pokemonInstance1,
+      pokemon2: pokemonInstanceStore.pokemonInstance2,
+      generation: this.storedGeneration
+    });
   }
 
   async simulateSingleBattle(config: ShowdownBattleConfig): Promise<any> {
-    return pokemonShowdownService.simulateSingleBattle(config);
+    return pokemonShowdownService.simulateSingleBattleTester(config);
   }
 
-  async simulateBattleWithInstances(config: {
-    pokemon1Instance: PokemonInstanceData;
-    pokemon2Instance: PokemonInstanceData;
-    generation: number;
-  }): Promise<ShowdownBattleResult> {
-    return pokemonShowdownService.simulateBattleWithInstances(config);
-  }
 }
 
 export const showdownService = new ShowdownService();

@@ -136,8 +136,6 @@ export interface GetRandomPokemonWithInstancesResponse {
   pokemon1: PokemonInstanceData;
   pokemon2: PokemonInstanceData;
   generation: number;
-  pokemon1InstanceId?: string;
-  pokemon2InstanceId?: string;
 }
 
 export interface RandomPokemonSettings {

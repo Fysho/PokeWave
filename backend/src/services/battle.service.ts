@@ -1,4 +1,4 @@
-import { cacheService } from './cache.service';
+/*import { cacheService } from './cache.service';
 import { showdownService } from './showdown.service';
 import logger from '../utils/logger';
 import { ApiError } from '../middleware/error.middleware';
@@ -347,4 +347,4 @@ class BattleService {
   }
 }
 
-export const battleService = new BattleService();
+export const battleService = new BattleService();*/
