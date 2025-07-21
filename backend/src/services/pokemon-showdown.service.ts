@@ -367,6 +367,12 @@ class PokemonShowdownService {
   async simulateSingleBattle(config: ShowdownBattleConfig): Promise<SingleBattleResult> {
     const startTime = Date.now();
     
+    logger.info('🎮 Battle Tester: Starting single battle simulation', {
+      pokemon1Id: config.pokemon1Id,
+      pokemon2Id: config.pokemon2Id,
+      options: config.options
+    });
+    
     try {
       const generation = config.options?.generation || 9;
       const dex = Dex.forGen(generation);
@@ -385,10 +391,7 @@ class PokemonShowdownService {
         throw new ApiError(400, `Invalid Pokemon IDs provided: ${config.pokemon1Id}, ${config.pokemon2Id}`);
       }
 
-      // logger.debug('Pokemon species found', {
-      //   species1: species1.name,
-      //   species2: species2.name
-      // });
+      logger.info(`🎮 Battle Tester: ${species1.name} (Lv.${config.options?.pokemon1Level || 50}) vs ${species2.name} (Lv.${config.options?.pokemon2Level || 50})`);
 
       const pokemon1Level = config.options?.pokemon1Level || 50;
       const pokemon2Level = config.options?.pokemon2Level || 50;
@@ -398,10 +401,12 @@ class PokemonShowdownService {
       const outputs: string[] = [];
       
       // Create teams with moves from Pokemon Showdown
+      logger.info('🎮 Battle Tester: Creating teams...');
       const p1team = await this.createTeam(species1, pokemon1Level, generation);
       const p2team = await this.createTeam(species2, pokemon2Level, generation);
 
       // Start battle
+      logger.info('🎮 Battle Tester: Initializing battle stream...');
       await stream.write(`>start {"formatid":"gen${generation}singles"}`);
       await stream.write(`>player p1 {"name":"Player 1","team":"${p1team}"}`);
       await stream.write(`>player p2 {"name":"Player 2","team":"${p2team}"}`);
@@ -413,12 +418,7 @@ class PokemonShowdownService {
       let p1Request: any = null;
       let p2Request: any = null;
       
-      // logger.debug('Starting single battle simulation', {
-      //   pokemon1: species1.name,
-      //   pokemon2: species2.name,
-      //   level1: pokemon1Level,
-      //   level2: pokemon2Level
-      // });
+      logger.info('🎮 Battle Tester: Battle started! Processing turns...');
       
       // Process battle synchronously for simplicity
       while (!battleEnded && turnCount < maxTurns) {
@@ -433,12 +433,13 @@ class PokemonShowdownService {
         if (chunk.includes('|win|')) {
           battleEnded = true;
           winner = chunk.includes('Player 1') ? species1.name : species2.name;
-          // logger.debug('Battle ended', { winner });
+          logger.info(`🎮 Battle Tester: Battle ended! Winner: ${winner}`);
           break;
         }
         
         // Handle team preview
         if (chunk.includes('|teampreview')) {
+          logger.info('🎮 Battle Tester: Team preview phase');
           await stream.write('>p1 team 1');
           await stream.write('>p2 team 1');
         }
@@ -446,6 +447,29 @@ class PokemonShowdownService {
         // Parse requests and make moves
         const lines = chunk.split('\n');
         for (const line of lines) {
+          // Log important battle events
+          if (line.includes('|move|')) {
+            const moveMatch = line.match(/\|move\|([^|]+)\|([^|]+)\|([^|]+)/);
+            if (moveMatch) {
+              logger.info(`🎮 Battle Tester: ${this.extractPokemonName(moveMatch[1])} used ${moveMatch[2]}!`);
+            }
+          }
+          if (line.includes('|-damage|')) {
+            const damageMatch = line.match(/\|-damage\|([^|]+)\|([^|]+)/);
+            if (damageMatch) {
+              logger.info(`🎮 Battle Tester: ${this.extractPokemonName(damageMatch[1])} took damage! HP: ${damageMatch[2]}`);
+            }
+          }
+          if (line.includes('|-supereffective|')) {
+            logger.info('🎮 Battle Tester: It\'s super effective!');
+          }
+          if (line.includes('|-resisted|')) {
+            logger.info('🎮 Battle Tester: It\'s not very effective...');
+          }
+          if (line.includes('|-crit|')) {
+            logger.info('🎮 Battle Tester: Critical hit!');
+          }
+          
           if (line.includes('sideupdate')) {
             const playerMatch = line.match(/^>(p[12])/);
             if (playerMatch) {
@@ -471,40 +495,44 @@ class PokemonShowdownService {
         // Make moves based on requests
         if (p1Request && p1Request.active) {
           const choice = this.makeRandomChoice(p1Request);
+          logger.info(`🎮 Battle Tester: ${species1.name} choosing action: ${choice}`);
           await stream.write(`>p1 ${choice}`);
           p1Request = null;
         }
         
         if (p2Request && p2Request.active) {
           const choice = this.makeRandomChoice(p2Request);
+          logger.info(`🎮 Battle Tester: ${species2.name} choosing action: ${choice}`);
           await stream.write(`>p2 ${choice}`);
           p2Request = null;
         }
         
         if (chunk.includes('|turn|')) {
           turnCount++;
+          logger.info(`🎮 Battle Tester: === Turn ${turnCount} ===`);
         }
       }
       
       // Force end if battle takes too long
       if (!battleEnded) {
-        logger.warn('Battle timed out, forcing winner');
+        logger.warn('🎮 Battle Tester: Battle timed out after 50 turns, forcing winner');
         await stream.write('>forcewin p1');
         winner = species1.name;
       }
 
       // Parse battle log
+      logger.info('🎮 Battle Tester: Parsing battle log...');
       const turns = this.parseBattleLog(outputs);
       
-      // logger.debug('Battle simulation complete', {
-      //   winner,
-      //   totalOutputs: outputs.length,
-      //   turnsFound: turns.length
-      // });
+      logger.info(`🎮 Battle Tester: Battle simulation complete!`, {
+        winner,
+        totalTurns: turnCount,
+        parsedTurns: turns.length
+      });
       
       // If no turns were parsed, create a simple turn for demo purposes
       if (turns.length === 0) {
-        logger.warn('No turns parsed from battle, creating demo turn');
+        logger.warn('🎮 Battle Tester: No turns parsed from battle, creating demo turns');
         
         // Create a simple battle turn for demonstration
         const pokemon1Stats = this.calculateStats(species1, pokemon1Level);
@@ -599,6 +627,8 @@ class PokemonShowdownService {
       } catch (cleanupError) {
         logger.error('Error during stream cleanup in simulateSingleBattle:', cleanupError);
       }
+
+      logger.info(`🎮 Battle Tester: Returning battle result. Winner: ${winner}, Total turns: ${turns.length}, Execution time: ${executionTime}ms`);
 
       return {
         winner: winner || species1.name,

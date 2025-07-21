@@ -70,19 +70,36 @@ export const simulateSingleBattle = async (
 ): Promise<void> => {
   try {
     const { pokemon1Id, pokemon2Id, options } = req.body;
+    console.log('🎮 Battle Tester: Controller received single battle request:', { 
+      pokemon1Id, 
+      pokemon2Id,
+      options,
+      timestamp: new Date().toISOString()
+    });
 
     if (!pokemon1Id || !pokemon2Id) {
       throw new ApiError(400, 'Both pokemon1Id and pokemon2Id are required');
     }
 
+    console.log('🎮 Battle Tester: Calling battleService.simulateSingleBattle...');
     const result = await battleService.simulateSingleBattle({
       pokemon1Id,
       pokemon2Id,
       options
     });
 
+    console.log('🎮 Battle Tester: Controller sending response with', {
+      winner: result.winner,
+      totalTurns: result.totalTurns,
+      turnsCount: result.turns.length
+    });
     res.json(result);
   } catch (error) {
+    console.error('🎮 Battle Tester: Controller caught error:', {
+      error: error instanceof Error ? error.message : error,
+      stack: error instanceof Error ? error.stack : undefined,
+      timestamp: new Date().toISOString()
+    });
     next(error);
   }
 };

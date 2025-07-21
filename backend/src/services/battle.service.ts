@@ -227,10 +227,22 @@ class BattleService {
 
   async simulateSingleBattle(config: BattleConfig): Promise<any> {
     try {
+      logger.info('🎮 Battle Tester: BattleService received single battle request', {
+        pokemon1Id: config.pokemon1Id,
+        pokemon2Id: config.pokemon2Id,
+        options: config.options
+      });
+      
       const result = await showdownService.simulateSingleBattle(config);
+      
+      logger.info('🎮 Battle Tester: BattleService returning result', {
+        winner: result.winner,
+        totalTurns: result.totalTurns
+      });
+      
       return result;
     } catch (error) {
-      logger.error('Failed to simulate single battle:', {
+      logger.error('🎮 Battle Tester: Failed to simulate single battle:', {
         error: error instanceof Error ? error.message : error,
         stack: error instanceof Error ? error.stack : undefined,
         config
