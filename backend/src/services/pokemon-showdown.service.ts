@@ -18,6 +18,8 @@ export interface ShowdownBattleConfig {
     withItems?: boolean;
     movesetType?: 'random' | 'competitive';
     aiDifficulty?: 'random' | 'elite';
+    pokemon1Instance?: any;
+    pokemon2Instance?: any;
   };
 }
 
@@ -370,12 +372,10 @@ class PokemonShowdownService {
     logger.info('🎮 Battle Tester: Starting single battle simulation', {
       pokemon1Id: config.pokemon1Id,
       pokemon2Id: config.pokemon2Id,
-      options: {
-        generation: config.options?.generation,
-        pokemon1Level: config.options?.pokemon1Level,
-        pokemon2Level: config.options?.pokemon2Level,
-        aiDifficulty: config.options?.aiDifficulty
-      }
+      generation: config.options?.generation || 9,
+      aiDifficulty: config.options?.aiDifficulty || 'random',
+      pokemon1Instance: config.options?.pokemon1Instance || null,
+      pokemon2Instance: config.options?.pokemon2Instance || null
     });
     
     try {

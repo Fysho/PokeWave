@@ -90,20 +90,8 @@ export const simulateSingleBattle = async (
       battleOptions.pokemon2Instance = pokemon2;
       
       console.log('🎮 Battle Tester: Controller received single battle request with full instances:', { 
-        pokemon1: {
-          id: pokemon1Id,
-          level: pokemon1.level,
-          nature: pokemon1.nature,
-          ability: pokemon1.ability?.ability || 'random',
-          heldItem: pokemon1.heldItem?.item || 'none'
-        },
-        pokemon2: {
-          id: pokemon2Id,
-          level: pokemon2.level,
-          nature: pokemon2.nature,
-          ability: pokemon2.ability?.ability || 'random',
-          heldItem: pokemon2.heldItem?.item || 'none'
-        },
+        pokemon1Instance: pokemon1,
+        pokemon2Instance: pokemon2,
         options: {
           generation: battleOptions.generation,
           aiDifficulty: battleOptions.aiDifficulty

@@ -13,6 +13,8 @@ interface BattleConfig {
     withItems?: boolean;
     movesetType?: 'random' | 'competitive';
     aiDifficulty?: 'random' | 'elite';
+    pokemon1Instance?: any;
+    pokemon2Instance?: any;
   };
 }
 
