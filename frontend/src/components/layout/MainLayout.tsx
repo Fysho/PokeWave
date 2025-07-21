@@ -44,7 +44,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({
     setBattleTesterSimulation,
     setIsBattleTesterSimulating
   } = useSettingsStore();
-  const { currentBattle, currentPokemon1, currentPokemon2 } = useGameStore();
+  const { currentBattle } = useGameStore();
 
   const navigationItems = [
     { id: 'battle', label: 'Battle', icon: IconDeviceGamepad2, description: 'Predict Pokemon battles' },
@@ -80,14 +80,12 @@ const MainLayout: React.FC<MainLayoutProps> = ({
             
             setIsBattleTesterSimulating(true);
             try {
-              // Call the backend API for single battle simulation
+              // Call the backend API for single battle simulation with full Pokemon instances
               const result = await ApiService.simulateSingleBattle(
-                currentBattle.pokemon1.id,
-                currentBattle.pokemon2.id,
+                currentBattle.pokemon1,
+                currentBattle.pokemon2,
                 {
                   generation: battleSettings.generation,
-                  pokemon1Level: currentBattle.pokemon1.level,
-                  pokemon2Level: currentBattle.pokemon2.level,
                   withItems: battleSettings.withItems,
                   movesetType: battleSettings.movesetType,
                   aiDifficulty: battleSettings.aiDifficulty

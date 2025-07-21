@@ -198,10 +198,50 @@ export class ApiService {
     }
   }
 
+  // Helper function to build a Pokemon instance for battle
+  private static buildPokemonInstance(pokemonData: BattleResult['pokemon1'], options: {
+    generation?: number;
+    withItems?: boolean;
+    movesetType?: 'random' | 'competitive';
+  }) {
+    return {
+      pokemonId: pokemonData.id,
+      level: pokemonData.level,
+      nature: 'random', // Will be randomly selected by backend
+      gender: 'random', // Will be randomly selected by backend based on species
+      ivs: {
+        hp: 31,
+        attack: 31,
+        defense: 31,
+        specialAttack: 31,
+        specialDefense: 31,
+        speed: 31
+      },
+      evs: {
+        hp: 0,
+        attack: 0,
+        defense: 0,
+        specialAttack: 0,
+        specialDefense: 0,
+        speed: 0
+      },
+      status: 'none' as const,
+      heldItem: {
+        mode: options.withItems ? 'random' as const : 'none' as const
+      },
+      ability: {
+        mode: 'random' as const
+      },
+      moves: {
+        mode: 'auto' as const // Use the last 4 learned moves
+      },
+      happiness: 255,
+      generation: options.generation || 1
+    };
+  }
+
   // Simulate a single battle with turn-by-turn details
-  static async simulateSingleBattle(pokemon1Id: number, pokemon2Id: number, options?: {
-    levelMode?: 'random' | 'set';
-    setLevel?: number;
+  static async simulateSingleBattle(pokemon1Data: BattleResult['pokemon1'], pokemon2Data: BattleResult['pokemon2'], options?: {
     generation?: number;
     withItems?: boolean;
     movesetType?: 'random' | 'competitive';
@@ -234,27 +274,24 @@ export class ApiService {
     };
   }> {
     try {
-      // Generate levels based on settings
-      let pokemon1Level = 50;
-      let pokemon2Level = 50;
+      // Build full Pokemon instances
+      const pokemon1Instance = this.buildPokemonInstance(pokemon1Data, {
+        generation: options?.generation,
+        withItems: options?.withItems,
+        movesetType: options?.movesetType
+      });
       
-      if (options?.levelMode === 'set' && options.setLevel) {
-        pokemon1Level = options.setLevel;
-        pokemon2Level = options.setLevel;
-      } else if (options?.levelMode === 'random') {
-        pokemon1Level = Math.floor(Math.random() * 100) + 1;
-        pokemon2Level = Math.floor(Math.random() * 100) + 1;
-      }
+      const pokemon2Instance = this.buildPokemonInstance(pokemon2Data, {
+        generation: options?.generation,
+        withItems: options?.withItems,
+        movesetType: options?.movesetType
+      });
 
       const response = await api.post('/battle/simulate-single', {
-        pokemon1Id,
-        pokemon2Id,
+        pokemon1: pokemon1Instance,
+        pokemon2: pokemon2Instance,
         options: {
           generation: options?.generation || 1,
-          pokemon1Level,
-          pokemon2Level,
-          withItems: options?.withItems || false,
-          movesetType: options?.movesetType || 'random',
           aiDifficulty: options?.aiDifficulty || 'random'
         }
       }, {

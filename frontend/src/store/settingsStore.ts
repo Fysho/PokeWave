@@ -6,6 +6,8 @@ interface BattleSettings {
   setLevel: number;
   generation: number;
   withItems: boolean;
+  movesetType?: 'random' | 'competitive';
+  aiDifficulty?: 'random' | 'elite';
 }
 
 interface SettingsState {
@@ -40,6 +42,8 @@ export const useSettingsStore = create<SettingsState>()(
         setLevel: 50,
         generation: 1,
         withItems: false,
+        movesetType: 'random',
+        aiDifficulty: 'random',
       },
       isSettingsPanelExpanded: false,
       isSimulationPanelExpanded: false,
@@ -70,7 +74,7 @@ export const useSettingsStore = create<SettingsState>()(
         isSimulationPanelExpanded: state.isSimulationPanelExpanded,
         isBattleTesterExpanded: state.isBattleTesterExpanded,
       }),
-      // Handle migration for existing users without generation or withItems field
+      // Handle migration for existing users without new fields
       onRehydrateStorage: () => (state) => {
         if (state && state.battleSettings) {
           if (!state.battleSettings.generation) {
@@ -78,6 +82,12 @@ export const useSettingsStore = create<SettingsState>()(
           }
           if (state.battleSettings.withItems === undefined) {
             state.battleSettings.withItems = false;
+          }
+          if (state.battleSettings.movesetType === undefined) {
+            state.battleSettings.movesetType = 'random';
+          }
+          if (state.battleSettings.aiDifficulty === undefined) {
+            state.battleSettings.aiDifficulty = 'random';
           }
         }
       },
