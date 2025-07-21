@@ -159,6 +159,14 @@ export interface PokemonInstanceData {
   ability: string;
   item?: string;
   moves: string[];
+  moveDetails?: {
+    name: string;
+    type: string;
+    category: 'physical' | 'special' | 'status';
+    power: number | null;
+    accuracy: number | null;
+    pp: number;
+  }[];
   stats: {
     hp: number;
     attack: number;

@@ -300,7 +300,7 @@ const PokemonBattleCard: React.FC<PokemonBattleCardProps> = ({
                             style={{ 
                               backgroundColor: `color-mix(in srgb, var(--mantine-color-${getTypeColor(moveDetail.type)}-${colorScheme === 'dark' ? 8 : 6}) 15%, transparent)`,
                               borderRadius: '4px', 
-                              border: `1px solid ${theme.colors[getTypeColor(moveDetail.type)][colorScheme === 'dark' ? 7 : 5]}`,
+                              border: `1px solid var(--mantine-color-${getTypeColor(moveDetail.type)}-${colorScheme === 'dark' ? 7 : 5})`,
                               cursor: 'pointer',
                               transition: 'all 0.2s ease'
                             }}
@@ -315,7 +315,7 @@ const PokemonBattleCard: React.FC<PokemonBattleCardProps> = ({
                               e.currentTarget.style.backgroundColor = `color-mix(in srgb, var(--mantine-color-${getTypeColor(moveDetail.type)}-${colorScheme === 'dark' ? 8 : 6}) 15%, transparent)`;
                             }}
                           >
-                            <Text size="sm" fw={600} tt="capitalize" c={theme.colors[getTypeColor(moveDetail.type)][colorScheme === 'dark' ? 4 : 7]}>
+                            <Text size="sm" fw={600} tt="capitalize" style={{ color: `var(--mantine-color-${getTypeColor(moveDetail.type)}-${colorScheme === 'dark' ? 4 : 7})` }}>
                               {moveDetail.name}
                             </Text>
                           </Box>
