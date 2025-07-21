@@ -16,9 +16,19 @@ const logger = winston.createLogger({
     new winston.transports.Console({
       format: winston.format.combine(
         winston.format.colorize(),
-        winston.format.printf(({ timestamp, level, message, ...meta }) => {
-          return `${timestamp} [${level}]: ${message} ${
-            Object.keys(meta).length ? JSON.stringify(meta, null, 2) : ''
+        winston.format.printf(({ timestamp, level, message, skipFormat, ...meta }) => {
+          const msg = String(message);
+          
+          // For battle logs, use a simpler format
+          if (skipFormat && msg.includes('won battle')) {
+            return `${timestamp} [${level}]: ${msg}`;
+          }
+          
+          // Remove 'service' from meta for cleaner output
+          const { service, ...cleanMeta } = meta;
+          
+          return `${timestamp} [${level}]: ${msg} ${
+            Object.keys(cleanMeta).length ? JSON.stringify(cleanMeta, null, 2) : ''
           }`;
         })
       )

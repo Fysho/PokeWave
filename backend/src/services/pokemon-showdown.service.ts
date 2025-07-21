@@ -230,7 +230,7 @@ class PokemonShowdownService {
       let pokemon1Wins = 0;
       let pokemon2Wins = 0;
 
-      logger.info(`Beginning simulation: ${species1.name} vs ${species2.name}`);
+      logger.info(`Beginning simulation: ${species1.name} vs ${species2.name}`, { skipFormat: true });
 
       for (let i = 0; i < this.NUM_BATTLES; i++) {
         const winner = await this.runSingleShowdownBattle(
@@ -243,10 +243,10 @@ class PokemonShowdownService {
         
         if (winner === 1) {
           pokemon1Wins++;
-          logger.info(`${species1.name} won battle ${i + 1}`);
+          logger.info(`${species1.name} won battle ${i + 1}`, { skipFormat: true });
         } else {
           pokemon2Wins++;
-          logger.info(`${species2.name} won battle ${i + 1}`);
+          logger.info(`${species2.name} won battle ${i + 1}`, { skipFormat: true });
         }
       }
 
@@ -352,7 +352,7 @@ class PokemonShowdownService {
       // Cache the result
       await cacheService.set(`showdown:${cacheKey}`, result, 3600);
 
-      logger.info(`Simulation complete: ${species1.name} won ${pokemon1Wins}, ${species2.name} won ${pokemon2Wins}`);
+      logger.info(`Simulation complete: ${species1.name} won ${pokemon1Wins}, ${species2.name} won ${pokemon2Wins}`, { skipFormat: true });
       return result;
     } catch (error) {
       logger.error('Failed to simulate battle with Pokemon Showdown:', {
