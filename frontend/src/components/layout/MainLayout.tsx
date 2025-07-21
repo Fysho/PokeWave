@@ -15,6 +15,7 @@ import BattleSettings from '../settings/BattleSettings';
 import BattleTester from '../battle/BattleTester';
 import { useSettingsStore } from '../../store/settingsStore';
 import { useGameStore } from '../../store/gameStore';
+import ApiService from '../../services/api';
 
 interface MainLayoutProps {
   children: React.ReactNode;
@@ -75,100 +76,26 @@ const MainLayout: React.FC<MainLayoutProps> = ({
           pokemon2={currentBattle?.pokemon2}
           rightOffset={0}
           onSimulateBattle={async () => {
-            if (!currentPokemon1 || !currentPokemon2) return;
+            if (!currentBattle?.pokemon1 || !currentBattle?.pokemon2) return;
             
             setIsBattleTesterSimulating(true);
             try {
-              // Import and use the single battle simulation
-              const { simulateSingleBattle } = await import('../../utils/mainBattleSimulation');
-              
-              // Convert Pokemon instances to CompletePokemon format
-              const pokemon1Data = {
-                id: currentPokemon1.id,
-                name: currentPokemon1.name,
-                species: currentPokemon1.name,
-                level: currentPokemon1.level,
-                types: currentPokemon1.types,
-                stats: {
-                  hp: currentPokemon1.calculatedStats.hp,
-                  attack: currentPokemon1.calculatedStats.attack,
-                  defense: currentPokemon1.calculatedStats.defense,
-                  specialAttack: currentPokemon1.calculatedStats.specialAttack,
-                  specialDefense: currentPokemon1.calculatedStats.specialDefense,
-                  speed: currentPokemon1.calculatedStats.speed
-                },
-                moves: currentPokemon1.moves,
-                moveNames: currentPokemon1.moves,
-                ability: currentPokemon1.ability,
-                abilityName: currentPokemon1.ability,
-                item: currentPokemon1.item,
-                sprites: currentPokemon1.sprites,
-                wins: currentPokemon1.wins
-              };
-              
-              const pokemon2Data = {
-                id: currentPokemon2.id,
-                name: currentPokemon2.name,
-                species: currentPokemon2.name,
-                level: currentPokemon2.level,
-                types: currentPokemon2.types,
-                stats: {
-                  hp: currentPokemon2.calculatedStats.hp,
-                  attack: currentPokemon2.calculatedStats.attack,
-                  defense: currentPokemon2.calculatedStats.defense,
-                  specialAttack: currentPokemon2.calculatedStats.specialAttack,
-                  specialDefense: currentPokemon2.calculatedStats.specialDefense,
-                  speed: currentPokemon2.calculatedStats.speed
-                },
-                moves: currentPokemon2.moves,
-                moveNames: currentPokemon2.moves,
-                ability: currentPokemon2.ability,
-                abilityName: currentPokemon2.ability,
-                item: currentPokemon2.item,
-                sprites: currentPokemon2.sprites,
-                wins: currentPokemon2.wins
-              };
-              
-              const startTime = Date.now();
-              const result = await simulateSingleBattle(
-                pokemon1Data,
-                pokemon2Data,
-                battleSettings.generation
+              // Call the backend API for single battle simulation
+              const result = await ApiService.simulateSingleBattle(
+                currentBattle.pokemon1.id,
+                currentBattle.pokemon2.id,
+                {
+                  generation: battleSettings.generation,
+                  levelMode: 'set',
+                  setLevel: currentBattle.pokemon1.level,
+                  withItems: battleSettings.withItems,
+                  movesetType: battleSettings.movesetType,
+                  aiDifficulty: battleSettings.aiDifficulty
+                }
               );
               
-              // Format the result for the battle tester display
-              const formattedResult = {
-                winner: result.winner === 1 ? currentPokemon1.name : currentPokemon2.name,
-                totalTurns: result.totalTurns,
-                executionTime: Date.now() - startTime,
-                pokemon1: currentBattle.pokemon1,
-                pokemon2: currentBattle.pokemon2,
-                turns: result.events.map((event, index) => {
-                  if (event.type === 'move') {
-                    const attacker = event.pokemon === 'p1' ? currentPokemon1.name : currentPokemon2.name;
-                    const defender = event.pokemon === 'p1' ? currentPokemon2.name : currentPokemon1.name;
-                    
-                    // Find the next damage event for this move
-                    const damageEvent = result.events.slice(index + 1).find(e => 
-                      e.type === 'damage' && e.turn === event.turn
-                    );
-                    
-                    return {
-                      turn: event.turn,
-                      attacker,
-                      defender,
-                      move: event.details?.move || 'Unknown Move',
-                      damage: damageEvent?.details?.damage || 0,
-                      remainingHP: 0, // Will be calculated based on final HP
-                      critical: false,
-                      effectiveness: 'normal'
-                    };
-                  }
-                  return null;
-                }).filter(Boolean)
-              };
-              
-              setBattleTesterSimulation(formattedResult);
+              // The result already contains the formatted data we need
+              setBattleTesterSimulation(result);
             } catch (error) {
               console.error('Battle test error:', error);
             } finally {

@@ -192,8 +192,7 @@ export class ApiService {
     }
   }
 
-  // DEPRECATED: Single battle simulation now runs locally in the frontend
-  // See frontend/src/utils/battleSimulation.ts
+  // Simulate a single battle with turn-by-turn details
   static async simulateSingleBattle(pokemon1Id: number, pokemon2Id: number, options?: {
     levelMode?: 'random' | 'set';
     setLevel?: number;
@@ -201,9 +200,64 @@ export class ApiService {
     withItems?: boolean;
     movesetType?: 'random' | 'competitive';
     aiDifficulty?: 'random' | 'elite';
-  }): Promise<any> {
-    console.warn('ApiService.simulateSingleBattle is deprecated. Use local battle simulation instead.');
-    throw new Error('Single battle simulation should be run locally. Use simulateSingleBattle from utils/battleSimulation.ts');
+  }): Promise<{
+    winner: string;
+    turns: Array<{
+      turn: number;
+      attacker: string;
+      defender: string;
+      move: string;
+      damage: number;
+      remainingHP: number;
+      critical: boolean;
+      effectiveness: 'super' | 'normal' | 'not very' | 'no';
+    }>;
+    totalTurns: number;
+    finalHP1: number;
+    finalHP2: number;
+    executionTime: number;
+    pokemon1: {
+      name: string;
+      level: number;
+      stats: any;
+    };
+    pokemon2: {
+      name: string;
+      level: number;
+      stats: any;
+    };
+  }> {
+    try {
+      // Generate levels based on settings
+      let pokemon1Level = 50;
+      let pokemon2Level = 50;
+      
+      if (options?.levelMode === 'set' && options.setLevel) {
+        pokemon1Level = options.setLevel;
+        pokemon2Level = options.setLevel;
+      } else if (options?.levelMode === 'random') {
+        pokemon1Level = Math.floor(Math.random() * 100) + 1;
+        pokemon2Level = Math.floor(Math.random() * 100) + 1;
+      }
+
+      const response = await api.post('/battle/simulate-single', {
+        pokemon1Id,
+        pokemon2Id,
+        options: {
+          generation: options?.generation || 1,
+          pokemon1Level,
+          pokemon2Level,
+          withItems: options?.withItems || false,
+          movesetType: options?.movesetType || 'random',
+          aiDifficulty: options?.aiDifficulty || 'random'
+        }
+      }, {
+        timeout: 15000 // 15 seconds timeout for battle simulations
+      });
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
   }
 }
 
