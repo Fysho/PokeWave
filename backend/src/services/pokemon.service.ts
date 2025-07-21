@@ -3,7 +3,7 @@ import { cacheService } from './cache.service';
 import logger from '../utils/logger';
 import { ApiError } from '../middleware/error.middleware';
 import { pokemonShowdownService } from './pokemon-showdown.service';
-import { GetRandomPokemonWithInstancesResponse } from '../types/pokemon-instance.types';
+import { GetRandomPokemonWithInstancesResponse, RandomPokemonSettings } from '../types/pokemon-instance.types';
 
 interface PokemonSprites {
   front: string;
@@ -70,20 +70,56 @@ class PokemonService {
     return { pokemon1Id, pokemon2Id, generation };
   }
 
-  async getRandomPokemonWithInstances(generation: number = 9, level: number = 50): Promise<GetRandomPokemonWithInstancesResponse> {
+  async getRandomPokemonWithInstances(settings: RandomPokemonSettings = {}): Promise<GetRandomPokemonWithInstancesResponse> {
     try {
+      // Apply default settings
+      const generation = settings.generation || 1;
+      const levelMode = settings.levelMode || 'fixed';
+      
       // Get random Pokemon IDs
       const { pokemon1Id, pokemon2Id } = this.getRandomPokemonIds(generation);
       
-      logger.info(`Creating Pokemon instances for IDs ${pokemon1Id} and ${pokemon2Id} at level ${level}`);
+      let pokemon1Level: number;
+      let pokemon2Level: number;
+      
+      if (levelMode === 'random') {
+        // Generate random levels within the specified range
+        const minLevel = settings.minLevel || 1;
+        const maxLevel = settings.maxLevel || 100;
+        
+        // Validate level range
+        if (minLevel < 1 || minLevel > 100 || maxLevel < 1 || maxLevel > 100 || minLevel > maxLevel) {
+          throw new ApiError(400, 'Invalid level range. Levels must be between 1-100 and minLevel <= maxLevel');
+        }
+        
+        pokemon1Level = Math.floor(Math.random() * (maxLevel - minLevel + 1)) + minLevel;
+        pokemon2Level = Math.floor(Math.random() * (maxLevel - minLevel + 1)) + minLevel;
+        
+        logger.info(`Creating Pokemon instances with random levels: ${pokemon1Level} and ${pokemon2Level}`);
+      } else {
+        // Use fixed level
+        const fixedLevel = settings.level || 50;
+        
+        // Validate fixed level
+        if (fixedLevel < 1 || fixedLevel > 100) {
+          throw new ApiError(400, 'Invalid level. Must be between 1 and 100');
+        }
+        
+        pokemon1Level = fixedLevel;
+        pokemon2Level = fixedLevel;
+        
+        logger.info(`Creating Pokemon instances at fixed level ${fixedLevel}`);
+      }
+      
+      logger.info(`Creating Pokemon instances for IDs ${pokemon1Id} (Lv.${pokemon1Level}) and ${pokemon2Id} (Lv.${pokemon2Level})`);
       
       // Create Pokemon instances with full data
       const [pokemon1Instance, pokemon2Instance] = await Promise.all([
-        pokemonShowdownService.createPokemonInstance(pokemon1Id, level, generation),
-        pokemonShowdownService.createPokemonInstance(pokemon2Id, level, generation)
+        pokemonShowdownService.createPokemonInstance(pokemon1Id, pokemon1Level, generation),
+        pokemonShowdownService.createPokemonInstance(pokemon2Id, pokemon2Level, generation)
       ]);
       
-      logger.info(`Successfully created Pokemon instances: ${pokemon1Instance.name} vs ${pokemon2Instance.name}`);
+      logger.info(`Successfully created Pokemon instances: ${pokemon1Instance.name} (Lv.${pokemon1Level}) vs ${pokemon2Instance.name} (Lv.${pokemon2Level})`);
       
       return {
         pokemon1: pokemon1Instance,
@@ -92,6 +128,9 @@ class PokemonService {
       };
     } catch (error) {
       logger.error('Failed to create random Pokemon instances:', error);
+      if (error instanceof ApiError) {
+        throw error;
+      }
       throw new ApiError(500, 'Failed to create random Pokemon instances');
     }
   }

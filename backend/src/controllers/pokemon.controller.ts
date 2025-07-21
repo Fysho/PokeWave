@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { ApiError } from '../middleware/error.middleware';
 import { pokemonService } from '../services/pokemon.service';
+import { RandomPokemonSettings } from '../types/pokemon-instance.types';
 
 export const getPokemon = async (
   req: Request,
@@ -45,24 +46,48 @@ export const getRandomPokemonWithInstances = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const generation = req.query.generation 
-      ? parseInt(req.query.generation as string) 
-      : 1;  // Default to Gen 1 for the game
+    // Parse settings from query parameters
+    const settings: RandomPokemonSettings = {};
     
-    const level = req.query.level
-      ? parseInt(req.query.level as string)
-      : 50;
-
-    // Validate inputs
-    if (generation < 1 || generation > 9) {
-      throw new ApiError(400, 'Invalid generation. Must be between 1 and 9');
+    // Generation setting
+    if (req.query.generation) {
+      settings.generation = parseInt(req.query.generation as string);
+      if (isNaN(settings.generation) || settings.generation < 1 || settings.generation > 9) {
+        throw new ApiError(400, 'Invalid generation. Must be between 1 and 9');
+      }
     }
     
-    if (level < 1 || level > 100) {
-      throw new ApiError(400, 'Invalid level. Must be between 1 and 100');
+    // Level settings - check for "random_levels" or specific level
+    if (req.query.level_mode === 'random' || req.query.random_levels === 'true') {
+      settings.levelMode = 'random';
+      
+      // Parse min and max levels if provided
+      if (req.query.min_level) {
+        settings.minLevel = parseInt(req.query.min_level as string);
+        if (isNaN(settings.minLevel)) {
+          throw new ApiError(400, 'Invalid min_level. Must be a number');
+        }
+      }
+      
+      if (req.query.max_level) {
+        settings.maxLevel = parseInt(req.query.max_level as string);
+        if (isNaN(settings.maxLevel)) {
+          throw new ApiError(400, 'Invalid max_level. Must be a number');
+        }
+      }
+    } else {
+      // Fixed level mode
+      settings.levelMode = 'fixed';
+      
+      if (req.query.level) {
+        settings.level = parseInt(req.query.level as string);
+        if (isNaN(settings.level)) {
+          throw new ApiError(400, 'Invalid level. Must be a number');
+        }
+      }
     }
 
-    const pokemonInstances = await pokemonService.getRandomPokemonWithInstances(generation, level);
+    const pokemonInstances = await pokemonService.getRandomPokemonWithInstances(settings);
     res.json(pokemonInstances);
   } catch (error) {
     next(error);

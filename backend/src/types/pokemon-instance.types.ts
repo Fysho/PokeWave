@@ -137,3 +137,11 @@ export interface GetRandomPokemonWithInstancesResponse {
   pokemon2: PokemonInstanceData;
   generation: number;
 }
+
+export interface RandomPokemonSettings {
+  generation?: number;
+  levelMode?: 'fixed' | 'random';
+  level?: number;        // Used when levelMode is 'fixed'
+  minLevel?: number;     // Used when levelMode is 'random'
+  maxLevel?: number;     // Used when levelMode is 'random'
+}
