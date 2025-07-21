@@ -9,7 +9,7 @@ import { ApiError } from '../middleware/error.middleware';
 import crypto from 'crypto';
 import { PokemonInstanceData } from '../types/pokemon-instance.types';
 // Temporarily hardcode BATTLE_CONFIG until shared config is properly set up
-const BATTLE_CONFIG = { TOTAL_BATTLES: 999 };
+const BATTLE_CONFIG = { TOTAL_BATTLES: 100 };
 
 export interface ShowdownBattleConfig {
   pokemon1: PokemonInstanceData;
