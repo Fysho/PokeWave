@@ -159,13 +159,13 @@ class PokemonShowdownService {
 
   async simulateBattle(config: ShowdownBattleConfig): Promise<ShowdownBattleResult> {
     const startTime = Date.now();
-    logger.info('Starting simulateBattle', { pokemon1Id: config.pokemon1Id, pokemon2Id: config.pokemon2Id });
+    // Reduced logging - moved to battle start
     
     try {
-      logger.debug('Config received:', config);
+      // logger.debug('Config received:', config);
       // Generate cache key
       const cacheKey = this.generateBattleKey(config);
-      logger.debug('Generated cache key:', cacheKey);
+      // logger.debug('Generated cache key:', cacheKey);
       
       // Check cache first
       const cachedResult = await cacheService.get<ShowdownBattleResult>(`showdown:${cacheKey}`);
@@ -175,19 +175,19 @@ class PokemonShowdownService {
       }
 
       const generation = config.options?.generation || 9;
-      logger.debug('Using generation:', generation);
+      // logger.debug('Using generation:', generation);
       
       let dex;
       try {
         dex = Dex.forGen(generation);
-        logger.debug('Dex initialized successfully for generation', generation);
+        // logger.debug('Dex initialized successfully for generation', generation);
       } catch (dexError) {
         logger.error('Failed to initialize Dex:', dexError);
         throw new ApiError(500, 'Failed to initialize Pokemon data');
       }
       
       // Get Pokemon species
-      logger.debug('Getting species for IDs:', { id1: config.pokemon1Id, id2: config.pokemon2Id });
+      // logger.debug('Getting species for IDs:', { id1: config.pokemon1Id, id2: config.pokemon2Id });
       const species1 = this.getSpeciesById(dex, config.pokemon1Id);
       const species2 = this.getSpeciesById(dex, config.pokemon2Id);
 
@@ -201,23 +201,23 @@ class PokemonShowdownService {
         throw new ApiError(400, `Invalid Pokemon IDs provided: ${config.pokemon1Id}, ${config.pokemon2Id}`);
       }
 
-      logger.info('Pokemon species found', {
-        species1: species1.name,
-        species2: species2.name,
-        species1Types: species1.types,
-        species2Types: species2.types,
-        species1BaseStats: species1.baseStats
-      });
+      // logger.debug('Pokemon species found', {
+      //   species1: species1.name,
+      //   species2: species2.name,
+      //   species1Types: species1.types,
+      //   species2Types: species2.types,
+      //   species1BaseStats: species1.baseStats
+      // });
 
       // Fetch Pokemon sprites from PokeAPI
-      logger.debug('Fetching Pokemon sprites...');
+      // logger.debug('Fetching Pokemon sprites...');
       let pokemon1Sprites, pokemon2Sprites;
       try {
         [pokemon1Sprites, pokemon2Sprites] = await this.fetchPokemonSprites(
           config.pokemon1Id,
           config.pokemon2Id
         );
-        logger.debug('Sprites fetched successfully');
+        // logger.debug('Sprites fetched successfully');
       } catch (spriteError) {
         logger.error('Failed to fetch sprites:', spriteError);
         throw new ApiError(500, 'Failed to fetch Pokemon sprites');
@@ -230,13 +230,9 @@ class PokemonShowdownService {
       let pokemon1Wins = 0;
       let pokemon2Wins = 0;
 
-      logger.info(`Starting ${this.NUM_BATTLES} battle simulations`);
+      logger.info(`Beginning simulation: ${species1.name} vs ${species2.name}`);
 
       for (let i = 0; i < this.NUM_BATTLES; i++) {
-        if (i % 5 === 0 && i > 0) {
-          logger.info(`Progress: ${i}/${this.NUM_BATTLES} battles completed`);
-        }
-        
         const winner = await this.runSingleShowdownBattle(
           species1,
           species2,
@@ -247,8 +243,10 @@ class PokemonShowdownService {
         
         if (winner === 1) {
           pokemon1Wins++;
+          logger.info(`${species1.name} won battle ${i + 1}`);
         } else {
           pokemon2Wins++;
+          logger.info(`${species2.name} won battle ${i + 1}`);
         }
       }
 
@@ -354,14 +352,7 @@ class PokemonShowdownService {
       // Cache the result
       await cacheService.set(`showdown:${cacheKey}`, result, 3600);
 
-      logger.info(`Battle simulation completed using Pokemon Showdown`, {
-        pokemon1: `${species1.name} (${pokemon1Wins} wins)`,
-        pokemon2: `${species2.name} (${pokemon2Wins} wins)`,
-        winRate: `${winRate.toFixed(1)}%`,
-        executionTime: `${executionTime}ms`
-      });
-
-      logger.info('Returning battle result from simulateBattle');
+      logger.info(`Simulation complete: ${species1.name} won ${pokemon1Wins}, ${species2.name} won ${pokemon2Wins}`);
       return result;
     } catch (error) {
       logger.error('Failed to simulate battle with Pokemon Showdown:', {
@@ -394,10 +385,10 @@ class PokemonShowdownService {
         throw new ApiError(400, `Invalid Pokemon IDs provided: ${config.pokemon1Id}, ${config.pokemon2Id}`);
       }
 
-      logger.info('Pokemon species found', {
-        species1: species1.name,
-        species2: species2.name
-      });
+      // logger.debug('Pokemon species found', {
+      //   species1: species1.name,
+      //   species2: species2.name
+      // });
 
       const pokemon1Level = config.options?.pokemon1Level || 50;
       const pokemon2Level = config.options?.pokemon2Level || 50;
@@ -422,12 +413,12 @@ class PokemonShowdownService {
       let p1Request: any = null;
       let p2Request: any = null;
       
-      logger.info('Starting single battle simulation', {
-        pokemon1: species1.name,
-        pokemon2: species2.name,
-        level1: pokemon1Level,
-        level2: pokemon2Level
-      });
+      // logger.debug('Starting single battle simulation', {
+      //   pokemon1: species1.name,
+      //   pokemon2: species2.name,
+      //   level1: pokemon1Level,
+      //   level2: pokemon2Level
+      // });
       
       // Process battle synchronously for simplicity
       while (!battleEnded && turnCount < maxTurns) {
@@ -436,13 +427,13 @@ class PokemonShowdownService {
         if (!chunk) continue;
         
         outputs.push(chunk);
-        logger.debug('Battle chunk:', { chunk: chunk.substring(0, 100) });
+        // logger.debug('Battle chunk:', { chunk: chunk.substring(0, 100) });
         
         // Check for winner
         if (chunk.includes('|win|')) {
           battleEnded = true;
           winner = chunk.includes('Player 1') ? species1.name : species2.name;
-          logger.info('Battle ended', { winner });
+          // logger.debug('Battle ended', { winner });
           break;
         }
         
@@ -505,11 +496,11 @@ class PokemonShowdownService {
       // Parse battle log
       const turns = this.parseBattleLog(outputs);
       
-      logger.info('Battle simulation complete', {
-        winner,
-        totalOutputs: outputs.length,
-        turnsFound: turns.length
-      });
+      // logger.debug('Battle simulation complete', {
+      //   winner,
+      //   totalOutputs: outputs.length,
+      //   turnsFound: turns.length
+      // });
       
       // If no turns were parsed, create a simple turn for demo purposes
       if (turns.length === 0) {
@@ -773,11 +764,11 @@ class PokemonShowdownService {
     const dex = Dex.forGen(generation);
     
     // Debug: Check what's available on dex at creation
-    logger.debug('Dex root keys:', Object.keys(dex).slice(0, 20));
+    // logger.debug('Dex root keys:', Object.keys(dex).slice(0, 20));
     
     // Get moves from level-up learnset only
     const moves = await this.getMovesFromLearnset(species, level, dex);
-    logger.info(`Using moves for ${species.name}:`, moves);
+    // logger.debug(`Using moves for ${species.name}:`, moves);
     
     // Get random ability and item
     const ability = this.getRandomAbility(species);
@@ -824,12 +815,12 @@ class PokemonShowdownService {
           .sort((a, b) => b.level - a.level)
           .slice(0, 4);
         
-        logger.info(`Selected 4 most recent moves for ${species.name} at level ${level}:`, sortedMoves.map(m => m.move));
+        // logger.debug(`Selected 4 most recent moves for ${species.name} at level ${level}:`, sortedMoves.map(m => m.move));
         // Return move IDs (not formatted names) for battle simulation
         return sortedMoves.map(moveData => moveData.moveId);
       }
       
-      logger.info(`Using all ${availableMoves.length} available moves for ${species.name} at level ${level}:`, availableMoves.map(m => m.move));
+      // logger.debug(`Using all ${availableMoves.length} available moves for ${species.name} at level ${level}:`, availableMoves.map(m => m.move));
       // Return move IDs (not formatted names) for battle simulation
       return availableMoves.map(moveData => moveData.moveId);
     } catch (error) {
@@ -1053,7 +1044,7 @@ class PokemonShowdownService {
         // Sort by level
         levelupMoves.sort((a, b) => a.level - b.level);
         
-        logger.info(`Found ${levelupMoves.length} level-up moves for ${species.name}`);
+        // logger.debug(`Found ${levelupMoves.length} level-up moves for ${species.name}`);
       }
       
       // If we couldn't get learnset data, use fallback moves for Gen 1
