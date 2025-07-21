@@ -1,5 +1,5 @@
 import axios from 'axios';
-import type { Pokemon, BattleResult, GuessSubmission, GuessResult, ApiError } from '../types/api';
+import type { Pokemon, BattleResult, GuessSubmission, GuessResult, ApiError, GetRandomPokemonWithInstancesResponse, PokemonInstanceData } from '../types/api';
 
 const API_BASE_URL = 'http://localhost:4000/api';
 
@@ -65,6 +65,37 @@ export class ApiService {
     }
   }
 
+  // Get random Pokemon with full instance data
+  static async getRandomPokemonWithInstances(settings?: {
+    generation?: number;
+    levelMode?: 'fixed' | 'random';
+    level?: number;
+    minLevel?: number;
+    maxLevel?: number;
+    itemMode?: 'random' | 'none';
+  }): Promise<GetRandomPokemonWithInstancesResponse> {
+    try {
+      const params = new URLSearchParams();
+      
+      if (settings?.generation) params.append('generation', settings.generation.toString());
+      if (settings?.levelMode === 'random') {
+        params.append('random_levels', 'true');
+        if (settings.minLevel) params.append('min_level', settings.minLevel.toString());
+        if (settings.maxLevel) params.append('max_level', settings.maxLevel.toString());
+      } else if (settings?.level) {
+        params.append('level', settings.level.toString());
+      }
+      if (settings?.itemMode === 'none') {
+        params.append('no_items', 'true');
+      }
+      
+      const response = await api.get<GetRandomPokemonWithInstancesResponse>(`/pokemon/random-instances?${params.toString()}`);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  }
+
   // Get Pokemon sprites from PokeAPI
   static async getPokemonSprites(pokemonId: number): Promise<{ front: string; back: string; shiny: string }> {
     try {
@@ -92,18 +123,23 @@ export class ApiService {
     withItems?: boolean;
     movesetType?: 'random' | 'competitive';
     aiDifficulty?: 'random' | 'elite';
+    pokemon1Level?: number;
+    pokemon2Level?: number;
   }): Promise<BattleResult> {
     try {
-      // Generate levels based on settings
-      let pokemon1Level = 50;
-      let pokemon2Level = 50;
+      // Use provided levels or generate based on settings
+      let pokemon1Level = options?.pokemon1Level || 50;
+      let pokemon2Level = options?.pokemon2Level || 50;
       
-      if (options?.levelMode === 'set' && options.setLevel) {
-        pokemon1Level = options.setLevel;
-        pokemon2Level = options.setLevel;
-      } else if (options?.levelMode === 'random') {
-        pokemon1Level = Math.floor(Math.random() * 100) + 1;
-        pokemon2Level = Math.floor(Math.random() * 100) + 1;
+      // Only generate if not provided
+      if (!options?.pokemon1Level || !options?.pokemon2Level) {
+        if (options?.levelMode === 'set' && options.setLevel) {
+          pokemon1Level = options.setLevel;
+          pokemon2Level = options.setLevel;
+        } else if (options?.levelMode === 'random') {
+          pokemon1Level = Math.floor(Math.random() * 100) + 1;
+          pokemon2Level = Math.floor(Math.random() * 100) + 1;
+        }
       }
 
       console.log(`[Frontend] Requesting battle simulation: Pokemon ${pokemon1Id} vs ${pokemon2Id} at ${new Date().toISOString()}`);

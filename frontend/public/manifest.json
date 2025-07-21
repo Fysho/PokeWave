@@ -1,0 +1,29 @@
+{
+  "name": "PokeWave - Pokemon Battle Prediction Game",
+  "short_name": "PokeWave",
+  "description": "Test your Pokemon knowledge by predicting battle outcomes!",
+  "start_url": "/",
+  "display": "standalone",
+  "theme_color": "#1a1b26",
+  "background_color": "#1a1b26",
+  "icons": [
+    {
+      "src": "/PokeWaveLogo64.png",
+      "sizes": "64x64",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/PokeWaveLogo128.png",
+      "sizes": "128x128",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/PokeWaveLogo256.png",
+      "sizes": "256x256",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

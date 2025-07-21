@@ -89,65 +89,67 @@ export const useGameStore = create<GameStore>()(
           set({ isLoading: true, error: null });
           
           try {
-            // Determine the generation and range
-            const generation = battleSettings?.generation || 1;
+            // First, get random Pokemon instances with full data
+            const pokemonInstances = await ApiService.getRandomPokemonWithInstances({
+              generation: battleSettings?.generation || 1,
+              levelMode: battleSettings?.levelMode === 'random' ? 'random' : 'fixed',
+              level: battleSettings?.setLevel || 50,
+              itemMode: battleSettings?.withItems ? 'random' : 'none'
+            });
+
+            // Then simulate battle using the Pokemon instance data
+            const battleResult = await ApiService.simulateBattle(
+              pokemonInstances.pokemon1.id, 
+              pokemonInstances.pokemon2.id, 
+              {
+                generation: battleSettings?.generation || 1,
+                levelMode: battleSettings?.levelMode || 'set',
+                setLevel: battleSettings?.setLevel || 50,
+                withItems: battleSettings?.withItems || false,
+                movesetType: battleSettings?.movesetType || 'random',
+                aiDifficulty: battleSettings?.aiDifficulty || 'random',
+                pokemon1Level: pokemonInstances.pokemon1.level,
+                pokemon2Level: pokemonInstances.pokemon2.level
+              }
+            );
             
-            // Generation ranges for Pokemon IDs
-            const generationRanges: { [key: number]: { start: number; end: number } } = {
-              1: { start: 1, end: 151 },     // Gen 1
-              2: { start: 1, end: 251 },     // Gen 1-2
-              3: { start: 1, end: 386 },     // Gen 1-3
-              4: { start: 1, end: 493 },     // Gen 1-4
-              5: { start: 1, end: 649 },     // Gen 1-5
-              6: { start: 1, end: 721 },     // Gen 1-6
-              7: { start: 1, end: 809 },     // Gen 1-7
-              8: { start: 1, end: 905 },     // Gen 1-8
-              9: { start: 1, end: 1025 }     // Gen 1-9
+            // Merge the instance data with battle results
+            const enhancedBattleResult = {
+              ...battleResult,
+              pokemon1: {
+                ...battleResult.pokemon1,
+                ...pokemonInstances.pokemon1,
+                wins: battleResult.pokemon1.wins,
+                // Ensure we keep the stats from instance data
+                stats: pokemonInstances.pokemon1.stats,
+                baseStats: pokemonInstances.pokemon1.baseStats,
+                evs: pokemonInstances.pokemon1.evs,
+                ivs: pokemonInstances.pokemon1.ivs,
+                ability: pokemonInstances.pokemon1.ability,
+                item: pokemonInstances.pokemon1.item,
+                nature: pokemonInstances.pokemon1.nature
+              },
+              pokemon2: {
+                ...battleResult.pokemon2,
+                ...pokemonInstances.pokemon2,
+                wins: battleResult.pokemon2.wins,
+                // Ensure we keep the stats from instance data
+                stats: pokemonInstances.pokemon2.stats,
+                baseStats: pokemonInstances.pokemon2.baseStats,
+                evs: pokemonInstances.pokemon2.evs,
+                ivs: pokemonInstances.pokemon2.ivs,
+                ability: pokemonInstances.pokemon2.ability,
+                item: pokemonInstances.pokemon2.item,
+                nature: pokemonInstances.pokemon2.nature
+              }
             };
             
-            const range = generationRanges[generation] || generationRanges[1];
-            
-            // Generate random Pokemon IDs from the selected generation range
-            const pokemon1Id = Math.floor(Math.random() * (range.end - range.start + 1)) + range.start;
-            let pokemon2Id = Math.floor(Math.random() * (range.end - range.start + 1)) + range.start;
-            
-            // Ensure they're different
-            while (pokemon2Id === pokemon1Id) {
-              pokemon2Id = Math.floor(Math.random() * (range.end - range.start + 1)) + range.start;
-            }
-            
-            // Calculate levels based on settings
-            const pokemon1Level = battleSettings?.levelMode === 'set' ? 
-              (battleSettings.setLevel || 50) : 
-              Math.floor(Math.random() * 100) + 1;
-            const pokemon2Level = battleSettings?.levelMode === 'set' ? 
-              (battleSettings.setLevel || 50) : 
-              Math.floor(Math.random() * 100) + 1;
-
-            // No longer need local Pokemon data - backend handles everything
-            
-            // Backend now handles all Pokemon stats calculation
-            
-            // Backend now creates complete Pokemon objects with all data
-            
-            // Backend handles all Pokemon data generation
-
-            // Call backend API for battle simulation
-            const battleResult = await ApiService.simulateBattle(pokemon1Id, pokemon2Id, {
-              generation: battleSettings?.generation || 1,
-              levelMode: battleSettings?.levelMode || 'set',
-              setLevel: battleSettings?.setLevel || 50,
-              withItems: battleSettings?.withItems || false,
-              movesetType: battleSettings?.movesetType || 'random',
-              aiDifficulty: battleSettings?.aiDifficulty || 'random'
-            });
-            
-            // Create Pokemon instances from the battle result
-            const pokemon1 = Pokemon.fromApiResponse(battleResult.pokemon1, battleResult.totalBattles);
-            const pokemon2 = Pokemon.fromApiResponse(battleResult.pokemon2, battleResult.totalBattles);
+            // Create Pokemon instances from the enhanced battle result
+            const pokemon1 = Pokemon.fromApiResponse(enhancedBattleResult.pokemon1, enhancedBattleResult.totalBattles);
+            const pokemon2 = Pokemon.fromApiResponse(enhancedBattleResult.pokemon2, enhancedBattleResult.totalBattles);
             
             set({ 
-              currentBattle: battleResult,
+              currentBattle: enhancedBattleResult,
               currentPokemon1: pokemon1,
               currentPokemon2: pokemon2,
               isLoading: false,

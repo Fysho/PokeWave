@@ -2,10 +2,31 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/png" href="/PokeWaveLogo64.png" />
-    <link rel="icon" type="image/png" sizes="64x64" href="/PokeWaveLogo64.png" />
-    <link rel="icon" type="image/png" sizes="128x128" href="/PokeWaveLogo128.png" />
-    <link rel="apple-touch-icon" sizes="256x256" href="/PokeWaveLogo256.png" />
+    <!-- Primary favicon for browsers -->
+    <link rel="icon" type="image/png" href="/PokeWaveLogo64.png?v=2" />
+    
+    <!-- Multiple sizes for different contexts -->
+    <link rel="icon" type="image/png" sizes="16x16" href="/PokeWaveLogo64.png?v=2" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/PokeWaveLogo64.png?v=2" />
+    <link rel="icon" type="image/png" sizes="64x64" href="/PokeWaveLogo64.png?v=2" />
+    <link rel="icon" type="image/png" sizes="128x128" href="/PokeWaveLogo128.png?v=2" />
+    
+    <!-- Apple Touch Icon for iOS bookmarks -->
+    <link rel="apple-touch-icon" href="/PokeWaveLogo256.png?v=2" />
+    <link rel="apple-touch-icon" sizes="256x256" href="/PokeWaveLogo256.png?v=2" />
+    
+    <!-- For Windows tiles and Android Chrome -->
+    <meta name="msapplication-TileImage" content="/PokeWaveLogo256.png?v=2" />
+    <meta name="msapplication-TileColor" content="#1a1b26" />
+    
+    <!-- Open Graph meta tags for social sharing -->
+    <meta property="og:image" content="/PokeWaveLogo256.png?v=2" />
+    <meta property="og:title" content="PokeWave - Pokemon Battle Prediction Game" />
+    <meta property="og:description" content="Test your Pokemon knowledge by predicting battle outcomes!" />
+    
+    <!-- Web App Manifest -->
+    <link rel="manifest" href="/manifest.json" />
+    
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>PokeWave</title>
   </head>

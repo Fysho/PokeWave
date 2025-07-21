@@ -149,3 +149,58 @@ export interface ApiError {
   code?: number;
   details?: any;
 }
+
+export interface PokemonInstanceData {
+  id: number;
+  name: string;
+  species: string;
+  level: number;
+  types: string[];
+  ability: string;
+  item?: string;
+  moves: string[];
+  stats: {
+    hp: number;
+    attack: number;
+    defense: number;
+    specialAttack: number;
+    specialDefense: number;
+    speed: number;
+  };
+  baseStats: {
+    hp: number;
+    attack: number;
+    defense: number;
+    specialAttack: number;
+    specialDefense: number;
+    speed: number;
+  };
+  evs: {
+    hp: number;
+    attack: number;
+    defense: number;
+    specialAttack: number;
+    specialDefense: number;
+    speed: number;
+  };
+  ivs: {
+    hp: number;
+    attack: number;
+    defense: number;
+    specialAttack: number;
+    specialDefense: number;
+    speed: number;
+  };
+  nature: string;
+  sprites: {
+    front: string;
+    back: string;
+    shiny: string;
+  };
+}
+
+export interface GetRandomPokemonWithInstancesResponse {
+  pokemon1: PokemonInstanceData;
+  pokemon2: PokemonInstanceData;
+  generation: number;
+}
