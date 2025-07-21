@@ -86,8 +86,8 @@ const MainLayout: React.FC<MainLayoutProps> = ({
                 currentBattle.pokemon2.id,
                 {
                   generation: battleSettings.generation,
-                  levelMode: 'set',
-                  setLevel: currentBattle.pokemon1.level,
+                  pokemon1Level: currentBattle.pokemon1.level,
+                  pokemon2Level: currentBattle.pokemon2.level,
                   withItems: battleSettings.withItems,
                   movesetType: battleSettings.movesetType,
                   aiDifficulty: battleSettings.aiDifficulty
