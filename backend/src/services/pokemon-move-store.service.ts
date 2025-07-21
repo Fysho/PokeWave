@@ -2,6 +2,8 @@ import axios from 'axios';
 import logger from '../utils/logger';
 import { ApiError } from '../middleware/error.middleware';
 import { cacheService } from './cache.service';
+import * as fs from 'fs/promises';
+import * as path from 'path';
 
 interface MoveDetail {
   id: number;
@@ -40,6 +42,10 @@ class PokemonMoveStoreService {
   private readonly CACHE_KEY_PREFIX = 'pokemon-moves:';
   private readonly CACHE_TTL = 86400; // 24 hours in seconds
   
+  // File storage
+  private readonly DATA_DIR = path.join(__dirname, '../../data');
+  private readonly MOVES_FILE = path.join(this.DATA_DIR, 'pokemon-moves.json');
+  
   /**
    * Initialize the move store on server startup
    */
@@ -63,7 +69,22 @@ class PokemonMoveStoreService {
       logger.info('Initializing Pokemon move store...');
       const startTime = Date.now();
       
-      // Try to load from cache first
+      // 1. Try to load from JSON file first (permanent storage)
+      const fileMoves = await this.loadFromFile();
+      if (fileMoves && fileMoves.length > 0) {
+        logger.info(`Loaded ${fileMoves.length} moves from JSON file`);
+        fileMoves.forEach(move => {
+          this.moveStore.moves.set(move.name, move);
+        });
+        this.moveStore.totalMoves = fileMoves.length;
+        this.isInitialized = true;
+        
+        // Also update cache for faster access next time
+        await this.cacheAllMoves(fileMoves);
+        return;
+      }
+      
+      // 2. Try to load from cache (Redis/memory)
       const cachedMoves = await this.loadFromCache();
       if (cachedMoves && cachedMoves.length > 0) {
         logger.info(`Loaded ${cachedMoves.length} moves from cache`);
@@ -72,10 +93,13 @@ class PokemonMoveStoreService {
         });
         this.moveStore.totalMoves = cachedMoves.length;
         this.isInitialized = true;
+        
+        // Save to file for permanent storage
+        await this.saveToFile(cachedMoves);
         return;
       }
       
-      // If no cache, fetch from PokeAPI
+      // 3. If no file or cache, fetch from PokeAPI
       await this.fetchAllMovesFromPokeAPI();
       
       const endTime = Date.now();
@@ -132,6 +156,9 @@ class PokemonMoveStoreService {
       
       // Cache the moves
       await this.cacheAllMoves(moves);
+      
+      // Save to file for permanent storage
+      await this.saveToFile(moves);
       
     } catch (error) {
       logger.error('Error fetching moves from PokeAPI:', error);
@@ -200,6 +227,56 @@ class PokemonMoveStoreService {
       return cachedMoves;
     } catch (error) {
       logger.warn('Failed to load moves from cache:', error);
+      return null;
+    }
+  }
+  
+  /**
+   * Save moves to JSON file
+   */
+  private async saveToFile(moves: MoveDetail[]): Promise<void> {
+    try {
+      // Ensure data directory exists
+      await fs.mkdir(this.DATA_DIR, { recursive: true });
+      
+      // Save moves to JSON file
+      const data = {
+        version: '1.0',
+        lastUpdated: new Date().toISOString(),
+        totalMoves: moves.length,
+        moves: moves
+      };
+      
+      await fs.writeFile(this.MOVES_FILE, JSON.stringify(data, null, 2), 'utf-8');
+      logger.info(`Saved ${moves.length} moves to JSON file: ${this.MOVES_FILE}`);
+    } catch (error) {
+      logger.error('Failed to save moves to file:', error);
+    }
+  }
+  
+  /**
+   * Load moves from JSON file
+   */
+  private async loadFromFile(): Promise<MoveDetail[] | null> {
+    try {
+      const fileExists = await fs.access(this.MOVES_FILE).then(() => true).catch(() => false);
+      
+      if (!fileExists) {
+        logger.info('No JSON file found for Pokemon moves');
+        return null;
+      }
+      
+      const fileContent = await fs.readFile(this.MOVES_FILE, 'utf-8');
+      const data = JSON.parse(fileContent);
+      
+      if (data.moves && Array.isArray(data.moves)) {
+        logger.info(`Found JSON file with ${data.moves.length} moves (last updated: ${data.lastUpdated})`);
+        return data.moves;
+      }
+      
+      return null;
+    } catch (error) {
+      logger.error('Failed to load moves from file:', error);
       return null;
     }
   }
@@ -315,6 +392,16 @@ class PokemonMoveStoreService {
     this.isInitialized = false;
     this.moveStore.moves.clear();
     this.moveStore.totalMoves = 0;
+    
+    // Delete the JSON file to force re-fetch from PokeAPI
+    try {
+      await fs.unlink(this.MOVES_FILE);
+      logger.info('Deleted existing moves JSON file');
+    } catch (error) {
+      // File might not exist, which is fine
+      logger.debug('No existing JSON file to delete');
+    }
+    
     await this.initialize();
   }
 }
