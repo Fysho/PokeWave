@@ -197,33 +197,17 @@ const MainLayout: React.FC<MainLayoutProps> = ({
           <Group h="100%" px="md" justify="space-between">
             <Group>
               <Group gap="sm">
-                <Box pos="relative">
-                  <Box 
-                    w={32} 
-                    h={32} 
-                    style={{ 
-                      backgroundImage: 'linear-gradient(135deg, var(--mantine-color-blue-6), var(--mantine-color-grape-6))',
-                      borderRadius: '8px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center'
-                    }}
-                  >
-                    <IconDeviceGamepad2 size={20} color="white" />
-                  </Box>
-                  <Box 
-                    pos="absolute"
-                    top={-4}
-                    right={-4}
-                    w={12}
-                    h={12}
-                    bg="green.5"
-                    style={{ 
-                      borderRadius: '50%',
-                      animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite'
-                    }}
-                  />
-                </Box>
+                <Box 
+                  component="img"
+                  src="/logo.png" 
+                  alt="PokeWave Logo"
+                  h={40}
+                  style={{ 
+                    objectFit: 'contain',
+                    cursor: 'pointer'
+                  }}
+                  onClick={() => onTabChange('battle')}
+                />
                 <Text 
                   size="xl"
                   fw={700}
