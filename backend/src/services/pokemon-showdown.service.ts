@@ -417,17 +417,65 @@ class PokemonShowdownService {
       const maxTurns = 50;
       let p1Request: any = null;
       let p2Request: any = null;
+      let noDataCount = 0;
+      const maxNoDataCount = 5;
       
       logger.info('🎮 Battle Tester: Battle started! Processing turns...');
+      
+      // Give the stream a moment to initialize
+      await new Promise(resolve => setTimeout(resolve, 100));
       
       // Process battle synchronously for simplicity
       while (!battleEnded && turnCount < maxTurns) {
         // Read from stream with a simple approach
-        const chunk = await stream.read();
-        if (!chunk) continue;
+        logger.info(`🎮 Battle Tester: Waiting for stream data... (Turn ${turnCount})`);
         
+        // Add timeout to prevent hanging
+        let chunk: string | null | undefined = null;
+        try {
+          const timeoutPromise = new Promise<null>((resolve) => {
+            setTimeout(() => {
+              logger.warn('🎮 Battle Tester: Read timeout after 2 seconds');
+              resolve(null);
+            }, 2000);
+          });
+          
+          chunk = await Promise.race([
+            stream.read(),
+            timeoutPromise
+          ]) as string | null | undefined;
+        } catch (readError) {
+          logger.error('🎮 Battle Tester: Error reading from stream:', readError);
+          break;
+        }
+        
+        if (!chunk) {
+          noDataCount++;
+          logger.info(`🎮 Battle Tester: No chunk received (${noDataCount}/${maxNoDataCount})`);
+          
+          if (noDataCount >= maxNoDataCount) {
+            logger.warn('🎮 Battle Tester: Too many empty reads, forcing battle end');
+            battleEnded = true;
+            break;
+          }
+          
+          // Try to kickstart the battle if stuck
+          if (noDataCount === 2) {
+            logger.info('🎮 Battle Tester: Attempting to kickstart battle with default moves');
+            await stream.write('>p1 move 1');
+            await stream.write('>p2 move 1');
+          }
+          
+          continue;
+        }
+        
+        noDataCount = 0; // Reset counter on successful read
+        
+        logger.info(`🎮 Battle Tester: Received chunk (${chunk.length} chars)`);
         outputs.push(chunk);
-        // logger.debug('Battle chunk:', { chunk: chunk.substring(0, 100) });
+        // Log first 200 chars of chunk for debugging
+        logger.debug(`🎮 Battle Tester: Chunk preview: ${chunk.substring(0, 200).replace(/\n/g, '\\n')}`);
+        
         
         // Check for winner
         if (chunk.includes('|win|')) {
@@ -492,6 +540,11 @@ class PokemonShowdownService {
           }
         }
         
+        // Check if we need to make moves based on the chunk content
+        if (chunk.includes('|request|')) {
+          logger.info('🎮 Battle Tester: Found request in chunk, processing moves...');
+        }
+        
         // Make moves based on requests
         if (p1Request && p1Request.active) {
           const choice = this.makeRandomChoice(p1Request);
@@ -505,6 +558,17 @@ class PokemonShowdownService {
           logger.info(`🎮 Battle Tester: ${species2.name} choosing action: ${choice}`);
           await stream.write(`>p2 ${choice}`);
           p2Request = null;
+        }
+        
+        // Alternative: Try to make moves if we see specific patterns
+        if (chunk.includes('|request|') && !p1Request && !p2Request) {
+          logger.info('🎮 Battle Tester: Request found but not parsed, trying default moves');
+          if (chunk.includes('>p1')) {
+            await stream.write('>p1 move 1');
+          }
+          if (chunk.includes('>p2')) {
+            await stream.write('>p2 move 1');
+          }
         }
         
         if (chunk.includes('|turn|')) {
