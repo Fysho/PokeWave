@@ -2,6 +2,7 @@
 // No custom simulation is performed here - all battles go through Showdown for accuracy
 
 import { pokemonShowdownService } from './pokemon-showdown.service';
+import { PokemonInstanceData } from '../types/pokemon-instance.types';
 
 export interface ShowdownBattleConfig {
   pokemon1Id: number;
@@ -79,6 +80,14 @@ class ShowdownService {
 
   async simulateSingleBattle(config: ShowdownBattleConfig): Promise<any> {
     return pokemonShowdownService.simulateSingleBattle(config);
+  }
+
+  async simulateBattleWithInstances(config: {
+    pokemon1Instance: PokemonInstanceData;
+    pokemon2Instance: PokemonInstanceData;
+    generation: number;
+  }): Promise<ShowdownBattleResult> {
+    return pokemonShowdownService.simulateBattleWithInstances(config);
   }
 }
 

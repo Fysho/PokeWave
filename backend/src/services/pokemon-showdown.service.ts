@@ -1436,6 +1436,268 @@ class PokemonShowdownService {
       throw error instanceof ApiError ? error : new ApiError(500, 'Failed to create Pokemon instance');
     }
   }
+
+  async simulateBattleWithInstances(config: {
+    pokemon1Instance: PokemonInstanceData;
+    pokemon2Instance: PokemonInstanceData;
+    generation: number;
+  }): Promise<ShowdownBattleResult> {
+    const startTime = Date.now();
+    const battleId = crypto.randomUUID();
+    
+    logger.info(`Starting battle simulation with instances: ${config.pokemon1Instance.name} vs ${config.pokemon2Instance.name}`);
+    
+    try {
+      const dex = Dex.forGen(config.generation);
+      
+      let pokemon1Wins = 0;
+      let pokemon2Wins = 0;
+      
+      // Run battles using the instance data
+      for (let i = 0; i < this.NUM_BATTLES; i++) {
+        const winner = await this.runSingleShowdownBattleWithInstances(
+          config.pokemon1Instance,
+          config.pokemon2Instance,
+          config.generation,
+          dex
+        );
+        
+        if (winner === 1) {
+          pokemon1Wins++;
+          logger.debug(`${config.pokemon1Instance.name} won battle ${i + 1}`);
+        } else {
+          pokemon2Wins++;
+          logger.debug(`${config.pokemon2Instance.name} won battle ${i + 1}`);
+        }
+      }
+      
+      const winRate = (pokemon1Wins / this.NUM_BATTLES) * 100;
+      const executionTime = Date.now() - startTime;
+      
+      const result: ShowdownBattleResult = {
+        battleId,
+        pokemon1: {
+          id: config.pokemon1Instance.id,
+          name: config.pokemon1Instance.name,
+          level: config.pokemon1Instance.level,
+          wins: pokemon1Wins,
+          types: config.pokemon1Instance.types,
+          sprites: config.pokemon1Instance.sprites,
+          moves: config.pokemon1Instance.moves,
+          stats: config.pokemon1Instance.stats,
+          baseStats: config.pokemon1Instance.baseStats,
+          evs: config.pokemon1Instance.evs,
+          ivs: config.pokemon1Instance.ivs,
+          ability: config.pokemon1Instance.ability,
+          item: config.pokemon1Instance.item,
+          levelupMoves: [] // Not needed for instance-based battles
+        },
+        pokemon2: {
+          id: config.pokemon2Instance.id,
+          name: config.pokemon2Instance.name,
+          level: config.pokemon2Instance.level,
+          wins: pokemon2Wins,
+          types: config.pokemon2Instance.types,
+          sprites: config.pokemon2Instance.sprites,
+          moves: config.pokemon2Instance.moves,
+          stats: config.pokemon2Instance.stats,
+          baseStats: config.pokemon2Instance.baseStats,
+          evs: config.pokemon2Instance.evs,
+          ivs: config.pokemon2Instance.ivs,
+          ability: config.pokemon2Instance.ability,
+          item: config.pokemon2Instance.item,
+          levelupMoves: [] // Not needed for instance-based battles
+        },
+        totalBattles: this.NUM_BATTLES,
+        winRate,
+        executionTime
+      };
+      
+      logger.info(`Battle completed with instances in ${executionTime}ms`, {
+        pokemon1: `${config.pokemon1Instance.name} (${pokemon1Wins} wins)`,
+        pokemon2: `${config.pokemon2Instance.name} (${pokemon2Wins} wins)`,
+        winRate: `${winRate.toFixed(1)}%`
+      });
+      
+      return result;
+    } catch (error) {
+      logger.error('Failed to simulate battle with instances:', error);
+      throw error instanceof ApiError ? error : new ApiError(500, 'Failed to simulate battle with instances');
+    }
+  }
+
+  private async runSingleShowdownBattleWithInstances(
+    pokemon1Instance: PokemonInstanceData,
+    pokemon2Instance: PokemonInstanceData,
+    generation: number,
+    dex: any
+  ): Promise<1 | 2> {
+    let stream: BattleStreams.BattleStream | null = null;
+    let pendingRead: Promise<string | null | undefined> | null = null;
+    
+    try {
+      stream = new BattleStreams.BattleStream();
+      
+      // Create teams from instance data
+      const p1team = await this.createTeamFromInstance(pokemon1Instance, generation, dex);
+      const p2team = await this.createTeamFromInstance(pokemon2Instance, generation, dex);
+      
+      // Start battle
+      await stream.write(`>start {"formatid":"gen${generation}singles","seed":[${Math.floor(Math.random() * 65536)},${Math.floor(Math.random() * 65536)},${Math.floor(Math.random() * 65536)},${Math.floor(Math.random() * 65536)}]}`);
+      await stream.write(`>player p1 {"name":"Player 1","team":"${p1team}"}`);
+      await stream.write(`>player p2 {"name":"Player 2","team":"${p2team}"}`);
+      
+      let winner: 1 | 2 = 1;
+      let battleEnded = false;
+      let turnCount = 0;
+      const maxTurns = 50;
+      
+      // Process battle quickly
+      while (!battleEnded && turnCount < maxTurns) {
+        let chunk: string | null | undefined = null;
+        try {
+          // Create a cancellable timeout
+          let timeoutId: NodeJS.Timeout | null = null;
+          const timeoutPromise = new Promise<string | null>((resolve) => {
+            timeoutId = setTimeout(() => resolve(null), 1000);
+          });
+          
+          // Store the pending read promise
+          pendingRead = stream.read();
+          
+          // Race between read and timeout
+          chunk = await Promise.race([
+            pendingRead,
+            timeoutPromise
+          ]);
+          
+          // Clear the timeout if read completed
+          if (timeoutId) clearTimeout(timeoutId);
+          
+          // If we got a timeout, mark pendingRead as handled
+          if (chunk === null) {
+            pendingRead = null;
+            continue;
+          }
+        } catch (readError) {
+          logger.error('Error reading from stream:', readError);
+          break;
+        }
+        
+        if (!chunk) continue;
+        
+        const lines = chunk.split('\n');
+        
+        for (const line of lines) {
+          if (line.includes('|turn|')) {
+            turnCount++;
+          }
+          
+          if (line.includes('|win|')) {
+            const winnerMatch = line.match(/\|win\|(.+)/);
+            if (winnerMatch) {
+              winner = winnerMatch[1].includes('Player 1') ? 1 : 2;
+              battleEnded = true;
+              break;
+            }
+          }
+          
+          if (line.includes('|tie')) {
+            winner = Math.random() < 0.5 ? 1 : 2;
+            battleEnded = true;
+            break;
+          }
+          
+          if (line.startsWith('|request|') || line.startsWith('>')) {
+            continue;
+          }
+        }
+        
+        if (!battleEnded && chunk.includes('|request|')) {
+          await stream.write(`>p1 default`);
+          await stream.write(`>p2 default`);
+        }
+      }
+      
+      if (!battleEnded) {
+        // Fallback to stats comparison if battle doesn't end
+        const total1 = Object.values(pokemon1Instance.stats).reduce((a, b) => a + b, 0);
+        const total2 = Object.values(pokemon2Instance.stats).reduce((a, b) => a + b, 0);
+        winner = total1 >= total2 ? 1 : 2;
+      }
+      
+      return winner;
+    } catch (error) {
+      logger.error('Error in runSingleShowdownBattleWithInstances:', {
+        error: error instanceof Error ? error.message : error,
+        pokemon1: pokemon1Instance.name,
+        pokemon2: pokemon2Instance.name
+      });
+      // Fallback to stats comparison on error
+      const total1 = Object.values(pokemon1Instance.stats).reduce((a, b) => a + b, 0);
+      const total2 = Object.values(pokemon2Instance.stats).reduce((a, b) => a + b, 0);
+      return total1 >= total2 ? 1 : 2;
+    } finally {
+      // Clean up stream properly
+      if (stream) {
+        try {
+          // Wait for any pending read to complete or timeout
+          if (pendingRead) {
+            await Promise.race([
+              pendingRead.catch(() => null), // Ignore errors from pending read
+              new Promise(resolve => setTimeout(resolve, 100)) // Give it 100ms max
+            ]);
+          }
+          
+          // Instead of destroying the stream, let it be garbage collected
+          // The BattleStream doesn't properly implement destroy() method
+          // and calling it causes internal state corruption
+          stream = null;
+        } catch (cleanupError) {
+          logger.error('Error during stream cleanup:', cleanupError);
+        }
+      }
+    }
+  }
+
+  private async createTeamFromInstance(instance: PokemonInstanceData, generation: number, dex: any): Promise<string> {
+    // Use the moves from the instance data (they're already move IDs)
+    const moves = instance.moves.slice(0, 4).map(move => {
+      // Convert move names back to IDs if needed
+      const moveId = move.toLowerCase().replace(/\s+/g, '');
+      return moveId;
+    });
+    
+    // Create a set from the instance data
+    const set = {
+      name: instance.name,
+      species: instance.species,
+      item: instance.item || '',
+      ability: instance.ability || 'No Ability',
+      level: instance.level,
+      moves: moves,
+      nature: instance.nature || 'Hardy',
+      evs: {
+        hp: instance.evs.hp,
+        atk: instance.evs.attack,
+        def: instance.evs.defense,
+        spa: instance.evs.specialAttack,
+        spd: instance.evs.specialDefense,
+        spe: instance.evs.speed
+      },
+      ivs: {
+        hp: instance.ivs.hp,
+        atk: instance.ivs.attack,
+        def: instance.ivs.defense,
+        spa: instance.ivs.specialAttack,
+        spd: instance.ivs.specialDefense,
+        spe: instance.ivs.speed
+      }
+    };
+    
+    const packedTeam = Teams.pack([set]);
+    return packedTeam;
+  }
 }
 
 export const pokemonShowdownService = new PokemonShowdownService();

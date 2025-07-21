@@ -2,6 +2,7 @@ import { cacheService } from './cache.service';
 import { showdownService } from './showdown.service';
 import logger from '../utils/logger';
 import { ApiError } from '../middleware/error.middleware';
+import { pokemonInstanceStore } from './pokemon-instance-store.service';
 
 interface BattleConfig {
   pokemon1Id: number;
@@ -15,6 +16,17 @@ interface BattleConfig {
     aiDifficulty?: 'random' | 'elite';
     pokemon1Instance?: any;
     pokemon2Instance?: any;
+  };
+}
+
+interface BattleWithInstancesConfig {
+  pokemon1InstanceId: string;
+  pokemon2InstanceId: string;
+  options?: {
+    generation?: number;
+    withItems?: boolean;
+    movesetType?: 'random' | 'competitive';
+    aiDifficulty?: 'random' | 'elite';
   };
 }
 
@@ -251,6 +263,86 @@ class BattleService {
         config
       });
       throw new ApiError(500, `Failed to simulate single battle: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
+  }
+
+  async simulateBattleWithInstances(config: BattleWithInstancesConfig): Promise<BattleResult> {
+    try {
+      logger.info('BattleService received battle request with instance IDs', {
+        pokemon1InstanceId: config.pokemon1InstanceId,
+        pokemon2InstanceId: config.pokemon2InstanceId,
+        generation: config.options?.generation
+      });
+
+      // Retrieve Pokemon instances from store
+      const pokemon1Instance = pokemonInstanceStore.getInstance(config.pokemon1InstanceId);
+      const pokemon2Instance = pokemonInstanceStore.getInstance(config.pokemon2InstanceId);
+
+      if (!pokemon1Instance || !pokemon2Instance) {
+        throw new ApiError(404, 'Pokemon instance(s) not found. They may have expired.');
+      }
+
+      logger.info('Retrieved Pokemon instances from store', {
+        pokemon1: `${pokemon1Instance.name} (Lv.${pokemon1Instance.level})`,
+        pokemon2: `${pokemon2Instance.name} (Lv.${pokemon2Instance.level})`
+      });
+
+      // Use showdown service to simulate battle with the stored instances
+      const showdownResult = await showdownService.simulateBattleWithInstances({
+        pokemon1Instance,
+        pokemon2Instance,
+        generation: config.options?.generation || 1
+      });
+
+      const result: BattleResult = {
+        battleId: showdownResult.battleId,
+        pokemon1: {
+          id: showdownResult.pokemon1.id,
+          name: showdownResult.pokemon1.name,
+          level: showdownResult.pokemon1.level,
+          wins: showdownResult.pokemon1.wins,
+          types: showdownResult.pokemon1.types,
+          sprites: showdownResult.pokemon1.sprites,
+          moves: showdownResult.pokemon1.moves,
+          stats: showdownResult.pokemon1.stats,
+          ability: showdownResult.pokemon1.ability,
+          item: showdownResult.pokemon1.item
+        },
+        pokemon2: {
+          id: showdownResult.pokemon2.id,
+          name: showdownResult.pokemon2.name,
+          level: showdownResult.pokemon2.level,
+          wins: showdownResult.pokemon2.wins,
+          types: showdownResult.pokemon2.types,
+          sprites: showdownResult.pokemon2.sprites,
+          moves: showdownResult.pokemon2.moves,
+          stats: showdownResult.pokemon2.stats,
+          ability: showdownResult.pokemon2.ability,
+          item: showdownResult.pokemon2.item
+        },
+        totalBattles: showdownResult.totalBattles,
+        winRate: showdownResult.winRate,
+        executionTime: showdownResult.executionTime
+      };
+
+      // Store battle result
+      this.activeBattles.set(result.battleId, result);
+
+      logger.info('Battle completed with instances', {
+        battleId: result.battleId,
+        pokemon1: `${result.pokemon1.name} (${result.pokemon1.wins} wins)`,
+        pokemon2: `${result.pokemon2.name} (${result.pokemon2.wins} wins)`,
+        winRate: result.winRate,
+        executionTime: result.executionTime
+      });
+
+      return result;
+    } catch (error) {
+      if (error instanceof ApiError) {
+        throw error;
+      }
+      logger.error('Failed to simulate battle with instances:', error);
+      throw new ApiError(500, 'Failed to simulate battle');
     }
   }
 }

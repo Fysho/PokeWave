@@ -5,28 +5,37 @@ PokeWave is a web-based Pokemon battle prediction game where users predict the w
 
 ## Implementation Status
 
-### ✅ Phase 5 - Data Source Optimization (Complete)
-**Status**: Fully optimized with Pokemon Showdown data and learnset enforcement
-**Last Commit**: c0c31ad - "fix: Resolve first-load timeout issue with battle simulations"
+### ✅ Phase 6 - Pokemon Instance System (Complete)
+**Status**: Full Pokemon instance creation with comprehensive battle data
+**Last Commit**: 9460bd7 - "feat: Update frontend to use new random-instances endpoint"
 
 **Recent Updates**:
-- **Pokemon Data Sources**: 
-  - Pokemon Showdown (@pkmn packages) provides: stats, types, moves, abilities, battle mechanics
-  - PokeAPI only provides: sprite images (front, back, shiny)
-  - Local learnset data from @pkmn/dex for accurate move validation
-- **Battle Simulation**: Always simulates exactly 17 battles (configured in shared/config/battle.config.ts)
-- **Move System**: 
-  - Strict enforcement of level-up moves only (no invalid moves)
-  - Pokemon can only use moves from their actual learnset
-  - Proper move ID formatting for Pokemon Showdown compatibility
-- **Performance Optimizations**:
-  - Learnset data preloaded on server startup
-  - Cached in memory to avoid repeated file reads
-  - Frontend timeout increased to 15s for battle simulations (handles cold starts)
-- **Bug Fixes**: 
-  - Fixed battle simulation timeout by using correct move IDs
-  - Resolved first-load timeout with preloading optimization
-  - Corrected UI display showing wrong battle count
+- **Pokemon Instance System**:
+  - New `/api/pokemon/random-instances` endpoint returns complete Pokemon data
+  - Pokemon instances include: stats, moves, abilities, items, types, sprites, IVs, EVs, nature
+  - Support for flexible level settings (fixed or random levels)
+  - Support for item settings (random with 50% chance or none)
+- **Frontend Integration**:
+  - Frontend now fetches full Pokemon instances before battle simulation
+  - Displays comprehensive Pokemon stats calculated with level, IVs, EVs, and nature
+  - Shows Pokemon abilities, held items (or "No Item"), and nature
+  - "Perfect IVs" indicator displayed for all Pokemon
+- **API Query Parameters**:
+  - `generation`: Pokemon generation (1-9, default: 1)
+  - `level_mode`: "fixed" or "random" (default: "fixed")
+  - `level`: Fixed level value (default: 50)
+  - `min_level`/`max_level`: Range for random levels (default: 1-100)
+  - `item_mode`: "random" or "none" (default: "random")
+  - `no_items`: Boolean alternative to disable items
+
+### ✅ Phase 5 - Data Source Optimization (Complete)
+**Status**: Fully optimized with Pokemon Showdown data and learnset enforcement
+**Previous Updates**:
+- Pokemon Showdown (@pkmn packages) provides: stats, types, moves, abilities, battle mechanics
+- PokeAPI only provides: sprite images (front, back, shiny)
+- Battle Simulation: Always simulates exactly 17 battles
+- Strict enforcement of level-up moves only
+- Learnset data preloaded on server startup
 
 ### ✅ Phase 4 Complete - UI Framework Migration
 **Status**: Successfully migrated to Mantine UI framework
@@ -47,7 +56,10 @@ PokeWave is a web-based Pokemon battle prediction game where users predict the w
 **Last Commit**: fe71783 - "Complete game loop implementation with guess result feedback"
 
 ## Game Flow
-1. **Battle Generation**: System selects two random Pokemon (default Gen 1-151, configurable up to Gen 9)
+1. **Pokemon Generation**: System creates two random Pokemon instances with full battle data
+   - Fetches from `/api/pokemon/random-instances` endpoint
+   - Includes calculated stats, abilities, items, moves, nature, IVs/EVs
+   - Supports fixed or random levels, with or without items
 2. **Battle Simulation**: Pokemon Showdown engine simulates exactly 17 battles (configured in shared/config/battle.config.ts)
 3. **User Prediction**: User predicts win percentage using a slider (must be within 10% accuracy to score)
 4. **Result Feedback**: System shows correct/incorrect with accuracy percentage and points earned

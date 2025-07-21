@@ -4,6 +4,7 @@ import logger from '../utils/logger';
 import { ApiError } from '../middleware/error.middleware';
 import { pokemonShowdownService } from './pokemon-showdown.service';
 import { GetRandomPokemonWithInstancesResponse, RandomPokemonSettings } from '../types/pokemon-instance.types';
+import { pokemonInstanceStore } from './pokemon-instance-store.service';
 
 interface PokemonSprites {
   front: string;
@@ -122,10 +123,20 @@ class PokemonService {
       
       logger.info(`Successfully created Pokemon instances: ${pokemon1Instance.name} (Lv.${pokemon1Level}) vs ${pokemon2Instance.name} (Lv.${pokemon2Level})`);
       
+      // Store the instances and get their IDs
+      const { pokemon1InstanceId, pokemon2InstanceId } = pokemonInstanceStore.storeBattlePair(
+        pokemon1Instance,
+        pokemon2Instance
+      );
+      
+      logger.info(`Stored Pokemon instances with IDs: ${pokemon1InstanceId} and ${pokemon2InstanceId}`);
+      
       return {
         pokemon1: pokemon1Instance,
         pokemon2: pokemon2Instance,
-        generation
+        generation,
+        pokemon1InstanceId,
+        pokemon2InstanceId
       };
     } catch (error) {
       logger.error('Failed to create random Pokemon instances:', error);

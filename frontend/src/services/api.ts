@@ -125,6 +125,8 @@ export class ApiService {
     aiDifficulty?: 'random' | 'elite';
     pokemon1Level?: number;
     pokemon2Level?: number;
+    pokemon1InstanceId?: string;
+    pokemon2InstanceId?: string;
   }): Promise<BattleResult> {
     try {
       // Use provided levels or generate based on settings
@@ -150,6 +152,8 @@ export class ApiService {
       const response = await api.post<BattleResult>('/battle/simulate', {
         pokemon1Id,
         pokemon2Id,
+        pokemon1InstanceId: options?.pokemon1InstanceId,
+        pokemon2InstanceId: options?.pokemon2InstanceId,
         options: {
           generation: options?.generation || 1,
           pokemon1Level,

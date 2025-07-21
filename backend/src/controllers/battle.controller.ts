@@ -8,28 +8,44 @@ export const simulateBattle = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const { pokemon1Id, pokemon2Id, options } = req.body;
+    const { pokemon1Id, pokemon2Id, pokemon1InstanceId, pokemon2InstanceId, options } = req.body;
     console.log('Battle controller received request:', { 
       pokemon1Id, 
       pokemon2Id,
+      pokemon1InstanceId,
+      pokemon2InstanceId,
       options,
       timestamp: new Date().toISOString()
     });
 
-    if (!pokemon1Id || !pokemon2Id) {
-      throw new ApiError(400, 'Both pokemon1Id and pokemon2Id are required');
+    // Support both instance IDs and regular Pokemon IDs
+    if (pokemon1InstanceId && pokemon2InstanceId) {
+      // Use instance IDs if provided
+      console.log('Using Pokemon instance IDs for battle simulation');
+      const result = await battleService.simulateBattleWithInstances({
+        pokemon1InstanceId,
+        pokemon2InstanceId,
+        options
+      });
+      
+      console.log('Battle controller sending response');
+      res.json(result);
+      console.log('Battle controller response sent successfully');
+    } else if (pokemon1Id && pokemon2Id) {
+      // Fallback to regular Pokemon IDs
+      console.log('Using regular Pokemon IDs for battle simulation');
+      const result = await battleService.simulateBattle({
+        pokemon1Id,
+        pokemon2Id,
+        options
+      });
+      
+      console.log('Battle controller sending response');
+      res.json(result);
+      console.log('Battle controller response sent successfully');
+    } else {
+      throw new ApiError(400, 'Either instance IDs or Pokemon IDs are required');
     }
-
-    console.log('Calling battleService.simulateBattle...');
-    const result = await battleService.simulateBattle({
-      pokemon1Id,
-      pokemon2Id,
-      options
-    });
-
-    console.log('Battle controller sending response');
-    res.json(result);
-    console.log('Battle controller response sent successfully');
   } catch (error) {
     console.error('Battle controller caught error:', {
       error: error instanceof Error ? error.message : error,

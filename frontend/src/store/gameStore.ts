@@ -108,7 +108,9 @@ export const useGameStore = create<GameStore>()(
                 movesetType: battleSettings?.movesetType || 'random',
                 aiDifficulty: battleSettings?.aiDifficulty || 'random',
                 pokemon1Level: pokemonInstances.pokemon1.level,
-                pokemon2Level: pokemonInstances.pokemon2.level
+                pokemon2Level: pokemonInstances.pokemon2.level,
+                pokemon1InstanceId: pokemonInstances.pokemon1InstanceId,
+                pokemon2InstanceId: pokemonInstances.pokemon2InstanceId
               }
             );
             
