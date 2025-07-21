@@ -23,6 +23,7 @@ interface PokemonBattleCardProps {
   position: 'left' | 'right';
   winPercentage?: number;
   guessPercentage?: number;
+  totalBattles?: number;
 }
 
 const PokemonBattleCard: React.FC<PokemonBattleCardProps> = ({
@@ -30,7 +31,8 @@ const PokemonBattleCard: React.FC<PokemonBattleCardProps> = ({
   showResults,
   position,
   winPercentage,
-  guessPercentage
+  guessPercentage,
+  totalBattles
 }) => {
   const theme = useMantineTheme();
   const { colorScheme } = useMantineColorScheme();
@@ -393,7 +395,7 @@ const PokemonBattleCard: React.FC<PokemonBattleCardProps> = ({
                     {displayWinPercentage}%
                   </Text>
                   <Text size="sm" c="gray.6">
-                    {pokemon.wins}/{pokemon.totalBattles} wins
+                    {pokemon.wins} out of {totalBattles || 999} wins
                   </Text>
                 </Box>
               </ScaleIn>
@@ -571,6 +573,7 @@ const BattleArena: React.FC = () => {
                           position="left"
                           winPercentage={showResults ? guessResult?.actualWinRate : undefined}
                           guessPercentage={!showResults ? guessPercentage : undefined}
+                          totalBattles={currentBattle.totalBattles}
                         />
                       </Grid.Col>
 
@@ -614,6 +617,7 @@ const BattleArena: React.FC = () => {
                           position="right"
                           winPercentage={showResults ? (100 - (guessResult?.actualWinRate || 0)) : undefined}
                           guessPercentage={!showResults ? guessPercentage : undefined}
+                          totalBattles={currentBattle.totalBattles}
                         />
                       </Grid.Col>
                     </Grid>
