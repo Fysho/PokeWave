@@ -93,9 +93,9 @@ const PokemonBattleCard: React.FC<PokemonBattleCardProps> = ({
     const minSize = 240; // 2x bigger (was 120)
     const maxSize = 400; // 2x bigger (was 200)
     
-    // For left pokemon (position === 'left'), size decreases with guessPercentage (slider right = right wins more)
-    // For right pokemon (position === 'right'), size increases with guessPercentage
-    const percentage = position === 'left' ? (100 - effectiveGuess) : effectiveGuess;
+    // The effectiveGuess now represents the win percentage for the specific Pokemon
+    // So we use it directly for sizing
+    const percentage = effectiveGuess;
     
     // Scale the size based on percentage (0-100)
     // At 50%, both should be base size (320px)
