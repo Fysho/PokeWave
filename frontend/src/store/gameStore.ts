@@ -137,7 +137,8 @@ export const useGameStore = create<GameStore>()(
                 ability: pokemonInstances.pokemon1.ability,
                 abilityDetail: pokemonInstances.pokemon1.abilityDetail,
                 item: pokemonInstances.pokemon1.item,
-                itemDetail: pokemonInstances.pokemon1.itemDetail
+                itemDetail: pokemonInstances.pokemon1.itemDetail,
+                shiny: pokemonInstances.pokemon1.shiny
               },
               pokemon2: {
                 id: pokemonInstances.pokemon2.id,
@@ -156,7 +157,8 @@ export const useGameStore = create<GameStore>()(
                 abilityDetail: pokemonInstances.pokemon2.abilityDetail,
                 item: pokemonInstances.pokemon2.item,
                 itemDetail: pokemonInstances.pokemon2.itemDetail,
-                nature: pokemonInstances.pokemon2.nature
+                nature: pokemonInstances.pokemon2.nature,
+                shiny: pokemonInstances.pokemon2.shiny
               }
             };
             
@@ -216,6 +218,14 @@ export const useGameStore = create<GameStore>()(
               const pokedexStore = usePokedexStore.getState();
               const pokemon1Shiny = currentBattle.pokemon1.shiny || false;
               const pokemon2Shiny = currentBattle.pokemon2.shiny || false;
+              
+              console.log('🎮 Battle Pokemon Status:', {
+                pokemon1: currentBattle.pokemon1.name,
+                pokemon1Shiny,
+                pokemon2: currentBattle.pokemon2.name,
+                pokemon2Shiny
+              });
+              
               pokedexStore.unlockMultiplePokemon(
                 [currentBattle.pokemon1.id, currentBattle.pokemon2.id],
                 [pokemon1Shiny, pokemon2Shiny]
