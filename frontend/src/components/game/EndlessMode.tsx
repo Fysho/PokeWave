@@ -60,9 +60,8 @@ const EndlessMode: React.FC<EndlessModeProps> = () => {
       if (lastProcessedBattleRef.current >= 0) {
         if (!lastBattle.isCorrect) {
           loseLife();
-        } else {
-          addEndlessScore(lastBattle.pointsEarned);
         }
+        // Score is already updated in gameStore
         
         // Start next battle if still alive
         if (endlessLives > 1 || lastBattle.isCorrect) {
@@ -87,7 +86,7 @@ const EndlessMode: React.FC<EndlessModeProps> = () => {
     setEndlessActive(true);
     setHasStarted(true);
     await generateNewBattle(battleSettings); // Generate new battle for fresh start
-    incrementEndlessBattleCount(); // Start first battle of new game
+    // Don't increment battle count here - it will be incremented when the battle is completed
   };
 
   const handleReset = () => {

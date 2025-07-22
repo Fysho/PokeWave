@@ -51,12 +51,12 @@ export const useEndlessStore = create<EndlessState>()(
         return { endlessLives: newLives };
       }),
       
-      resetEndlessMode: () => set({
+      resetEndlessMode: () => set((state) => ({
         endlessLives: 3,
         endlessScore: 0,
         endlessBattleCount: 0,
-        isEndlessActive: false
-      }),
+        isEndlessActive: state.isEndlessActive // Keep the current active state
+      })),
       
       setEndlessActive: (active) => set({ isEndlessActive: active }),
       

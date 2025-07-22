@@ -5,6 +5,7 @@ import { Pokemon } from './pokemon';
 import ApiService from '../services/api';
 // import { simulateMainBattle } from '../utils/mainBattleSimulation'; // Using backend API instead
 import { evaluateGuess, evaluateRangeGuess } from '../utils/guessEvaluation';
+import { useEndlessStore } from './endlessStore';
 
 interface BattleHistoryEntry {
   id: string;
@@ -202,6 +203,12 @@ export const useGameStore = create<GameStore>()(
             const newCorrectGuesses = guessResult.isCorrect ? correctGuesses + 1 : correctGuesses;
             const newStreak = guessResult.isCorrect ? streak + 1 : 0;
             const newScore = score + guessResult.points;
+
+            // Update endless mode score if active
+            const endlessStore = useEndlessStore.getState();
+            if (endlessStore.isEndlessActive && guessResult.isCorrect) {
+              endlessStore.addEndlessScore(guessResult.points);
+            }
 
             // Add to battle history
             const historyEntry: BattleHistoryEntry = {
