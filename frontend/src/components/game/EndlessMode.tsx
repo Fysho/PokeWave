@@ -172,7 +172,7 @@ const EndlessMode: React.FC<EndlessModeProps> = () => {
                 <IconHeart size={24} color="var(--mantine-color-red-6)" />
                 <Text size="lg" fw={600}>Lives:</Text>
                 <Badge size="lg" color="red" variant="filled">
-                  {lives}
+                  {endlessLives}
                 </Badge>
               </Group>
             </Card>
