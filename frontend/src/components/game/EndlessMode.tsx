@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { 
   Box, 
   Title, 
@@ -20,7 +20,7 @@ import { FadeIn } from '../ui/transitions';
 interface EndlessModeProps {}
 
 const EndlessMode: React.FC<EndlessModeProps> = () => {
-  const { battleHistory, generateNewBattle } = useGameStore();
+  const { battleHistory, generateNewBattle, currentBattle } = useGameStore();
   const { battleSettings } = useSettingsStore();
   const { 
     endlessLives, 
@@ -37,21 +37,15 @@ const EndlessMode: React.FC<EndlessModeProps> = () => {
   } = useEndlessStore();
 
   const lastProcessedBattleRef = useRef<number>(-1);
+  const [hasStarted, setHasStarted] = useState(false);
 
   // Set endless mode as active when component mounts
   useEffect(() => {
     setEndlessActive(true);
     
-    // Generate new battle when entering endless mode
-    generateNewBattle(battleSettings);
-    
-    // If starting fresh, increment battle count for first battle
-    if (endlessBattleCount === 0) {
-      incrementEndlessBattleCount();
-    }
-    
     return () => {
       setEndlessActive(false);
+      setHasStarted(false);
     };
   }, []);
 
@@ -87,12 +81,19 @@ const EndlessMode: React.FC<EndlessModeProps> = () => {
     }
   }, [endlessLives]);
 
-  const handleReset = () => {
+  const handleStartRun = async () => {
     resetEndlessMode();
     lastProcessedBattleRef.current = battleHistory.length;
     setEndlessActive(true);
-    generateNewBattle(battleSettings); // Generate new battle for fresh start
+    setHasStarted(true);
+    await generateNewBattle(battleSettings); // Generate new battle for fresh start
     incrementEndlessBattleCount(); // Start first battle of new game
+  };
+
+  const handleReset = () => {
+    setHasStarted(false);
+    resetEndlessMode();
+    lastProcessedBattleRef.current = battleHistory.length;
   };
 
   if (endlessLives === 0) {
@@ -140,6 +141,69 @@ const EndlessMode: React.FC<EndlessModeProps> = () => {
                   mt="md"
                 >
                   Play Again
+                </Button>
+              </Stack>
+            </Card>
+          </Stack>
+        </FadeIn>
+      </Box>
+    );
+  }
+
+  // Show start screen if not started yet
+  if (!hasStarted) {
+    return (
+      <Box maw={800} mx="auto">
+        <FadeIn>
+          <Stack align="center" gap="xl" mt="xl">
+            <Title 
+              order={1}
+              size="h1"
+              fw={700}
+              ta="center"
+              style={{
+                background: 'linear-gradient(135deg, var(--mantine-color-blue-6), var(--mantine-color-purple-6))',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                backgroundClip: 'text'
+              }}
+            >
+              <Group gap="xs">
+                <IconInfinity size={40} />
+                Endless Mode
+              </Group>
+            </Title>
+            
+            <Card withBorder p="xl" w="100%">
+              <Stack align="center" gap="lg">
+                <IconInfinity size={64} color="var(--mantine-color-purple-6)" />
+                <Title order={2}>Survival Challenge</Title>
+                <Text size="lg" c="dimmed" ta="center">
+                  Test your Pokemon prediction skills! You start with 3 lives.
+                  Each wrong prediction costs you a life. How long can you survive?
+                </Text>
+                
+                {endlessHighScore > 0 && (
+                  <Card withBorder p="md" style={{ backgroundColor: 'var(--mantine-color-purple-0)', borderColor: 'var(--mantine-color-purple-3)' }}>
+                    <Group gap="xs">
+                      <IconFlame size={24} color="var(--mantine-color-purple-6)" />
+                      <Text size="lg" fw={600}>Your Best Score:</Text>
+                      <Badge size="lg" color="purple" variant="filled">
+                        {endlessHighScore}
+                      </Badge>
+                    </Group>
+                  </Card>
+                )}
+                
+                <Button 
+                  size="xl" 
+                  variant="gradient"
+                  gradient={{ from: 'blue', to: 'purple' }}
+                  onClick={handleStartRun}
+                  mt="md"
+                  leftSection={<IconInfinity size={24} />}
+                >
+                  Start New Survival Run
                 </Button>
               </Stack>
             </Card>
