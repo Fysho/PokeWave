@@ -120,7 +120,8 @@ export const CompactBattleCard: React.FC<CompactBattleCardProps> = ({
                   height: `${spriteSize}px`,
                   objectFit: 'contain',
                   filter: 'drop-shadow(0 4px 8px rgb(0 0 0 / 0.15))',
-                  cursor: 'pointer'
+                  cursor: 'pointer',
+                  imageRendering: 'pixelated'
                 }}
               />
             </Tooltip>
