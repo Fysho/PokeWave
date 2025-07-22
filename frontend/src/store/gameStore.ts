@@ -204,10 +204,10 @@ export const useGameStore = create<GameStore>()(
             const newStreak = guessResult.isCorrect ? streak + 1 : 0;
             const newScore = score + guessResult.points;
 
-            // Update endless mode score if active
+            // Update endless mode score if active (1 point per correct guess)
             const endlessStore = useEndlessStore.getState();
             if (endlessStore.isEndlessActive && guessResult.isCorrect) {
-              endlessStore.addEndlessScore(guessResult.points);
+              endlessStore.addEndlessScore(1);
             }
 
             // Add to battle history
