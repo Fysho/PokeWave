@@ -896,7 +896,7 @@ const BattleArena: React.FC<BattleArenaProps> = ({ hideStats = false }) => {
                               step={1}
                               disabled={isLoading}
                               color="blue"
-                              size="lg"
+                              size="xl"
                               label={(value) => `${value}%`}
                               hideHandles={true}
                               disableIndividualDrag={true}
@@ -910,8 +910,13 @@ const BattleArena: React.FC<BattleArenaProps> = ({ hideStats = false }) => {
                               step={1}
                               disabled={isLoading}
                               color="blue"
-                              size="lg"
-                              style={{ padding: '8px 0' }}
+                              size="xl"
+                              styles={{
+                                root: { padding: '12px 0' },
+                                track: { height: '12px' },
+                                bar: { height: '12px' },
+                                thumb: { width: '24px', height: '24px' }
+                              }}
                             />
                           )}
                         </Stack>
