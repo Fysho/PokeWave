@@ -628,8 +628,15 @@ const BattleArena: React.FC = () => {
       const width = calculateRangeWidth();
       setGuessRange(prevRange => {
         const center = prevRange[0] + (prevRange[1] - prevRange[0]) / 2;
-        const newMin = Math.max(0, Math.min(100 - width, center - width / 2));
-        const newMax = Math.min(100, newMin + width);
+        const rawMin = center - width / 2;
+        const rawMax = center + width / 2;
+        let newMin = Math.max(0, Math.min(100 - width, rawMin));
+        let newMax = Math.min(100, Math.max(width, rawMax));
+        
+        // Ensure we maintain exact boundaries at 0 and 100
+        if (newMin <= 0.5) newMin = 0;
+        if (newMax >= 99.5) newMax = 100;
+        
         return [Math.round(newMin), Math.round(newMax)];
       });
     }

@@ -130,8 +130,11 @@ export const CenterDraggableRangeSlider: React.FC<CenterDraggableRangeSliderProp
         newMin = max - range;
       }
 
-      setLocalValue([Math.round(newMin), Math.round(newMax)]);
-      onChange([Math.round(newMin), Math.round(newMax)]);
+      // Use floor for min when at boundary, ceil for max when at boundary
+      const finalMin = newMin <= min ? min : Math.round(newMin);
+      const finalMax = newMax >= max ? max : Math.round(newMax);
+      setLocalValue([finalMin, finalMax]);
+      onChange([finalMin, finalMax]);
     }
   };
 
