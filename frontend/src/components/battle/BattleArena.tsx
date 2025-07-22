@@ -107,16 +107,21 @@ const PokemonBattleCard: React.FC<PokemonBattleCardProps> = ({
         `}
       >
         <Card.Section p="lg">
-          <Title order={2} size="h1" fw={700} tt="capitalize" ta="center" mb="md">
-            {pokemon.name}
-          </Title>
+          <Box mb="md">
+            <Group align="baseline" gap="xs">
+              <Text size="lg" c="dimmed">Lv.{pokemon.level}</Text>
+              <Title order={2} size="h1" fw={700} tt="capitalize">
+                {pokemon.name}
+              </Title>
+            </Group>
+          </Box>
           
           <Box 
             pos="relative" 
             ta="center" 
-            mb="md"
+            mb="sm"
             style={{
-              height: '320px', // Reduced height since name is now above
+              height: '240px', // Further reduced height
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center'
@@ -179,17 +184,6 @@ const PokemonBattleCard: React.FC<PokemonBattleCardProps> = ({
                 </Text>
               </Box>
             )}
-            
-            <Badge 
-              variant="light" 
-              size="lg"
-              pos="absolute"
-              top={-8}
-              right={-8}
-              style={{ border: '2px solid var(--mantine-color-white)' }}
-            >
-              Lv.{pokemon.level}
-            </Badge>
           </Box>
         </Card.Section>
 
