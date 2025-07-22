@@ -14,12 +14,14 @@ import { IconInfinity, IconHeart, IconTrophy, IconFlame } from '@tabler/icons-re
 import BattleArena from '../battle/BattleArena';
 import { useGameStore } from '../../store/gameStore';
 import { useEndlessStore } from '../../store/endlessStore';
+import { useSettingsStore } from '../../store/settingsStore';
 import { FadeIn } from '../ui/transitions';
 
 interface EndlessModeProps {}
 
 const EndlessMode: React.FC<EndlessModeProps> = () => {
-  const { battleHistory } = useGameStore();
+  const { battleHistory, generateNewBattle } = useGameStore();
+  const { battleSettings } = useSettingsStore();
   const { 
     endlessLives, 
     endlessScore, 
@@ -39,6 +41,9 @@ const EndlessMode: React.FC<EndlessModeProps> = () => {
   // Set endless mode as active when component mounts
   useEffect(() => {
     setEndlessActive(true);
+    
+    // Generate new battle when entering endless mode
+    generateNewBattle(battleSettings);
     
     // If starting fresh, increment battle count for first battle
     if (endlessBattleCount === 0) {
@@ -85,6 +90,8 @@ const EndlessMode: React.FC<EndlessModeProps> = () => {
   const handleReset = () => {
     resetEndlessMode();
     lastProcessedBattleRef.current = battleHistory.length;
+    setEndlessActive(true);
+    generateNewBattle(battleSettings); // Generate new battle for fresh start
     incrementEndlessBattleCount(); // Start first battle of new game
   };
 
