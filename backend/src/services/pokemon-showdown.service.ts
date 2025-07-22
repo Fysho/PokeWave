@@ -24,6 +24,7 @@ export interface ShowdownBattleResult {
   battleId: string;
   pokemon1Wins: number;
   pokemon2Wins: number;
+  draws: number;
   totalBattles: number;
   executionTime: number;
 }
@@ -45,7 +46,7 @@ interface BattleTurn {
 }
 
 interface SingleBattleResult {
-  winner: string;
+  winner: string | 'draw';
   turns: BattleTurn[];
   totalTurns: number;
   finalHP1: number;
@@ -94,6 +95,7 @@ class PokemonShowdownService {
       // Run multiple battles
       let pokemon1Wins = 0;
       let pokemon2Wins = 0;
+      let draws = 0;
 
       logger.info(`Beginning simulation: ${config.pokemon1.name} vs ${config.pokemon2.name}`, {skipFormat: true});
 
@@ -104,7 +106,13 @@ class PokemonShowdownService {
             config.generation
         );
 
-        if (winner == 1) {
+        if (winner === 0) {
+          // Draw - both Pokemon get 0.5 wins
+          pokemon1Wins += 0.5;
+          pokemon2Wins += 0.5;
+          draws++;
+          //logger.info(`Battle ${i + 1} ended in a draw`, {skipFormat: true});
+        } else if (winner === 1) {
           pokemon1Wins++;
           //logger.info(`${config.pokemon1.name} won battle ${i + 1}`, {skipFormat: true});
         } else {
@@ -119,6 +127,7 @@ class PokemonShowdownService {
         battleId: crypto.randomUUID(),
         pokemon1Wins: pokemon1Wins,
         pokemon2Wins: pokemon2Wins,
+        draws: draws,
         totalBattles: this.NUM_BATTLES,
         executionTime: executionTime,
       };
@@ -181,12 +190,14 @@ class PokemonShowdownService {
       // Log both Pokemon levels
       logger.info(`🎮 Battle Tester: ${pokemon1.name} Level ${pokemon1.level} vs ${pokemon2.name} Level ${pokemon2.level}`);
       
-      let winner = config.pokemon1.name;
+      let winner: string | 'draw' = config.pokemon1.name;
       let battleEnded = false;
       let turnCount = 0;
       const maxTurns = 50;
       let p1Request: any = null;
       let p2Request: any = null;
+      let pokemon1Fainted = false;
+      let pokemon2Fainted = false;
 
       logger.info('🎮 Battle Tester: Battle started! Processing turns...');
       
@@ -208,11 +219,38 @@ class PokemonShowdownService {
         outputs.push(chunk);
         
         
+        // Check for faints
+        if (chunk.includes('|faint|')) {
+          if (chunk.includes('p1a:')) {
+            pokemon1Fainted = true;
+            logger.info(`🎮 Battle Tester: ${pokemon1.name} fainted!`);
+          } else if (chunk.includes('p2a:')) {
+            pokemon2Fainted = true;
+            logger.info(`🎮 Battle Tester: ${pokemon2.name} fainted!`);
+          }
+          
+          // Check for draw (both Pokemon fainted)
+          if (pokemon1Fainted && pokemon2Fainted) {
+            battleEnded = true;
+            winner = 'draw';
+            logger.info(`🎮 Battle Tester: Battle ended in a DRAW!`);
+            break;
+          }
+        }
+        
         // Check for winner
         if (chunk.includes('|win|')) {
           battleEnded = true;
           winner = chunk.includes('Player 1') ? pokemon1.name : pokemon2.name;
           logger.info(`🎮 Battle Tester: Battle ended! Winner: ${winner}`);
+          break;
+        }
+        
+        // Check for tie message from Pokemon Showdown
+        if (chunk.includes('|tie')) {
+          battleEnded = true;
+          winner = 'draw';
+          logger.info(`🎮 Battle Tester: Battle ended in a TIE!`);
           break;
         }
         
@@ -361,8 +399,8 @@ class PokemonShowdownService {
       }
 
       // Extract final HP from the last turn or set to 0 for the loser
-      const finalHP1 = winner === pokemon1.name ? turns[turns.length - 1]?.remainingHP || 0 : 0;
-      const finalHP2 = winner === pokemon2.name ? turns[turns.length - 1]?.remainingHP || 0 : 0;
+      const finalHP1 = winner === 'draw' ? 0 : (winner === pokemon1.name ? turns[turns.length - 1]?.remainingHP || 0 : 0);
+      const finalHP2 = winner === 'draw' ? 0 : (winner === pokemon2.name ? turns[turns.length - 1]?.remainingHP || 0 : 0);
       
       const executionTime = Date.now() - startTime;
 
@@ -409,7 +447,7 @@ class PokemonShowdownService {
       pokemon1: PokemonInstanceData,
       pokemon2: PokemonInstanceData,
       generation: number
-  ): Promise<1 | 2> {
+  ): Promise<0 | 1 | 2> {
     const stream = new BattleStreams.BattleStream();
 
     // Create teams
@@ -439,9 +477,11 @@ class PokemonShowdownService {
     await stream.write(`>player p1 ${JSON.stringify({ name: 'Player 1', team: p1team })}`);
     await stream.write(`>player p2 ${JSON.stringify({ name: 'Player 2', team: p2team })}`);
 
-    let winner: 1 | 2 = 1;
+    let winner: 0 | 1 | 2 = 1;
     let turnCount = 0;
     const maxTurns = 50;
+    let pokemon1Fainted = false;
+    let pokemon2Fainted = false;
 
     //logger.info(`\n\n==========================================================================='`);
     //logger.info(`NewTurnCourt ` + turnCount);
@@ -454,8 +494,29 @@ class PokemonShowdownService {
 
       if (!chunk) break;
 
+      // Check for faints
+      if (chunk.includes('|faint|')) {
+        if (chunk.includes('p1a:')) {
+          pokemon1Fainted = true;
+        } else if (chunk.includes('p2a:')) {
+          pokemon2Fainted = true;
+        }
+        
+        // Check for draw (both Pokemon fainted)
+        if (pokemon1Fainted && pokemon2Fainted) {
+          winner = 0;
+          break;
+        }
+      }
+
       if (chunk.includes('|win|')) {
         winner = chunk.includes('Player 1') ? 1 : 2;
+        break;
+      }
+      
+      // Check for tie message from Pokemon Showdown
+      if (chunk.includes('|tie')) {
+        winner = 0;
         break;
       }
       if (chunk.includes('|teampreview')) {

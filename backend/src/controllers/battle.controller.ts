@@ -23,6 +23,7 @@ export const simulateBattle = async (
       battleId: result.battleId,
       pokemon1Wins: result.pokemon1Wins,
       pokemon2Wins: result.pokemon2Wins,
+      draws: result.draws,
       totalBattles: result.totalBattles,
       winRate: result.pokemon1Wins / result.totalBattles * 100,
       executionTime: result.executionTime

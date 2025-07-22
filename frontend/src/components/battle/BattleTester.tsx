@@ -259,10 +259,10 @@ const BattleTester: React.FC<BattleTesterProps> = ({
                       </Text>
                       <Badge 
                         variant="filled" 
-                        color={simulation.winner === pokemon1?.name ? 'blue' : 'red'}
+                        color={simulation.winner === 'draw' ? 'gray' : (simulation.winner === pokemon1?.name ? 'blue' : 'red')}
                         size="sm"
                       >
-                        {simulation.winner} Wins!
+                        {simulation.winner === 'draw' ? 'Draw!' : `${simulation.winner} Wins!`}
                       </Badge>
                     </Group>
                     

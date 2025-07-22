@@ -272,6 +272,7 @@ export interface SimpleBattleResult {
   battleId: string;
   pokemon1Wins: number;
   pokemon2Wins: number;
+  draws: number;
   totalBattles: number;
   winRate: number;
   executionTime: number;
