@@ -338,13 +338,14 @@ const Pokedex: React.FC<PokedexProps> = () => {
                       {/* Pokemon Count */}
                       {getPokemonCount(poke.id) > 0 && (
                         <Badge
-                          size="xs"
+                          size="md"
                           variant="light"
                           style={{
                             position: 'absolute',
                             top: 2,
                             right: 2,
                             fontWeight: 600,
+                            fontSize: '14px',
                             backgroundColor: 'var(--mantine-color-default)',
                             color: 'var(--mantine-color-text)'
                           }}
