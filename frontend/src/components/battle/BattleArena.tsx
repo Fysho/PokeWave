@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Button, Badge, Slider, Group, Text, Grid, Box, Stack, Title, Center, Loader, useMantineTheme, useMantineColorScheme, Tooltip } from '@mantine/core';
+import { Card, Button, Badge, Slider, RangeSlider, Group, Text, Grid, Box, Stack, Title, Center, Loader, useMantineTheme, useMantineColorScheme, Tooltip } from '@mantine/core';
 import { useGameStore } from '../../store/gameStore';
 import { useSettingsStore } from '../../store/settingsStore';
+import { useEndlessStore } from '../../store/endlessStore';
 import { BattleLoading } from '../ui/loading';
 import { FadeIn, SlideIn, ResultReveal, BounceIn, ScaleIn } from '../ui/transitions';
 import StreakCelebration from '../ui/streak-celebration';
@@ -24,6 +25,7 @@ interface PokemonBattleCardProps {
   position: 'left' | 'right';
   winPercentage?: number;
   guessPercentage?: number;
+  guessRange?: [number, number];
   totalBattles?: number;
 }
 
@@ -33,6 +35,7 @@ const PokemonBattleCard: React.FC<PokemonBattleCardProps> = ({
   position,
   winPercentage,
   guessPercentage,
+  guessRange,
   totalBattles
 }) => {
   const theme = useMantineTheme();
@@ -62,14 +65,21 @@ const PokemonBattleCard: React.FC<PokemonBattleCardProps> = ({
 
   // Calculate dynamic sprite size based on guess percentage
   const calculateSpriteSize = () => {
-    if (guessPercentage === undefined || guessPercentage === null || showResults) return 320; // Default size when showing results (2x bigger)
+    if (showResults) return 320; // Default size when showing results (2x bigger)
+    
+    // Use range midpoint if range is provided, otherwise use guessPercentage
+    const effectiveGuess = guessRange 
+      ? Math.round((guessRange[0] + guessRange[1]) / 2)
+      : guessPercentage;
+      
+    if (effectiveGuess === undefined || effectiveGuess === null) return 320;
     
     const minSize = 240; // 2x bigger (was 120)
     const maxSize = 400; // 2x bigger (was 200)
     
     // For left pokemon (position === 'left'), size increases with guessPercentage
     // For right pokemon (position === 'right'), size decreases with guessPercentage
-    const percentage = position === 'left' ? guessPercentage : (100 - guessPercentage);
+    const percentage = position === 'left' ? effectiveGuess : (100 - effectiveGuess);
     
     // Scale the size based on percentage (0-100)
     // At 50%, both should be base size (320px)
@@ -567,8 +577,10 @@ const BattleArena: React.FC = () => {
   } = useGameStore();
   
   const { battleSettings } = useSettingsStore();
+  const { isEndlessActive } = useEndlessStore();
 
   const [guessPercentage, setGuessPercentage] = useState<number>(50);
+  const [guessRange, setGuessRange] = useState<[number, number]>([40, 60]);
   const [showResults, setShowResults] = useState(false);
   const [guessResult, setGuessResult] = useState<any>(null);
   const [showStreakCelebration, setShowStreakCelebration] = useState(false);
@@ -597,11 +609,22 @@ const BattleArena: React.FC = () => {
     setGuessPercentage(value[0]);
   };
 
+  const handleRangeSliderChange = (value: [number, number]) => {
+    if (isLoading || showResults) return;
+    setGuessRange(value);
+  };
+
   const handleSubmitGuess = async () => {
     if (!currentBattle) return;
     
     try {
-      const result = await submitGuess(guessPercentage);
+      // In endless mode, we'll check if the actual result falls within the range
+      // For now, we'll use the midpoint of the range for scoring
+      const guessValue = isEndlessActive 
+        ? Math.round((guessRange[0] + guessRange[1]) / 2) 
+        : guessPercentage;
+      
+      const result = await submitGuess(guessValue);
       setGuessResult(result);
       setShowResults(true);
     } catch (error) {
@@ -711,7 +734,8 @@ const BattleArena: React.FC = () => {
                           showResults={showResults}
                           position="left"
                           winPercentage={showResults ? guessResult?.actualWinRate : undefined}
-                          guessPercentage={!showResults ? guessPercentage : undefined}
+                          guessPercentage={!showResults && !isEndlessActive ? guessPercentage : undefined}
+                          guessRange={!showResults && isEndlessActive ? guessRange : undefined}
                           totalBattles={currentBattle.totalBattles}
                         />
                       </Grid.Col>
@@ -755,7 +779,8 @@ const BattleArena: React.FC = () => {
                           showResults={showResults}
                           position="right"
                           winPercentage={showResults ? (100 - (guessResult?.actualWinRate || 0)) : undefined}
-                          guessPercentage={!showResults ? guessPercentage : undefined}
+                          guessPercentage={!showResults && !isEndlessActive ? guessPercentage : undefined}
+                          guessRange={!showResults && isEndlessActive ? guessRange : undefined}
                           totalBattles={currentBattle.totalBattles}
                         />
                       </Grid.Col>
@@ -771,30 +796,57 @@ const BattleArena: React.FC = () => {
                         <Group justify="space-between" align="center" mb="xl">
                           <Stack align="flex-start" gap="xs">
                             <Text fw={600} size="lg">{currentBattle.pokemon1.name}</Text>
-                            <Text size="xl" fw={700} c="blue.6">{guessPercentage}%</Text>
+                            {isEndlessActive ? (
+                              <Text size="xl" fw={700} c="blue.6">{guessRange[0]}% - {guessRange[1]}%</Text>
+                            ) : (
+                              <Text size="xl" fw={700} c="blue.6">{guessPercentage}%</Text>
+                            )}
                           </Stack>
                           <Stack align="center" gap="xs">
-                            <Text size="sm" c="dimmed">Win Rate Prediction</Text>
+                            <Text size="sm" c="dimmed">
+                              {isEndlessActive ? 'Win Range Prediction' : 'Win Rate Prediction'}
+                            </Text>
                             <Text size="xl" fw={700}>VS</Text>
                           </Stack>
                           <Stack align="flex-end" gap="xs">
                             <Text fw={600} size="lg">{currentBattle.pokemon2.name}</Text>
-                            <Text size="xl" fw={700} c="grape.6">{100 - guessPercentage}%</Text>
+                            {isEndlessActive ? (
+                              <Text size="xl" fw={700} c="grape.6">
+                                {100 - guessRange[1]}% - {100 - guessRange[0]}%
+                              </Text>
+                            ) : (
+                              <Text size="xl" fw={700} c="grape.6">{100 - guessPercentage}%</Text>
+                            )}
                           </Stack>
                         </Group>
                         
                         <Stack gap="md">
-                          <Slider
-                            value={guessPercentage}
-                            onChange={(value) => handleSliderChange([value])}
-                            min={0}
-                            max={100}
-                            step={1}
-                            disabled={isLoading}
-                            color="blue"
-                            size="lg"
-                            style={{ padding: '8px 0' }}
-                          />
+                          {isEndlessActive ? (
+                            <RangeSlider
+                              value={guessRange}
+                              onChange={handleRangeSliderChange}
+                              min={0}
+                              max={100}
+                              step={1}
+                              disabled={isLoading}
+                              color="blue"
+                              size="lg"
+                              style={{ padding: '8px 0' }}
+                              label={(value) => `${value}%`}
+                            />
+                          ) : (
+                            <Slider
+                              value={guessPercentage}
+                              onChange={(value) => handleSliderChange([value])}
+                              min={0}
+                              max={100}
+                              step={1}
+                              disabled={isLoading}
+                              color="blue"
+                              size="lg"
+                              style={{ padding: '8px 0' }}
+                            />
+                          )}
                           
                           <Group justify="space-between">
                             <Text size="sm" c="dimmed" fw={500}>0%</Text>
@@ -856,12 +908,25 @@ const BattleArena: React.FC = () => {
                                     <Text 
                                       size="xl" 
                                       fw={700} 
-                                      c={guessResult.isCorrect ? 'green.7' : 'red.7'}
+                                      c={isEndlessActive 
+                                        ? (guessResult.actualWinRate >= guessRange[0] && guessResult.actualWinRate <= guessRange[1] ? 'green.7' : 'red.7')
+                                        : (guessResult.isCorrect ? 'green.7' : 'red.7')
+                                      }
                                     >
-                                      {guessResult.isCorrect ? '🎉 Within 10%!' : '❌ Not close enough!'}
+                                      {isEndlessActive 
+                                        ? (guessResult.actualWinRate >= guessRange[0] && guessResult.actualWinRate <= guessRange[1] 
+                                          ? '🎉 Within your range!' 
+                                          : '❌ Outside your range!')
+                                        : (guessResult.isCorrect ? '🎉 Within 10%!' : '❌ Not close enough!')
+                                      }
                                     </Text>
                                     <Text size="lg">
-                                      Your guess: <Text component="span" fw={700}>{guessResult.guessPercentage}%</Text>
+                                      Your guess: <Text component="span" fw={700}>
+                                        {isEndlessActive 
+                                          ? `${guessRange[0]}% - ${guessRange[1]}%`
+                                          : `${guessResult.guessPercentage}%`
+                                        }
+                                      </Text>
                                     </Text>
                                     <Text size="lg">
                                       Actual win rate: <Text component="span" fw={700} c="blue.6">{guessResult.actualWinRate.toFixed(1)}%</Text>
