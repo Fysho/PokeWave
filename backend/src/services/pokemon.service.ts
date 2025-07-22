@@ -50,9 +50,9 @@ class PokemonService {
       
       // Get basic data for all Pokemon in range
       // Batch fetching for better performance
-      const pokemonPromises = [];
-      const spritePromises = [];
-      const validIds = [];
+      const pokemonPromises: Promise<any>[] = [];
+      const spritePromises: Promise<PokemonSprites>[] = [];
+      const validIds: number[] = [];
       
       for (let id = startId; id <= endId; id++) {
         pokemonPromises.push(

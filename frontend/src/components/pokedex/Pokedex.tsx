@@ -17,12 +17,14 @@ import {
   Image,
   Tooltip,
   ActionIcon,
-  NumberInput
+  NumberInput,
+  Switch
 } from '@mantine/core';
 import { IconSearch, IconPokeball, IconFilter, IconX } from '@tabler/icons-react';
 import { FadeIn } from '../ui/transitions';
 import { getTypeColor } from '../../utils/typeColors';
 import ApiService from '../../services/api';
+import { usePokedexStore } from '../../store/pokedexStore';
 
 interface PokemonData {
   id: number;
@@ -42,6 +44,9 @@ const Pokedex: React.FC<PokedexProps> = () => {
   const [selectedType, setSelectedType] = useState<string | null>(null);
   const [selectedGeneration, setSelectedGeneration] = useState<string>('all');
   const [hoveredPokemon, setHoveredPokemon] = useState<number | null>(null);
+  const [showUnlockedOnly, setShowUnlockedOnly] = useState(false);
+  
+  const { isPokemonUnlocked, getUnlockedCount, getTotalPokemonCount } = usePokedexStore();
 
   // Pokemon type list
   const pokemonTypes = [
@@ -141,16 +146,22 @@ const Pokedex: React.FC<PokedexProps> = () => {
       filtered = filtered.filter(p => p.id >= min && p.id <= max);
     }
     
+    // Unlocked filter
+    if (showUnlockedOnly) {
+      filtered = filtered.filter(p => isPokemonUnlocked(p.id));
+    }
+    
     setFilteredPokemon(filtered);
-  }, [searchQuery, selectedType, selectedGeneration, pokemon]);
+  }, [searchQuery, selectedType, selectedGeneration, pokemon, showUnlockedOnly, isPokemonUnlocked]);
 
   const clearFilters = () => {
     setSearchQuery('');
     setSelectedType(null);
     setSelectedGeneration('all');
+    setShowUnlockedOnly(false);
   };
 
-  const hasActiveFilters = searchQuery || selectedType || selectedGeneration !== 'all';
+  const hasActiveFilters = searchQuery || selectedType || selectedGeneration !== 'all' || showUnlockedOnly;
 
   if (loading) {
     return (
@@ -188,6 +199,9 @@ const Pokedex: React.FC<PokedexProps> = () => {
             </Title>
             <Text size="xl" c="dimmed" ta="center">
               Browse all {allPokemon.length > 0 ? allPokemon.length : ''} Pokémon in numerical order
+            </Text>
+            <Text size="md" c="dimmed" ta="center">
+              {getUnlockedCount()} / {getTotalPokemonCount()} Pokémon unlocked
             </Text>
           </Stack>
 
@@ -236,6 +250,14 @@ const Pokedex: React.FC<PokedexProps> = () => {
                 </Group>
               </Stack>
 
+              {/* Toggle Unlocked Only */}
+              <Switch
+                label="Show only unlocked Pokémon"
+                checked={showUnlockedOnly}
+                onChange={(event) => setShowUnlockedOnly(event.currentTarget.checked)}
+                size="md"
+              />
+
               {/* Clear Filters */}
               {hasActiveFilters && (
                 <Group justify="space-between">
@@ -266,7 +288,9 @@ const Pokedex: React.FC<PokedexProps> = () => {
                     cursor: 'pointer',
                     transition: 'all 0.2s ease',
                     transform: hoveredPokemon === poke.id ? 'translateY(-4px)' : 'none',
-                    boxShadow: hoveredPokemon === poke.id ? 'var(--mantine-shadow-lg)' : 'none'
+                    boxShadow: hoveredPokemon === poke.id ? 'var(--mantine-shadow-lg)' : 'none',
+                    opacity: isPokemonUnlocked(poke.id) ? 1 : 0.4,
+                    filter: isPokemonUnlocked(poke.id) ? 'none' : 'grayscale(100%)'
                   }}
                   onMouseEnter={() => setHoveredPokemon(poke.id)}
                   onMouseLeave={() => setHoveredPokemon(null)}

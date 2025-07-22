@@ -209,6 +209,13 @@ export const useGameStore = create<GameStore>()(
             if (endlessStore.isEndlessActive && guessResult.isCorrect) {
               endlessStore.addEndlessScore(1);
             }
+            
+            // Unlock Pokemon in Pokedex when guessed correctly
+            if (guessResult.isCorrect && currentBattle.pokemon1 && currentBattle.pokemon2) {
+              const { usePokedexStore } = await import('./pokedexStore');
+              const pokedexStore = usePokedexStore.getState();
+              pokedexStore.unlockMultiplePokemon([currentBattle.pokemon1.id, currentBattle.pokemon2.id]);
+            }
 
             // Add to battle history
             const historyEntry: BattleHistoryEntry = {
