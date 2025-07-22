@@ -709,14 +709,6 @@ const BattleArena: React.FC = () => {
                   {/* Win Rate Prediction Slider */}
                   {!showResults && (
                     <Box maw={800} mx="auto" mt="xl">
-                      <Stack align="center" gap="md" mb="md">
-                        <Title order={3} size="h3" ta="center">
-                          How many battles will {currentBattle.pokemon1.name} win?
-                        </Title>
-                        <Text size="sm" c="dimmed" ta="center">
-                          Drag the slider to predict the win percentage (you need to be within 10% to score points)
-                        </Text>
-                      </Stack>
                       
                       <Card withBorder p="xl" shadow="lg" style={{ borderColor: colorScheme === 'dark' ? theme.colors.blue[7] : theme.colors.blue[3], borderWidth: '2px' }}>
                         <Group justify="space-between" align="center" mb="xl">
@@ -735,10 +727,6 @@ const BattleArena: React.FC = () => {
                         </Group>
                         
                         <Stack gap="md">
-                          <Text ta="center" size="sm" c="dimmed">
-                            Drag the slider to adjust your prediction
-                          </Text>
-                          
                           <Slider
                             value={guessPercentage}
                             onChange={(value) => handleSliderChange([value])}
