@@ -1160,8 +1160,8 @@ class PokemonShowdownService {
         speed: species.baseStats.spe
       };
 
-      // 50% chance for shiny (for testing)
-      const isShiny = Math.random() < 0.5;
+      // 1/50 chance for shiny (2%)
+      const isShiny = Math.random() < 0.02;
       
       if (isShiny) {
         logger.info(`🌟 SHINY Pokemon generated: ${species.name} (ID: ${pokemonId})`);

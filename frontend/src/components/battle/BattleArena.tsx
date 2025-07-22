@@ -28,16 +28,18 @@ interface PokemonBattleCardProps {
   guessPercentage?: number;
   guessRange?: [number, number];
   totalBattles?: number;
+  compact?: boolean;
 }
 
-const PokemonBattleCard: React.FC<PokemonBattleCardProps> = ({
+export const PokemonBattleCard: React.FC<PokemonBattleCardProps> = ({
   pokemon,
   showResults,
   position,
   winPercentage,
   guessPercentage,
   guessRange,
-  totalBattles
+  totalBattles,
+  compact = false
 }) => {
   const theme = useMantineTheme();
   const { colorScheme } = useMantineColorScheme();
@@ -81,6 +83,21 @@ const PokemonBattleCard: React.FC<PokemonBattleCardProps> = ({
 
   // Calculate dynamic sprite size based on guess percentage
   const calculateSpriteSize = () => {
+    if (compact) {
+      // Smaller sizes for compact mode
+      if (showResults) return 120;
+      const effectiveGuess = guessRange 
+        ? Math.round((guessRange[0] + guessRange[1]) / 2)
+        : guessPercentage;
+      if (effectiveGuess === undefined || effectiveGuess === null) return 120;
+      const minSize = 80;
+      const maxSize = 160;
+      const percentage = effectiveGuess;
+      const scaleFactor = percentage / 100;
+      const size = minSize + (maxSize - minSize) * scaleFactor;
+      return Math.round(size);
+    }
+    
     if (showResults) return 320; // Default size when showing results (2x bigger)
     
     // Use range midpoint if range is provided, otherwise use guessPercentage
@@ -122,15 +139,28 @@ const PokemonBattleCard: React.FC<PokemonBattleCardProps> = ({
         `}
       >
         <Card.Section p="lg" pos="relative">
-          <Text 
-            size="lg" 
-            c="dimmed" 
+          <Group 
             pos="absolute" 
             top="lg" 
             left="lg"
+            gap="sm"
           >
-            Lv.{pokemon.level}
-          </Text>
+            <Text 
+              size="lg" 
+              c="dimmed" 
+            >
+              Lv.{pokemon.level}
+            </Text>
+            {pokemon.shiny && (
+              <Badge
+                variant="dot"
+                size="md"
+                color="yellow"
+              >
+                ✨ Shiny
+              </Badge>
+            )}
+          </Group>
           <Box mb="xl">
             <Title order={2} size="h1" fw={700} tt="capitalize" ta="center">
               {pokemon.name}
@@ -149,24 +179,6 @@ const PokemonBattleCard: React.FC<PokemonBattleCardProps> = ({
           >
             {pokemon.sprites?.front ? (
               <Box pos="relative">
-                {pokemon.shiny && (
-                  <Badge
-                    size="lg"
-                    variant="filled"
-                    color="yellow"
-                    pos="absolute"
-                    top={-10}
-                    left="50%"
-                    style={{
-                      transform: 'translateX(-50%)',
-                      zIndex: 10,
-                      fontWeight: 700,
-                      boxShadow: '0 0 20px rgba(255,223,0,0.8)'
-                    }}
-                  >
-                    ✨ SHINY ✨
-                  </Badge>
-                )}
                 <img 
                   src={pokemon.shiny && pokemon.sprites.shiny ? pokemon.sprites.shiny : pokemon.sprites.front} 
                   alt={pokemon.name}
@@ -176,9 +188,7 @@ const PokemonBattleCard: React.FC<PokemonBattleCardProps> = ({
                     height: `${spriteSize}px`,
                     objectFit: 'contain',
                     margin: '0 auto',
-                    filter: pokemon.shiny 
-                      ? 'drop-shadow(0 0 25px rgba(255,223,0,0.7)) drop-shadow(0 25px 25px rgb(0 0 0 / 0.15))' 
-                      : 'drop-shadow(0 25px 25px rgb(0 0 0 / 0.15))',
+                    filter: 'drop-shadow(0 25px 25px rgb(0 0 0 / 0.15))',
                     transition: 'transform 0.3s ease, width 0.3s ease, height 0.3s ease',
                     cursor: 'pointer'
                   }}

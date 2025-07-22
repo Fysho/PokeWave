@@ -8,6 +8,7 @@ import logger from './utils/logger';
 import { pokemonMoveStoreService } from './services/pokemon-move-store.service';
 import { pokemonItemStoreService } from './services/pokemon-item-store.service';
 import { pokemonAbilityStoreService } from './services/pokemon-ability-store.service';
+import { dailyChallengeService } from './services/daily-challenge.service';
 
 // Load environment variables
 dotenv.config();
@@ -61,6 +62,15 @@ const server = app.listen(PORT, async () => {
   
   await Promise.all(storePromises);
   logger.info('Pokemon data stores initialization complete');
+  
+  // Initialize daily challenges
+  logger.info('Initializing daily challenges...');
+  try {
+    await dailyChallengeService.initializeDailyChallenges();
+    logger.info('Daily challenges initialization complete');
+  } catch (error) {
+    logger.error('Failed to initialize daily challenges:', error);
+  }
 });
 
 // Graceful shutdown

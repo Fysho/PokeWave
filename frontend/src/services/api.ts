@@ -339,6 +339,76 @@ export class ApiService {
   //     throw error;
   //   }
   // }
+
+  // Daily Challenge Methods
+  static async getTodaysChallenge(): Promise<{
+    challenge: {
+      id: string;
+      date: string;
+      battles: Array<{
+        battleId: string;
+        pokemon1: any;
+        pokemon2: any;
+        winRate: number;
+        totalBattles: number;
+        executionTime: number;
+      }>;
+      createdAt: Date;
+      expiresAt: Date;
+    };
+    isToday: boolean;
+    dayOfWeek: string;
+  }> {
+    try {
+      const response = await api.get('/daily-challenge/today');
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  static async getChallengeByDate(date: string): Promise<{
+    challenge: {
+      id: string;
+      date: string;
+      battles: Array<{
+        battleId: string;
+        pokemon1: any;
+        pokemon2: any;
+        winRate: number;
+        totalBattles: number;
+        executionTime: number;
+      }>;
+      createdAt: Date;
+      expiresAt: Date;
+    };
+    isToday: boolean;
+    dayOfWeek: string;
+  }> {
+    try {
+      const response = await api.get(`/daily-challenge/${date}`);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  static async getAvailableChallenges(): Promise<{
+    challenges: Array<{
+      date: string;
+      dayOfWeek: string;
+      isToday: boolean;
+      isPast: boolean;
+      isFuture: boolean;
+    }>;
+  }> {
+    try {
+      const response = await api.get('/daily-challenge/available');
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  }
 }
 
 export default ApiService;

@@ -4,6 +4,7 @@ import MainLayout from '../layout/MainLayout';
 import PokeInfo from '../debug/PokeInfo';
 import EndlessMode from './EndlessMode';
 import Pokedex from '../pokedex/Pokedex';
+import DailyMode from './DailyMode';
 import { useGameStore } from '../../store/gameStore';
 import { 
   IconChartBar, 
@@ -196,46 +197,7 @@ const GameDashboard: React.FC = () => {
         );
       
       case 'daily':
-        return (
-          <Box maw={1000} mx="auto">
-            <Stack align="center" gap="md" mb="xl">
-              <Title 
-                order={1}
-                size="h1"
-                fw={700}
-                ta="center"
-                style={{
-                  background: 'linear-gradient(135deg, var(--mantine-color-blue-6), var(--mantine-color-grape-6))',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  backgroundClip: 'text'
-                }}
-              >
-                Daily Challenges
-              </Title>
-              <Text size="xl" c="dimmed" ta="center">
-                Take on special challenges and earn exclusive rewards
-              </Text>
-            </Stack>
-            
-            <Card withBorder>
-              <Card.Section p="xl">
-                <Center>
-                  <Stack align="center" gap="md">
-                    <IconCalendar size={64} color="var(--mantine-color-gray-6)" />
-                    <Title order={3}>Daily Challenges</Title>
-                    <Text c="dimmed" ta="center" mb="md">
-                      New challenges every day with unique Pokemon battles and bonus rewards.
-                    </Text>
-                    <Button variant="outline" disabled leftSection={<IconTool size={16} />}>
-                      Coming Soon
-                    </Button>
-                  </Stack>
-                </Center>
-              </Card.Section>
-            </Card>
-          </Box>
-        );
+        return <DailyMode />;
       
       case 'pokeinfo':
         return <PokeInfo />;

@@ -42,7 +42,7 @@ const Pokedex: React.FC<PokedexProps> = () => {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedType, setSelectedType] = useState<string | null>(null);
-  const [selectedGeneration, setSelectedGeneration] = useState<string>('all');
+  const [selectedGeneration, setSelectedGeneration] = useState<string>('1');
   const [hoveredPokemon, setHoveredPokemon] = useState<number | null>(null);
   const [showUnlockedOnly, setShowUnlockedOnly] = useState(false);
   const [showShinyMode, setShowShinyMode] = useState(false);
@@ -171,11 +171,11 @@ const Pokedex: React.FC<PokedexProps> = () => {
   const clearFilters = () => {
     setSearchQuery('');
     setSelectedType(null);
-    setSelectedGeneration('all');
+    setSelectedGeneration('1');
     setShowUnlockedOnly(false);
   };
 
-  const hasActiveFilters = searchQuery || selectedType || selectedGeneration !== 'all' || showUnlockedOnly;
+  const hasActiveFilters = searchQuery || selectedType || selectedGeneration !== '1' || showUnlockedOnly;
 
   if (loading) {
     return (
@@ -368,21 +368,20 @@ const Pokedex: React.FC<PokedexProps> = () => {
                       )}
                       {/* Pokemon Count */}
                       {(showShinyMode ? getShinyPokemonCount(poke.id) : getPokemonCount(poke.id)) > 0 && (
-                        <Badge
+                        <Text
                           size="md"
-                          variant="light"
+                          fw={700}
                           style={{
                             position: 'absolute',
-                            top: 2,
-                            right: 2,
-                            fontWeight: 600,
-                            fontSize: '14px',
-                            backgroundColor: showShinyMode ? 'var(--mantine-color-yellow-2)' : 'var(--mantine-color-default)',
+                            top: 4,
+                            right: 4,
+                            fontSize: '16px',
+                            textShadow: '0 0 3px rgba(255,255,255,0.9), 0 0 6px rgba(255,255,255,0.7)',
                             color: 'var(--mantine-color-text)'
                           }}
                         >
                           {showShinyMode ? getShinyPokemonCount(poke.id) : getPokemonCount(poke.id)}
-                        </Badge>
+                        </Text>
                       )}
                     </Box>
 
