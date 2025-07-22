@@ -237,9 +237,9 @@ const EndlessMode: React.FC<EndlessModeProps> = () => {
           
           {/* Lives and Score Display */}
           <Group gap="xl">
-            <Card withBorder p="md" style={{ backgroundColor: 'var(--mantine-color-red-0)', borderColor: 'var(--mantine-color-red-3)' }}>
+            <Card withBorder p="md">
               <Group gap="xs">
-                <IconHeart size={24} color="var(--mantine-color-red-6)" />
+                <IconHeart size={24} style={{ color: 'var(--mantine-color-red-6)' }} />
                 <Text size="lg" fw={600}>Lives:</Text>
                 <Badge size="lg" color="red" variant="filled">
                   {endlessLives}
@@ -247,9 +247,9 @@ const EndlessMode: React.FC<EndlessModeProps> = () => {
               </Group>
             </Card>
             
-            <Card withBorder p="md" style={{ backgroundColor: 'var(--mantine-color-yellow-0)', borderColor: 'var(--mantine-color-yellow-3)' }}>
+            <Card withBorder p="md">
               <Group gap="xs">
-                <IconTrophy size={24} color="var(--mantine-color-yellow-6)" />
+                <IconTrophy size={24} style={{ color: 'var(--mantine-color-yellow-6)' }} />
                 <Text size="lg" fw={600}>Score:</Text>
                 <Badge size="lg" color="yellow" variant="filled">
                   {endlessScore}
@@ -257,19 +257,10 @@ const EndlessMode: React.FC<EndlessModeProps> = () => {
               </Group>
             </Card>
             
-            <Card withBorder p="md" style={{ backgroundColor: 'var(--mantine-color-blue-0)', borderColor: 'var(--mantine-color-blue-3)' }}>
-              <Group gap="xs">
-                <Text size="lg" fw={600}>Battle #</Text>
-                <Badge size="lg" color="blue" variant="filled">
-                  {endlessBattleCount}
-                </Badge>
-              </Group>
-            </Card>
-            
             {endlessHighScore > 0 && (
-              <Card withBorder p="md" style={{ backgroundColor: 'var(--mantine-color-purple-0)', borderColor: 'var(--mantine-color-purple-3)' }}>
+              <Card withBorder p="md">
                 <Group gap="xs">
-                  <IconFlame size={24} color="var(--mantine-color-purple-6)" />
+                  <IconFlame size={24} style={{ color: 'var(--mantine-color-purple-6)' }} />
                   <Text size="lg" fw={600}>Best:</Text>
                   <Badge size="lg" color="purple" variant="filled">
                     {endlessHighScore}
@@ -278,10 +269,6 @@ const EndlessMode: React.FC<EndlessModeProps> = () => {
               </Card>
             )}
           </Group>
-          
-          <Text size="md" c="dimmed" ta="center">
-            Predict correctly to continue! Wrong predictions cost you a life.
-          </Text>
         </Stack>
 
         {/* Battle Arena */}
