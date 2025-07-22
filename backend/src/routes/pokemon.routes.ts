@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getPokemon, getRandomPokemon, getRandomPokemonWithInstances } from '../controllers/pokemon.controller';
+import { getPokemon, getRandomPokemon, getRandomPokemonWithInstances, getPokedex, getPokemonById } from '../controllers/pokemon.controller';
 
 const router = Router();
 
@@ -9,6 +9,9 @@ router.get('/random', getRandomPokemon);
 // Get random Pokemon with full instance data (must be before /:id route)
 router.get('/random-instances', getRandomPokemonWithInstances);
 
+// Get all Pokemon for Pokedex (must be before /:id route)
+router.get('/pokedex', getPokedex);
+
 // Debug endpoint to check instance store
 router.get('/instance-store/status', (req, res) => {
   res.json({
@@ -17,6 +20,6 @@ router.get('/instance-store/status', (req, res) => {
 });
 
 // Get specific Pokemon by ID
-router.get('/:id', getPokemon);
+router.get('/:id', getPokemonById);
 
 export default router;

@@ -27,6 +27,65 @@ const GENERATION_RANGES = {
 class PokemonService {
   private pokeApiUrl = 'https://pokeapi.co/api/v2';
 
+  async getPokedexData(generation?: number): Promise<any[]> {
+    try {
+      const pokedexData = [];
+      
+      // Determine range based on generation
+      let startId = 1;
+      let endId = 1025;
+      
+      if (generation && GENERATION_RANGES[generation]) {
+        startId = GENERATION_RANGES[generation].start;
+        endId = GENERATION_RANGES[generation].end;
+      }
+      
+      // Get basic data for all Pokemon in range
+      for (let id = startId; id <= endId; id++) {
+        const pokemon = pokemonShowdownService.getPokemonById(id);
+        if (pokemon) {
+          const sprites = await this.getPokemonSprites(id);
+          pokedexData.push({
+            id: pokemon.num,
+            name: pokemon.name,
+            types: pokemon.types,
+            sprite: sprites.front
+          });
+        }
+      }
+      
+      return pokedexData;
+    } catch (error) {
+      logger.error('Error getting Pokedex data:', error);
+      throw new ApiError(500, 'Failed to get Pokedex data');
+    }
+  }
+
+  async getPokemonDataById(id: number): Promise<any> {
+    try {
+      const pokemon = pokemonShowdownService.getPokemonById(id);
+      if (!pokemon) {
+        throw new ApiError(404, `Pokemon with ID ${id} not found`);
+      }
+      
+      const sprites = await this.getPokemonSprites(id);
+      
+      return {
+        id: pokemon.num,
+        name: pokemon.name,
+        types: pokemon.types,
+        sprite: sprites.front,
+        sprites,
+        baseStats: pokemon.baseStats,
+        abilities: Object.keys(pokemon.abilities)
+      };
+    } catch (error) {
+      if (error instanceof ApiError) throw error;
+      logger.error(`Error getting Pokemon ${id}:`, error);
+      throw new ApiError(500, `Failed to get Pokemon ${id}`);
+    }
+  }
+
   async getPokemonSprites(id: number): Promise<PokemonSprites> {
     try {
       // Check cache first

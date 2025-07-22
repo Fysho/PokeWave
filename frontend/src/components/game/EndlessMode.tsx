@@ -8,7 +8,8 @@ import {
   Card,
   Group,
   Badge,
-  Button
+  Button,
+  Grid
 } from '@mantine/core';
 import { IconInfinity, IconHeart, IconTrophy, IconFlame } from '@tabler/icons-react';
 import BattleArena from '../battle/BattleArena';
@@ -215,64 +216,44 @@ const EndlessMode: React.FC<EndlessModeProps> = () => {
   return (
     <Box>
       <FadeIn>
-        {/* Header with Endless Mode title and stats */}
-        <Stack align="center" gap="md" mb="xl">
-          <Title 
-            order={1}
-            size="h1"
-            fw={700}
-            ta="center"
-            style={{
-              background: 'linear-gradient(135deg, var(--mantine-color-blue-6), var(--mantine-color-purple-6))',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              backgroundClip: 'text'
-            }}
-          >
-            <Group gap="xs">
-              <IconInfinity size={40} />
-              Endless Mode
-            </Group>
-          </Title>
-          
-          {/* Lives and Score Display */}
-          <Group gap="xl">
-            <Card withBorder p="md">
-              <Group gap="xs">
-                <IconHeart size={24} style={{ color: 'var(--mantine-color-red-6)' }} />
-                <Text size="lg" fw={600}>Lives:</Text>
-                <Badge size="lg" color="red" variant="filled">
-                  {endlessLives}
-                </Badge>
-              </Group>
-            </Card>
-            
-            <Card withBorder p="md">
-              <Group gap="xs">
-                <IconTrophy size={24} style={{ color: 'var(--mantine-color-yellow-6)' }} />
-                <Text size="lg" fw={600}>Score:</Text>
-                <Badge size="lg" color="yellow" variant="filled">
-                  {endlessScore}
-                </Badge>
-              </Group>
-            </Card>
-            
-            {endlessHighScore > 0 && (
+        <Grid gutter="md">
+          {/* Side stats */}
+          <Grid.Col span={2}>
+            <Stack gap="md" pos="sticky" top={20}>
               <Card withBorder p="md">
-                <Group gap="xs">
-                  <IconFlame size={24} style={{ color: 'var(--mantine-color-purple-6)' }} />
-                  <Text size="lg" fw={600}>Best:</Text>
-                  <Badge size="lg" color="purple" variant="filled">
-                    {endlessHighScore}
-                  </Badge>
-                </Group>
+                <Stack align="center" gap="xs">
+                  <IconHeart size={32} style={{ color: 'var(--mantine-color-red-6)' }} />
+                  <Text size="sm" fw={600} c="dimmed">Lives</Text>
+                  <Text size="xl" fw={700}>{endlessLives}</Text>
+                </Stack>
               </Card>
-            )}
-          </Group>
-        </Stack>
+              
+              <Card withBorder p="md">
+                <Stack align="center" gap="xs">
+                  <IconTrophy size={32} style={{ color: 'var(--mantine-color-yellow-6)' }} />
+                  <Text size="sm" fw={600} c="dimmed">Score</Text>
+                  <Text size="xl" fw={700}>{endlessScore}</Text>
+                </Stack>
+              </Card>
+              
+              {endlessHighScore > 0 && (
+                <Card withBorder p="md">
+                  <Stack align="center" gap="xs">
+                    <IconFlame size={32} style={{ color: 'var(--mantine-color-purple-6)' }} />
+                    <Text size="sm" fw={600} c="dimmed">Best</Text>
+                    <Text size="xl" fw={700}>{endlessHighScore}</Text>
+                  </Stack>
+                </Card>
+              )}
+            </Stack>
+          </Grid.Col>
 
-        {/* Battle Arena */}
-        <BattleArena />
+          {/* Main content */}
+          <Grid.Col span={10}>
+            {/* Battle Arena */}
+            <BattleArena hideStats={true} />
+          </Grid.Col>
+        </Grid>
       </FadeIn>
     </Box>
   );

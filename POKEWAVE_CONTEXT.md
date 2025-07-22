@@ -560,3 +560,28 @@ curl -X POST http://localhost:4000/api/battle/simulate \
 - **Error Handling**: Enhanced error messages for better debugging
 
 **WARNING**: The project is currently in a broken state. While Pokemon battle simulation works, the core game functionality (scoring, guess validation) is disabled due to incomplete code migration. The battle count issue (170 vs 17) causes severe performance problems.
+
+### UI Updates (Endless Mode & Range Slider Implementation)
+- **Endless Mode**: Implemented endless mode with lives, score tracking, and range-based predictions
+  - 3 lives system with score tracking and high score persistence
+  - Range slider starts at 50% width, shrinks by 1% per correct guess (minimum 20%)
+  - Lives, Score, and Best stats displayed vertically on the left sidebar
+  - Removed bottom stats tabs (Score, Streak, Accuracy, Battles) in endless mode
+- **Range Slider**: Custom `CenterDraggableRangeSlider` component for range predictions
+  - Center dragging to move entire range while maintaining width
+  - Hidden handle knobs and disabled individual dragging in endless mode
+  - Proper offset tracking for smooth dragging experience
+- **Scoring System**: 
+  - Endless mode: 1 point per correct guess (result within range)
+  - Regular mode: Points based on accuracy (closer = more points)
+- **UI Improvements**:
+  - Inverted slider logic: sliding right = right Pokemon wins more (intuitive)
+  - Pokemon sprites dynamically resize based on predicted win percentage
+  - Level displayed in top-left corner of Pokemon cards
+  - Pokemon name centered in cards
+  - All badges (type, ability, item) have consistent sizing (120px min width, 36px height)
+  - VS text stays centered using absolute positioning
+  - Results panel matches slider panel size to prevent UI shifting
+  - Simplified result display: "Correct!" or "Incorrect!" only
+  - Removed percentage increment labels (0%, 50%, 100%) below slider
+  - Added space after Pokemon name, removed space after sprite

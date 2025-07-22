@@ -105,3 +105,39 @@ export const getRandomPokemonWithInstances = async (
     next(error);
   }
 };
+
+export const getPokedex = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const generation = req.query.generation 
+      ? parseInt(req.query.generation as string) 
+      : undefined;
+
+    const pokedexData = await pokemonService.getPokedexData(generation);
+    res.json(pokedexData);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getPokemonById = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const id = parseInt(req.params.id);
+    
+    if (isNaN(id) || id < 1 || id > 1025) {
+      throw new ApiError(400, 'Invalid Pokemon ID');
+    }
+
+    const pokemonData = await pokemonService.getPokemonDataById(id);
+    res.json(pokemonData);
+  } catch (error) {
+    next(error);
+  }
+};

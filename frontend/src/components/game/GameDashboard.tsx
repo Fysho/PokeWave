@@ -3,6 +3,7 @@ import BattleArena from '../battle/BattleArena';
 import MainLayout from '../layout/MainLayout';
 import PokeInfo from '../debug/PokeInfo';
 import EndlessMode from './EndlessMode';
+import Pokedex from '../pokedex/Pokedex';
 import { useGameStore } from '../../store/gameStore';
 import { 
   IconChartBar, 
@@ -241,6 +242,9 @@ const GameDashboard: React.FC = () => {
       
       case 'endless':
         return <EndlessMode />;
+      
+      case 'pokedex':
+        return <Pokedex />;
       
       default:
         return null; // Prevent duplicate rendering

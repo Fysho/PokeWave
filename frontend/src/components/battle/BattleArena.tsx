@@ -131,7 +131,7 @@ const PokemonBattleCard: React.FC<PokemonBattleCardProps> = ({
           >
             Lv.{pokemon.level}
           </Text>
-          <Box mb="md">
+          <Box mb="xl">
             <Title order={2} size="h1" fw={700} tt="capitalize" ta="center">
               {pokemon.name}
             </Title>
@@ -140,7 +140,6 @@ const PokemonBattleCard: React.FC<PokemonBattleCardProps> = ({
           <Box 
             pos="relative" 
             ta="center" 
-            mb="sm"
             style={{
               height: '240px', // Further reduced height
               display: 'flex',
@@ -547,7 +546,11 @@ const PokemonBattleCard: React.FC<PokemonBattleCardProps> = ({
   );
 };
 
-const BattleArena: React.FC = () => {
+interface BattleArenaProps {
+  hideStats?: boolean;
+}
+
+const BattleArena: React.FC<BattleArenaProps> = ({ hideStats = false }) => {
   const theme = useMantineTheme();
   const { colorScheme } = useMantineColorScheme();
   
@@ -830,27 +833,38 @@ const BattleArena: React.FC = () => {
                     <Box maw={800} mx="auto" mt="xl">
                       
                       <Card withBorder p="xl" shadow="lg" style={{ borderColor: colorScheme === 'dark' ? theme.colors.blue[7] : theme.colors.blue[3], borderWidth: '2px' }}>
-                        <Group justify="space-between" align="center" mb="xl">
-                          <Stack align="flex-start" gap="xs">
-                            <Text fw={600} size="lg">{currentBattle.pokemon1.name}</Text>
-                            {isEndlessActive ? (
-                              <Text size="xl" fw={700} c="blue.6">{100 - guessRange[1]}% - {100 - guessRange[0]}%</Text>
-                            ) : (
-                              <Text size="xl" fw={700} c="blue.6">{100 - guessPercentage}%</Text>
-                            )}
-                          </Stack>
-                          <Text size="xl" fw={700}>VS</Text>
-                          <Stack align="flex-end" gap="xs">
-                            <Text fw={600} size="lg">{currentBattle.pokemon2.name}</Text>
-                            {isEndlessActive ? (
-                              <Text size="xl" fw={700} c="grape.6">
-                                {guessRange[0]}% - {guessRange[1]}%
-                              </Text>
-                            ) : (
-                              <Text size="xl" fw={700} c="grape.6">{guessPercentage}%</Text>
-                            )}
-                          </Stack>
-                        </Group>
+                        <Box pos="relative" mb="xl">
+                          <Group justify="space-between" align="center">
+                            <Stack align="flex-start" gap="xs">
+                              <Text fw={600} size="lg">{currentBattle.pokemon1.name}</Text>
+                              {isEndlessActive ? (
+                                <Text size="xl" fw={700} c="blue.6">{100 - guessRange[1]}% - {100 - guessRange[0]}%</Text>
+                              ) : (
+                                <Text size="xl" fw={700} c="blue.6">{100 - guessPercentage}%</Text>
+                              )}
+                            </Stack>
+                            <Stack align="flex-end" gap="xs">
+                              <Text fw={600} size="lg">{currentBattle.pokemon2.name}</Text>
+                              {isEndlessActive ? (
+                                <Text size="xl" fw={700} c="grape.6">
+                                  {guessRange[0]}% - {guessRange[1]}%
+                                </Text>
+                              ) : (
+                                <Text size="xl" fw={700} c="grape.6">{guessPercentage}%</Text>
+                              )}
+                            </Stack>
+                          </Group>
+                          <Text 
+                            size="xl" 
+                            fw={700} 
+                            pos="absolute" 
+                            top="50%" 
+                            left="50%" 
+                            style={{ transform: 'translate(-50%, -50%)' }}
+                          >
+                            VS
+                          </Text>
+                        </Box>
                         
                         <Stack gap="md">
                           {isEndlessActive ? (
@@ -880,12 +894,6 @@ const BattleArena: React.FC = () => {
                               style={{ padding: '8px 0' }}
                             />
                           )}
-                          
-                          <Group justify="space-between">
-                            <Text size="sm" c="dimmed" fw={500}>0%</Text>
-                            <Text size="sm" c="dimmed" fw={500}>50%</Text>
-                            <Text size="sm" c="dimmed" fw={500}>100%</Text>
-                          </Group>
                         </Stack>
                       </Card>
                     </Box>
@@ -923,32 +931,29 @@ const BattleArena: React.FC = () => {
                             isCorrect={guessResult?.isCorrect}
                           >
                             {guessResult && (
-                              <Card 
-                                withBorder 
-                                maw={400} 
-                                mx="auto"
-                                style={{
-                                  backgroundColor: guessResult.isCorrect 
-                                    ? colorScheme === 'dark' ? theme.colors.green[9] : theme.colors.green[0]
-                                    : colorScheme === 'dark' ? theme.colors.red[9] : theme.colors.red[0],
-                                  borderColor: guessResult.isCorrect 
-                                    ? colorScheme === 'dark' ? theme.colors.green[7] : theme.colors.green[3]
-                                    : colorScheme === 'dark' ? theme.colors.red[7] : theme.colors.red[3]
-                                }}
-                              >
-                                <Card.Section p="xl">
-                                  <Stack align="center" gap="md">
+                              <Box maw={800} mx="auto">
+                                <Card 
+                                  withBorder 
+                                  p="xl"
+                                  shadow="lg"
+                                  style={{
+                                    backgroundColor: guessResult.isCorrect 
+                                      ? colorScheme === 'dark' ? theme.colors.green[9] : theme.colors.green[0]
+                                      : colorScheme === 'dark' ? theme.colors.red[9] : theme.colors.red[0],
+                                    borderColor: guessResult.isCorrect 
+                                      ? colorScheme === 'dark' ? theme.colors.green[7] : theme.colors.green[3]
+                                      : colorScheme === 'dark' ? theme.colors.red[7] : theme.colors.red[3],
+                                    borderWidth: '2px',
+                                    minHeight: '180px'
+                                  }}
+                                >
+                                  <Stack align="center" gap="md" justify="center" style={{ minHeight: '120px' }}>
                                     <Text 
                                       size="xl" 
                                       fw={700} 
                                       c={guessResult.isCorrect ? 'green.7' : 'red.7'}
                                     >
-                                      {isEndlessActive 
-                                        ? (guessResult.isCorrect 
-                                          ? '🎉 Within your range!' 
-                                          : '❌ Outside your range!')
-                                        : (guessResult.isCorrect ? '🎉 Within 10%!' : '❌ Not close enough!')
-                                      }
+                                      {guessResult.isCorrect ? '🎉 Correct!' : '❌ Incorrect!'}
                                     </Text>
                                     <Text size="lg">
                                       Your guess: <Text component="span" fw={700}>
@@ -961,17 +966,9 @@ const BattleArena: React.FC = () => {
                                     <Text size="lg">
                                       Actual win rate: <Text component="span" fw={700} c="blue.6">{guessResult.actualWinRate.toFixed(1)}%</Text>
                                     </Text>
-                                    <Text c="dimmed">
-                                      {guessResult.message}
-                                    </Text>
-                                    {guessResult.isCorrect && (
-                                      <Text size="lg" fw={700} c="green.6">
-                                        +{guessResult.points} points earned!
-                                      </Text>
-                                    )}
                                   </Stack>
-                                </Card.Section>
-                              </Card>
+                                </Card>
+                              </Box>
                             )}
                           </ResultReveal>
 
@@ -1035,68 +1032,70 @@ const BattleArena: React.FC = () => {
       />
 
       {/* Stats Bar */}
-      <FadeIn delay={0.2}>
-        <Grid gutter="md" mt="xl">
-          <Grid.Col span={{ base: 6, md: 3 }}>
-            <Card withBorder>
-              <Stack align="center" gap="xs" p="md">
-                <IconTrophy size={24} color="var(--mantine-color-yellow-6)" />
-                <Text size="xl" fw={700}>
-                  {score}
-                </Text>
-                <Text size="sm" c="dimmed">Score</Text>
-              </Stack>
-            </Card>
-          </Grid.Col>
+      {!hideStats && (
+        <FadeIn delay={0.2}>
+          <Grid gutter="md" mt="xl">
+            <Grid.Col span={{ base: 6, md: 3 }}>
+              <Card withBorder>
+                <Stack align="center" gap="xs" p="md">
+                  <IconTrophy size={24} color="var(--mantine-color-yellow-6)" />
+                  <Text size="xl" fw={700}>
+                    {score}
+                  </Text>
+                  <Text size="sm" c="dimmed">Score</Text>
+                </Stack>
+              </Card>
+            </Grid.Col>
 
-          <Grid.Col span={{ base: 6, md: 3 }}>
-            <Card 
-              withBorder 
-              style={{ 
-                transition: 'all 0.3s ease'
-              }}
-            >
-              <Stack align="center" gap="xs" p="md">
-                {streak > 0 ? (
-                  <IconFlame size={24} color="var(--mantine-color-red-6)" />
-                ) : (
-                  <IconBolt size={24} color="var(--mantine-color-gray-6)" />
-                )}
-                <Text size="xl" fw={700} c={streak > 0 ? 'red.6' : undefined}>
-                  {streak}
-                </Text>
-                <Text size="sm" c={streak > 0 ? 'red.6' : 'dimmed'}>
-                  {streak > 0 ? `🔥 Streak` : 'Streak'}
-                </Text>
-              </Stack>
-            </Card>
-          </Grid.Col>
+            <Grid.Col span={{ base: 6, md: 3 }}>
+              <Card 
+                withBorder 
+                style={{ 
+                  transition: 'all 0.3s ease'
+                }}
+              >
+                <Stack align="center" gap="xs" p="md">
+                  {streak > 0 ? (
+                    <IconFlame size={24} color="var(--mantine-color-red-6)" />
+                  ) : (
+                    <IconBolt size={24} color="var(--mantine-color-gray-6)" />
+                  )}
+                  <Text size="xl" fw={700} c={streak > 0 ? 'red.6' : undefined}>
+                    {streak}
+                  </Text>
+                  <Text size="sm" c={streak > 0 ? 'red.6' : 'dimmed'}>
+                    {streak > 0 ? `🔥 Streak` : 'Streak'}
+                  </Text>
+                </Stack>
+              </Card>
+            </Grid.Col>
 
-          <Grid.Col span={{ base: 6, md: 3 }}>
-            <Card withBorder>
-              <Stack align="center" gap="xs" p="md">
-                <IconTarget size={24} color="var(--mantine-color-blue-6)" />
-                <Text size="xl" fw={700}>
-                  {getAccuracy()}%
-                </Text>
-                <Text size="sm" c="dimmed">Accuracy</Text>
-              </Stack>
-            </Card>
-          </Grid.Col>
+            <Grid.Col span={{ base: 6, md: 3 }}>
+              <Card withBorder>
+                <Stack align="center" gap="xs" p="md">
+                  <IconTarget size={24} color="var(--mantine-color-blue-6)" />
+                  <Text size="xl" fw={700}>
+                    {getAccuracy()}%
+                  </Text>
+                  <Text size="sm" c="dimmed">Accuracy</Text>
+                </Stack>
+              </Card>
+            </Grid.Col>
 
-          <Grid.Col span={{ base: 6, md: 3 }}>
-            <Card withBorder>
-              <Stack align="center" gap="xs" p="md">
-                <IconSwords size={24} color="var(--mantine-color-grape-6)" />
-                <Text size="xl" fw={700}>
-                  {totalGuesses}
-                </Text>
-                <Text size="sm" c="dimmed">Battles</Text>
-              </Stack>
-            </Card>
-          </Grid.Col>
-        </Grid>
-      </FadeIn>
+            <Grid.Col span={{ base: 6, md: 3 }}>
+              <Card withBorder>
+                <Stack align="center" gap="xs" p="md">
+                  <IconSwords size={24} color="var(--mantine-color-grape-6)" />
+                  <Text size="xl" fw={700}>
+                    {totalGuesses}
+                  </Text>
+                  <Text size="sm" c="dimmed">Battles</Text>
+                </Stack>
+              </Card>
+            </Grid.Col>
+          </Grid>
+        </FadeIn>
+      )}
     </>
   );
 };

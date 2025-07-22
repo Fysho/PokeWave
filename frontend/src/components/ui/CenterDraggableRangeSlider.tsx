@@ -193,7 +193,7 @@ export const CenterDraggableRangeSlider: React.FC<CenterDraggableRangeSliderProp
   const rangeColor = getColor();
 
   return (
-    <Box style={{ position: 'relative', padding: '20px 0' }}>
+    <Box style={{ position: 'relative' }}>
       {/* Track */}
       <Box
         ref={sliderRef}

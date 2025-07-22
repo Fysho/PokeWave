@@ -10,7 +10,8 @@ import {
   IconSun,
   IconMoon,
   IconInfoCircle,
-  IconInfinity
+  IconInfinity,
+  IconPokeball
 } from '@tabler/icons-react';
 import BattleSettings from '../settings/BattleSettings';
 import BattleTester from '../battle/BattleTester';
@@ -54,6 +55,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({
     { id: 'leaderboard', label: 'Leaderboard', icon: IconCrown, description: 'Global rankings' },
     { id: 'daily', label: 'Daily', icon: IconCalendar, description: 'Daily challenges' },
     { id: 'endless', label: 'Endless', icon: IconInfinity, description: 'Survival mode' },
+    { id: 'pokedex', label: 'Pokédex', icon: IconPokeball, description: 'Browse all Pokémon' },
     { id: 'pokeinfo', label: 'PokeInfo', icon: IconInfoCircle, description: 'Pokemon debug information' },
   ];
 
