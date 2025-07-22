@@ -9,7 +9,8 @@ import {
   IconUsers,
   IconSun,
   IconMoon,
-  IconInfoCircle
+  IconInfoCircle,
+  IconInfinity
 } from '@tabler/icons-react';
 import BattleSettings from '../settings/BattleSettings';
 import BattleTester from '../battle/BattleTester';
@@ -52,13 +53,14 @@ const MainLayout: React.FC<MainLayoutProps> = ({
     { id: 'stats', label: 'Stats', icon: IconChartBar, description: 'Detailed analytics' },
     { id: 'leaderboard', label: 'Leaderboard', icon: IconCrown, description: 'Global rankings' },
     { id: 'daily', label: 'Daily', icon: IconCalendar, description: 'Daily challenges' },
+    { id: 'endless', label: 'Endless', icon: IconInfinity, description: 'Survival mode' },
     { id: 'pokeinfo', label: 'PokeInfo', icon: IconInfoCircle, description: 'Pokemon debug information' },
   ];
 
   return (
     <Box>
       {/* Settings Panel */}
-      {activeTab === 'battle' && (
+      {(activeTab === 'battle' || activeTab === 'endless') && (
         <BattleSettings
           isExpanded={isSettingsPanelExpanded}
           onToggleExpanded={toggleSettingsPanel}
@@ -68,7 +70,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({
       )}
 
       {/* Battle Tester Panel */}
-      {activeTab === 'battle' && (
+      {(activeTab === 'battle' || activeTab === 'endless') && (
         <BattleTester
           isExpanded={isBattleTesterExpanded}
           onToggleExpanded={toggleBattleTester}
@@ -218,10 +220,10 @@ const MainLayout: React.FC<MainLayoutProps> = ({
           <Container 
             size="xl"
             style={{
-              marginLeft: activeTab === 'battle' ? (isSettingsPanelExpanded ? '320px' : '60px') : '0',
-              marginRight: activeTab === 'battle' ? (isBattleTesterExpanded ? '400px' : '60px') : '0',
+              marginLeft: (activeTab === 'battle' || activeTab === 'endless') ? (isSettingsPanelExpanded ? '320px' : '60px') : '0',
+              marginRight: (activeTab === 'battle' || activeTab === 'endless') ? (isBattleTesterExpanded ? '400px' : '60px') : '0',
               transition: 'margin-left 0.3s ease, margin-right 0.3s ease',
-              maxWidth: activeTab === 'battle' ? 
+              maxWidth: (activeTab === 'battle' || activeTab === 'endless') ? 
                 `calc(100% - ${isSettingsPanelExpanded ? '320px' : '60px'} - ${isBattleTesterExpanded ? '400px' : '60px'})` : 
                 '100%'
             }}

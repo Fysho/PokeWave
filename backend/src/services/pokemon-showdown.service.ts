@@ -101,10 +101,10 @@ class PokemonShowdownService {
 
         if (winner == 1) {
           pokemon1Wins++;
-          logger.info(`${config.pokemon1.name} won battle ${i + 1}`, {skipFormat: true});
+          //logger.info(`${config.pokemon1.name} won battle ${i + 1}`, {skipFormat: true});
         } else {
           pokemon2Wins++;
-          logger.info(`${config.pokemon2.name} won battle ${i + 1}`, {skipFormat: true});
+          //logger.info(`${config.pokemon2.name} won battle ${i + 1}`, {skipFormat: true});
         }
       }
 
