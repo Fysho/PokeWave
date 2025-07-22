@@ -27,6 +27,7 @@ import { useGameStore } from '../../store/gameStore';
 import { BattleLoading } from '../ui/loading';
 import { TypeColorSlider } from '../ui/TypeColorSlider';
 import ApiService from '../../services/api';
+import { useDailyChallengeStore } from '../../store/dailyChallengeStore';
 
 interface DailyBattle {
   id: number;
@@ -48,6 +49,7 @@ interface AvailableChallenge {
 
 const DailyMode: React.FC = () => {
   const { currentBattle, isLoading, generateNewBattle } = useGameStore();
+  const { saveScore, getBestScore } = useDailyChallengeStore();
   const [dailyBattles, setDailyBattles] = useState<DailyBattle[]>([]);
   const [loadingBattles, setLoadingBattles] = useState(true);
   const [guesses, setGuesses] = useState<number[]>([50, 50, 50, 50, 50, 50]);
@@ -58,6 +60,7 @@ const DailyMode: React.FC = () => {
   const [availableChallenges, setAvailableChallenges] = useState<AvailableChallenge[]>([]);
   const [loadingChallenges, setLoadingChallenges] = useState(false);
   const [selectedDate, setSelectedDate] = useState<string>('');
+  const [currentScore, setCurrentScore] = useState<number | null>(null);
 
   // Fetch today's challenge on mount
   useEffect(() => {
@@ -109,6 +112,7 @@ const DailyMode: React.FC = () => {
     setError(null);
     setSubmitted(false);
     setGuesses([50, 50, 50, 50, 50, 50]);
+    setCurrentScore(null);
     
     try {
       const response = await ApiService.getChallengeByDate(date);
@@ -141,13 +145,32 @@ const DailyMode: React.FC = () => {
   };
 
   const handleSubmit = () => {
-    // TODO: Process all guesses and calculate scores
+    // Calculate score: sum of absolute difference between guess and actual win percentage
+    let totalScore = 0;
+    
+    dailyBattles.forEach((battle, index) => {
+      const actualWinPercentage = battle.winRate * 100;
+      const guessPercentage = guesses[index];
+      const difference = Math.abs(actualWinPercentage - guessPercentage);
+      totalScore += difference;
+    });
+    
+    // Round to 2 decimal places
+    totalScore = Math.round(totalScore * 100) / 100;
+    
+    // Save the score
+    if (challengeDate) {
+      saveScore(challengeDate, totalScore, guesses);
+    }
+    
+    setCurrentScore(totalScore);
     setSubmitted(true);
   };
 
   const handleReset = () => {
     setSubmitted(false);
     setGuesses([50, 50, 50, 50, 50, 50]);
+    setCurrentScore(null);
     fetchTodaysChallenge();
   };
 
@@ -266,9 +289,19 @@ const DailyMode: React.FC = () => {
                           })}
                         </Text>
                       </Box>
-                      {challenge.isToday && (
-                        <Badge size="xs" color="green">Today</Badge>
-                      )}
+                      <Stack gap={4} align="flex-end">
+                        {challenge.isToday && (
+                          <Badge size="xs" color="green">Today</Badge>
+                        )}
+                        {(() => {
+                          const bestScore = getBestScore(challenge.date);
+                          return bestScore ? (
+                            <Text size="xs" fw={600} c="blue">
+                              Best: {bestScore.score}
+                            </Text>
+                          ) : null;
+                        })()}
+                      </Stack>
                     </Group>
                   </UnstyledButton>
                 ))
@@ -302,14 +335,24 @@ const DailyMode: React.FC = () => {
                   </Group>
                 </Title>
                 {challengeDate && (
-                  <Text size="lg" ta="center" c="dimmed">
-                    {new Date(challengeDate).toLocaleDateString('en-US', { 
-                      weekday: 'long', 
-                      year: 'numeric', 
-                      month: 'long', 
-                      day: 'numeric' 
-                    })}
-                  </Text>
+                  <Stack gap="xs" align="center">
+                    <Text size="lg" ta="center" c="dimmed">
+                      {new Date(challengeDate).toLocaleDateString('en-US', { 
+                        weekday: 'long', 
+                        year: 'numeric', 
+                        month: 'long', 
+                        day: 'numeric' 
+                      })}
+                    </Text>
+                    {(() => {
+                      const bestScore = getBestScore(challengeDate);
+                      return bestScore && !submitted ? (
+                        <Badge size="md" variant="light" color="blue">
+                          Best Score: {bestScore.score}
+                        </Badge>
+                      ) : null;
+                    })()}
+                  </Stack>
                 )}
               </Stack>
 
@@ -375,25 +418,52 @@ const DailyMode: React.FC = () => {
           </Grid>
 
           {/* Submit/Reset Button */}
-          <Group justify="center" mt="lg">
-            {!submitted ? (
-              <Button 
-                size="lg" 
-                onClick={handleSubmit}
-                leftSection={<IconSwords size={20} />}
-              >
-                Submit All Guesses
-              </Button>
-            ) : (
-              <Button 
-                size="lg" 
-                variant="outline"
-                onClick={handleReset}
-              >
-                Try New Daily Challenge
-              </Button>
+          <Stack align="center" gap="md" mt="lg">
+            {submitted && currentScore !== null && (
+              <Card withBorder p="md">
+                <Stack align="center" gap="xs">
+                  <Text size="lg" fw={600}>Your Score</Text>
+                  <Text size="2xl" fw={700} c="blue">
+                    {currentScore}
+                  </Text>
+                  <Text size="sm" c="dimmed">
+                    Lower is better - {currentScore < 100 ? 'Great job!' : currentScore < 200 ? 'Good try!' : 'Keep practicing!'}
+                  </Text>
+                  {(() => {
+                    const bestScore = getBestScore(challengeDate);
+                    if (bestScore && bestScore.score < currentScore) {
+                      return (
+                        <Text size="sm" c="dimmed">
+                          Your best: {bestScore.score}
+                        </Text>
+                      );
+                    }
+                    return null;
+                  })()}
+                </Stack>
+              </Card>
             )}
-          </Group>
+            
+            <Group justify="center">
+              {!submitted ? (
+                <Button 
+                  size="lg" 
+                  onClick={handleSubmit}
+                  leftSection={<IconSwords size={20} />}
+                >
+                  Submit All Guesses
+                </Button>
+              ) : (
+                <Button 
+                  size="lg" 
+                  variant="outline"
+                  onClick={handleReset}
+                >
+                  Try New Daily Challenge
+                </Button>
+              )}
+            </Group>
+          </Stack>
         </Stack>
       </FadeIn>
       </Box>
