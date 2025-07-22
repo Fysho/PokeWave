@@ -11,9 +11,16 @@ import {
   Slider,
   Center,
   Loader,
-  Alert
+  Alert,
+  Drawer,
+  ScrollArea,
+  ActionIcon,
+  Badge,
+  UnstyledButton,
+  Collapse,
+  Paper
 } from '@mantine/core';
-import { IconSwords, IconCalendar, IconAlertCircle } from '@tabler/icons-react';
+import { IconSwords, IconCalendar, IconAlertCircle, IconChevronRight, IconHistory, IconChevronLeft } from '@tabler/icons-react';
 import { CompactBattleCard } from '../battle/CompactBattleCard';
 import { FadeIn } from '../ui/transitions';
 import { useGameStore } from '../../store/gameStore';
@@ -31,6 +38,14 @@ interface DailyBattle {
   executionTime: number;
 }
 
+interface AvailableChallenge {
+  date: string;
+  dayOfWeek: string;
+  isToday: boolean;
+  isPast: boolean;
+  isFuture: boolean;
+}
+
 const DailyMode: React.FC = () => {
   const { currentBattle, isLoading, generateNewBattle } = useGameStore();
   const [dailyBattles, setDailyBattles] = useState<DailyBattle[]>([]);
@@ -39,10 +54,15 @@ const DailyMode: React.FC = () => {
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [challengeDate, setChallengeDate] = useState<string>('');
+  const [isPanelOpen, setIsPanelOpen] = useState(false);
+  const [availableChallenges, setAvailableChallenges] = useState<AvailableChallenge[]>([]);
+  const [loadingChallenges, setLoadingChallenges] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<string>('');
 
   // Fetch today's challenge on mount
   useEffect(() => {
     fetchTodaysChallenge();
+    fetchAvailableChallenges();
   }, []);
 
   const fetchTodaysChallenge = async () => {
@@ -63,9 +83,52 @@ const DailyMode: React.FC = () => {
       
       setDailyBattles(battles);
       setChallengeDate(response.challenge.date);
+      setSelectedDate(response.challenge.date);
     } catch (err) {
       console.error('Failed to fetch daily challenge:', err);
       setError('Failed to load today\'s challenge. Please try again later.');
+    } finally {
+      setLoadingBattles(false);
+    }
+  };
+
+  const fetchAvailableChallenges = async () => {
+    setLoadingChallenges(true);
+    try {
+      const response = await ApiService.getAvailableChallenges();
+      setAvailableChallenges(response.challenges);
+    } catch (err) {
+      console.error('Failed to fetch available challenges:', err);
+    } finally {
+      setLoadingChallenges(false);
+    }
+  };
+
+  const fetchChallengeByDate = async (date: string) => {
+    setLoadingBattles(true);
+    setError(null);
+    setSubmitted(false);
+    setGuesses([50, 50, 50, 50, 50, 50]);
+    
+    try {
+      const response = await ApiService.getChallengeByDate(date);
+      const battles: DailyBattle[] = response.challenge.battles.map((battle, index) => ({
+        id: index,
+        battleId: battle.battleId,
+        pokemon1: battle.pokemon1,
+        pokemon2: battle.pokemon2,
+        winRate: battle.winRate,
+        totalBattles: battle.totalBattles,
+        executionTime: battle.executionTime
+      }));
+      
+      setDailyBattles(battles);
+      setChallengeDate(response.challenge.date);
+      setSelectedDate(date);
+      setIsPanelOpen(false);
+    } catch (err) {
+      console.error('Failed to fetch challenge:', err);
+      setError('Failed to load challenge. Please try again later.');
     } finally {
       setLoadingBattles(false);
     }
@@ -120,39 +183,135 @@ const DailyMode: React.FC = () => {
   }
 
   return (
-    <Box maw={1400} mx="auto">
-      <FadeIn>
-        <Stack gap="xl">
-          {/* Header */}
-          <Stack align="center" gap="md">
-            <Title 
-              order={1}
-              size="h1"
-              fw={700}
-              ta="center"
-              style={{
-                background: 'linear-gradient(135deg, var(--mantine-color-blue-6), var(--mantine-color-grape-6))',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                backgroundClip: 'text'
-              }}
-            >
-              <Group gap="xs">
-                <IconCalendar size={40} />
-                Daily Challenge
-              </Group>
-            </Title>
-            {challengeDate && (
-              <Text size="lg" ta="center" c="dimmed">
-                {new Date(challengeDate).toLocaleDateString('en-US', { 
-                  weekday: 'long', 
-                  year: 'numeric', 
-                  month: 'long', 
-                  day: 'numeric' 
-                })}
-              </Text>
-            )}
-          </Stack>
+    <Box style={{ display: 'flex', gap: '20px', position: 'relative' }}>
+      {/* Expandable Panel */}
+      <Paper
+        withBorder
+        style={{
+          position: 'sticky',
+          top: 20,
+          height: 'fit-content',
+          maxHeight: 'calc(100vh - 40px)',
+          transition: 'all 0.3s ease',
+          width: isPanelOpen ? '280px' : '50px',
+          overflow: 'hidden',
+          display: 'flex',
+          flexDirection: 'column'
+        }}
+      >
+        <Group p="sm" justify={isPanelOpen ? "space-between" : "center"}>
+          <ActionIcon
+            variant="subtle"
+            onClick={() => setIsPanelOpen(!isPanelOpen)}
+            size="lg"
+          >
+            {isPanelOpen ? <IconChevronLeft size={20} /> : <IconHistory size={20} />}
+          </ActionIcon>
+          
+          {isPanelOpen && (
+            <Text fw={600} size="sm">Past Challenges</Text>
+          )}
+        </Group>
+        
+        {isPanelOpen && (
+          <ScrollArea h="100%" px="sm" pb="sm">
+            <Stack gap="xs">
+              {loadingChallenges ? (
+                <Center py="md">
+                  <Loader size="sm" />
+                </Center>
+              ) : (
+                availableChallenges.map((challenge) => (
+                  <UnstyledButton
+                    key={challenge.date}
+                    onClick={() => fetchChallengeByDate(challenge.date)}
+                    style={{
+                      display: 'block',
+                      width: '100%',
+                      padding: '8px 12px',
+                      borderRadius: '8px',
+                      backgroundColor: 
+                        selectedDate === challenge.date 
+                          ? 'var(--mantine-color-blue-light)' 
+                          : challenge.isToday 
+                            ? 'var(--mantine-color-green-light)'
+                            : 'transparent',
+                      border: '1px solid',
+                      borderColor: 
+                        selectedDate === challenge.date
+                          ? 'var(--mantine-color-blue-6)'
+                          : 'var(--mantine-color-gray-3)',
+                      transition: 'all 0.2s ease'
+                    }}
+                    onMouseEnter={(e) => {
+                      if (selectedDate !== challenge.date && !challenge.isToday) {
+                        e.currentTarget.style.backgroundColor = 'var(--mantine-color-gray-1)';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (selectedDate !== challenge.date && !challenge.isToday) {
+                        e.currentTarget.style.backgroundColor = 'transparent';
+                      }
+                    }}
+                  >
+                    <Group justify="space-between" wrap="nowrap">
+                      <Box>
+                        <Text size="sm" fw={500}>
+                          {challenge.dayOfWeek}
+                        </Text>
+                        <Text size="xs" c="dimmed">
+                          {new Date(challenge.date).toLocaleDateString('en-US', {
+                            month: 'short',
+                            day: 'numeric'
+                          })}
+                        </Text>
+                      </Box>
+                      {challenge.isToday && (
+                        <Badge size="xs" color="green">Today</Badge>
+                      )}
+                    </Group>
+                  </UnstyledButton>
+                ))
+              )}
+            </Stack>
+          </ScrollArea>
+        )}
+      </Paper>
+
+      {/* Main Content */}
+      <Box style={{ flex: 1 }} maw={1400} mx="auto">
+        <FadeIn>
+          <Stack gap="xl">
+            {/* Header */}
+            <Stack align="center" gap="md">
+                <Title 
+                  order={1}
+                  size="h1"
+                  fw={700}
+                  ta="center"
+                  style={{
+                    background: 'linear-gradient(135deg, var(--mantine-color-blue-6), var(--mantine-color-grape-6))',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    backgroundClip: 'text'
+                  }}
+                >
+                  <Group gap="xs">
+                    <IconCalendar size={40} />
+                    Daily Challenge
+                  </Group>
+                </Title>
+                {challengeDate && (
+                  <Text size="lg" ta="center" c="dimmed">
+                    {new Date(challengeDate).toLocaleDateString('en-US', { 
+                      weekday: 'long', 
+                      year: 'numeric', 
+                      month: 'long', 
+                      day: 'numeric' 
+                    })}
+                  </Text>
+                )}
+              </Stack>
 
           {/* Battle Grid */}
           <Grid gutter="md">
@@ -237,6 +396,7 @@ const DailyMode: React.FC = () => {
           </Group>
         </Stack>
       </FadeIn>
+      </Box>
     </Box>
   );
 };
