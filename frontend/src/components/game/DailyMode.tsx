@@ -398,7 +398,7 @@ const DailyMode: React.FC = () => {
                       </Grid.Col>
                     </Grid>
 
-                    <Box style={{ marginTop: submitted ? '25px' : '0' }}>
+                    <Box style={{ marginTop: submitted ? '20px' : '0' }}>
                       <TypeColorSlider
                         value={guesses[index]}
                         onChange={(value) => handleGuessChange(index, value)}
