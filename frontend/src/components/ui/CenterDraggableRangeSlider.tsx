@@ -33,11 +33,19 @@ export const CenterDraggableRangeSlider: React.FC<CenterDraggableRangeSliderProp
   const [isDragging, setIsDragging] = useState<'left' | 'right' | 'center' | null>(null);
   const [showTooltip, setShowTooltip] = useState<'left' | 'right' | 'both' | null>(null);
   const sliderRef = useRef<HTMLDivElement>(null);
-  const [localValue, setLocalValue] = useState(value);
+  const [localValue, setLocalValue] = useState<[number, number]>(() => {
+    // Ensure we have valid numbers
+    return [
+      typeof value[0] === 'number' && !isNaN(value[0]) ? value[0] : 0,
+      typeof value[1] === 'number' && !isNaN(value[1]) ? value[1] : 100
+    ];
+  });
   const [dragOffset, setDragOffset] = useState(0);
 
   useEffect(() => {
-    setLocalValue(value);
+    if (value && value[0] !== undefined && value[1] !== undefined && !isNaN(value[0]) && !isNaN(value[1])) {
+      setLocalValue(value);
+    }
   }, [value]);
 
   const sizeMap = {
@@ -333,7 +341,7 @@ export const CenterDraggableRangeSlider: React.FC<CenterDraggableRangeSliderProp
         mt="xs"
         style={{ userSelect: 'none' }}
       >
-        Range: {localValue[1] - localValue[0]}%
+        Range: {!isNaN(localValue[1] - localValue[0]) ? `${localValue[1] - localValue[0]}%` : '0%'}
       </Text>
     </Box>
   );

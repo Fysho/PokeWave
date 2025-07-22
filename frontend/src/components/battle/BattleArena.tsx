@@ -588,13 +588,16 @@ const BattleArena: React.FC = () => {
     const baseWidth = 50;
     const shrinkPerScore = 1;
     const minWidth = 20;
-    return Math.max(minWidth, baseWidth - (endlessScore * shrinkPerScore));
+    const score = endlessScore || 0; // Ensure we have a valid number
+    return Math.max(minWidth, baseWidth - (score * shrinkPerScore));
   };
   
   const [guessRange, setGuessRange] = useState<[number, number]>(() => {
     const width = calculateRangeWidth();
     const center = 50;
-    return [center - width / 2, center + width / 2];
+    const min = Math.round(center - width / 2);
+    const max = Math.round(center + width / 2);
+    return [min, max];
   });
   const [showResults, setShowResults] = useState(false);
   const [guessResult, setGuessResult] = useState<any>(null);
@@ -623,10 +626,12 @@ const BattleArena: React.FC = () => {
   useEffect(() => {
     if (isEndlessActive) {
       const width = calculateRangeWidth();
-      const center = guessRange[0] + (guessRange[1] - guessRange[0]) / 2;
-      const newMin = Math.max(0, Math.min(100 - width, center - width / 2));
-      const newMax = Math.min(100, newMin + width);
-      setGuessRange([Math.round(newMin), Math.round(newMax)]);
+      setGuessRange(prevRange => {
+        const center = prevRange[0] + (prevRange[1] - prevRange[0]) / 2;
+        const newMin = Math.max(0, Math.min(100 - width, center - width / 2));
+        const newMax = Math.min(100, newMin + width);
+        return [Math.round(newMin), Math.round(newMax)];
+      });
     }
   }, [endlessScore, isEndlessActive]);
 
