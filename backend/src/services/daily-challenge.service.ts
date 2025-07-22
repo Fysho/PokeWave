@@ -289,6 +289,41 @@ class DailyChallengeService {
    */
   async refreshAllChallenges(): Promise<void> {
     logger.info('Manually refreshing all daily challenges...');
+    
+    // First, clear all existing challenges from cache
+    const today = new Date();
+    const dates: Date[] = [];
+    
+    // Clear past days
+    for (let i = this.DAYS_TO_KEEP_PAST; i >= 1; i--) {
+      const date = new Date(today);
+      date.setDate(date.getDate() - i);
+      dates.push(date);
+    }
+    
+    // Clear today
+    dates.push(today);
+    
+    // Clear future days
+    for (let i = 1; i <= this.DAYS_TO_GENERATE_FUTURE; i++) {
+      const date = new Date(today);
+      date.setDate(date.getDate() + i);
+      dates.push(date);
+    }
+    
+    // Delete all challenges from cache
+    for (const date of dates) {
+      const dateKey = this.getDateKey(date);
+      const cacheKey = `${this.CACHE_PREFIX}${dateKey}`;
+      try {
+        await cacheService.delete(cacheKey);
+        logger.info(`Deleted cached challenge for ${dateKey}`);
+      } catch (error) {
+        // Ignore errors for non-existent keys
+      }
+    }
+    
+    // Now regenerate all challenges
     await this.initializeDailyChallenges();
   }
 }
