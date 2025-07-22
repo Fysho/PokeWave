@@ -634,9 +634,6 @@ const BattleArena: React.FC = () => {
                             <Text size="lg" fw={700}>VS</Text>
                           </Box>
                         </BounceIn>
-                        <Text size="sm" c="dimmed">
-                          {currentBattle.totalBattles} battle simulation
-                        </Text>
                       </Stack>
                     </Center>
                     
@@ -698,12 +695,6 @@ const BattleArena: React.FC = () => {
                       </Grid.Col>
                     </Grid>
                   
-                  {/* Battle Info for Desktop */}
-                  <Center mt="md" visibleFrom="md">
-                    <Text size="sm" c="dimmed">
-                      {currentBattle.totalBattles} battle simulation
-                    </Text>
-                  </Center>
                   </div>
 
                   {/* Win Rate Prediction Slider */}

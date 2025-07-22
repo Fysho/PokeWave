@@ -6,6 +6,8 @@ import { loggerMiddleware } from './middleware/logger.middleware';
 import routes from './routes';
 import logger from './utils/logger';
 import { pokemonMoveStoreService } from './services/pokemon-move-store.service';
+import { pokemonItemStoreService } from './services/pokemon-item-store.service';
+import { pokemonAbilityStoreService } from './services/pokemon-ability-store.service';
 
 // Load environment variables
 dotenv.config();
@@ -41,15 +43,24 @@ const PORT = process.env.PORT || 4000;
 const server = app.listen(PORT, async () => {
   logger.info(`Server running on port ${PORT}`);
   
-  // Initialize Pokemon move store
-  logger.info('Initializing Pokemon move store...');
-  try {
-    await pokemonMoveStoreService.initialize();
-    logger.info('Pokemon move store initialization complete');
-  } catch (error) {
-    logger.error('Failed to initialize Pokemon move store:', error);
-    // Don't exit - service can work without the move store
-  }
+  // Initialize Pokemon stores
+  logger.info('Initializing Pokemon data stores...');
+  
+  // Initialize all stores in parallel
+  const storePromises = [
+    pokemonMoveStoreService.initialize().catch(error => {
+      logger.error('Failed to initialize Pokemon move store:', error);
+    }),
+    pokemonItemStoreService.initialize().catch(error => {
+      logger.error('Failed to initialize Pokemon item store:', error);
+    }),
+    pokemonAbilityStoreService.initialize().catch(error => {
+      logger.error('Failed to initialize Pokemon ability store:', error);
+    })
+  ];
+  
+  await Promise.all(storePromises);
+  logger.info('Pokemon data stores initialization complete');
 });
 
 // Graceful shutdown

@@ -90,7 +90,18 @@ export interface PokemonInstanceData {
   level: number;          // Level
   types: string[];        // Type array
   ability: string;        // Active ability
+  abilityDetail?: {       // Detailed ability information (optional)
+    name: string;
+    effect: string;
+    shortEffect: string;
+  };
   item?: string;          // Held item (optional)
+  itemDetail?: {          // Detailed item information (optional)
+    name: string;
+    effect: string;
+    shortEffect: string;
+    sprite: string;
+  };
   moves: string[];        // Move names
   moveDetails?: {         // Detailed move information (optional)
     name: string;

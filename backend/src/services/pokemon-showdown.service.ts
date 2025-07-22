@@ -5,6 +5,8 @@ import { Teams } from '@pkmn/sets';
 //import { cacheService } from './cache.service';
 import { pokemonService } from './pokemon.service';
 import { pokemonMoveStoreService } from './pokemon-move-store.service';
+import { pokemonItemStoreService } from './pokemon-item-store.service';
+import { pokemonAbilityStoreService } from './pokemon-ability-store.service';
 import logger from '../utils/logger';
 import { ApiError } from '../middleware/error.middleware';
 import crypto from 'crypto';
@@ -1100,14 +1102,41 @@ class PokemonShowdownService {
 
       // Get random ability
       const ability = this.getRandomAbility(species);
+      
+      // Get ability details
+      let abilityDetail = undefined;
+      if (ability) {
+        const abilityData = pokemonAbilityStoreService.getAbility(ability);
+        if (abilityData) {
+          abilityDetail = {
+            name: abilityData.name,
+            effect: abilityData.effect,
+            shortEffect: abilityData.shortEffect
+          };
+        }
+      }
 
       // Get item based on item mode
       let item: string | undefined;
+      let itemDetail = undefined;
       if (itemMode === 'none') {
         item = undefined;
       } else {
         // Random mode - 50% chance of having an item
         item = this.getRandomItem();
+        
+        // Get item details if we have an item
+        if (item) {
+          const itemData = pokemonItemStoreService.getItem(item);
+          if (itemData) {
+            itemDetail = {
+              name: itemData.name,
+              effect: itemData.effect,
+              shortEffect: itemData.shortEffect,
+              sprite: itemData.sprite
+            };
+          }
+        }
       }
 
       // Get random nature
@@ -1138,7 +1167,9 @@ class PokemonShowdownService {
         level,
         types,
         ability,
+        abilityDetail,
         item,
+        itemDetail,
         moves: moves.map(move => this.formatMoveName(move)),
         moveDetails,
         stats,
