@@ -51,46 +51,60 @@ class PokemonService {
       // Get basic data for all Pokemon in range
       // Batch fetching for better performance
       const pokemonPromises: Promise<any>[] = [];
-      const spritePromises: Promise<PokemonSprites>[] = [];
-      const validIds: number[] = [];
+      const pokemonDataMap = new Map<number, any>();
       
       for (let id = startId; id <= endId; id++) {
         pokemonPromises.push(
           pokemonShowdownService.createPokemonInstance(id, 50, generation || 9, 'none')
             .then(instance => {
-              validIds.push(id);
-              return {
+              const data = {
                 num: instance.id,
                 name: instance.name,
                 types: instance.types
               };
+              pokemonDataMap.set(id, data);
+              return data;
             })
             .catch(() => null) // Skip non-existent Pokemon
         );
       }
       
       // Wait for all Pokemon data
-      const pokemonResults = await Promise.all(pokemonPromises);
-      const pokemonList = pokemonResults.filter(p => p !== null);
+      await Promise.all(pokemonPromises);
       
       // Now fetch sprites for valid Pokemon only
-      validIds.forEach(id => {
-        spritePromises.push(this.getPokemonSprites(id));
-      });
+      const spritePromises: Promise<{ id: number; sprites: PokemonSprites }>[] = [];
+      for (const [id, data] of pokemonDataMap.entries()) {
+        spritePromises.push(
+          this.getPokemonSprites(id)
+            .then(sprites => ({ id, sprites }))
+        );
+      }
       
       // Fetch all sprites in parallel
-      const sprites = await Promise.all(spritePromises);
+      const spriteResults = await Promise.all(spritePromises);
+      
+      // Create a map of sprites by ID
+      const spriteMap = new Map<number, PokemonSprites>();
+      spriteResults.forEach(result => {
+        spriteMap.set(result.id, result.sprites);
+      });
       
       // Combine data
-      for (let i = 0; i < pokemonList.length; i++) {
-        const pokemon = pokemonList[i];
-        pokedexData.push({
-          id: pokemon.num,
-          name: pokemon.name,
-          types: pokemon.types,
-          sprite: sprites[i].front
-        });
+      for (const [id, pokemon] of pokemonDataMap.entries()) {
+        const sprites = spriteMap.get(id);
+        if (sprites) {
+          pokedexData.push({
+            id: pokemon.num,
+            name: pokemon.name,
+            types: pokemon.types,
+            sprite: sprites.front
+          });
+        }
       }
+      
+      // Sort by ID to ensure correct order
+      pokedexData.sort((a, b) => a.id - b.id);
       
       // Cache for 7 days since Pokemon data rarely changes
       await cacheService.set(cacheKey, pokedexData, 7 * 24 * 60 * 60);
