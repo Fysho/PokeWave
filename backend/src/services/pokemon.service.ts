@@ -12,7 +12,7 @@ interface PokemonSprites {
   shiny: string;
 }
 
-const GENERATION_RANGES = {
+const GENERATION_RANGES: Record<number, { start: number; end: number }> = {
   1: { start: 1, end: 151 },
   2: { start: 152, end: 251 },
   3: { start: 252, end: 386 },
