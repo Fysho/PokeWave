@@ -3,9 +3,11 @@ import { persist } from 'zustand/middleware';
 
 interface PokedexStore {
   unlockedPokemon: Set<number>;
+  pokemonCounts: Map<number, number>;
   unlockPokemon: (pokemonId: number) => void;
   unlockMultiplePokemon: (pokemonIds: number[]) => void;
   isPokemonUnlocked: (pokemonId: number) => boolean;
+  getPokemonCount: (pokemonId: number) => number;
   getUnlockedCount: () => number;
   getTotalPokemonCount: () => number;
   resetPokedex: () => void;
@@ -17,25 +19,42 @@ export const usePokedexStore = create<PokedexStore>()(
   persist(
     (set, get) => ({
       unlockedPokemon: new Set<number>(),
+      pokemonCounts: new Map<number, number>(),
       
       unlockPokemon: (pokemonId: number) => {
         set((state) => {
           const newUnlocked = new Set(state.unlockedPokemon);
           newUnlocked.add(pokemonId);
-          return { unlockedPokemon: newUnlocked };
+          
+          const newCounts = new Map(state.pokemonCounts);
+          const currentCount = newCounts.get(pokemonId) || 0;
+          newCounts.set(pokemonId, currentCount + 1);
+          
+          return { unlockedPokemon: newUnlocked, pokemonCounts: newCounts };
         });
       },
       
       unlockMultiplePokemon: (pokemonIds: number[]) => {
         set((state) => {
           const newUnlocked = new Set(state.unlockedPokemon);
-          pokemonIds.forEach(id => newUnlocked.add(id));
-          return { unlockedPokemon: newUnlocked };
+          const newCounts = new Map(state.pokemonCounts);
+          
+          pokemonIds.forEach(id => {
+            newUnlocked.add(id);
+            const currentCount = newCounts.get(id) || 0;
+            newCounts.set(id, currentCount + 1);
+          });
+          
+          return { unlockedPokemon: newUnlocked, pokemonCounts: newCounts };
         });
       },
       
       isPokemonUnlocked: (pokemonId: number) => {
         return get().unlockedPokemon.has(pokemonId);
+      },
+      
+      getPokemonCount: (pokemonId: number) => {
+        return get().pokemonCounts.get(pokemonId) || 0;
       },
       
       getUnlockedCount: () => {
@@ -47,7 +66,7 @@ export const usePokedexStore = create<PokedexStore>()(
       },
       
       resetPokedex: () => {
-        set({ unlockedPokemon: new Set<number>() });
+        set({ unlockedPokemon: new Set<number>(), pokemonCounts: new Map<number, number>() });
       },
     }),
     {
@@ -61,6 +80,7 @@ export const usePokedexStore = create<PokedexStore>()(
             state: {
               ...state,
               unlockedPokemon: new Set(state.unlockedPokemon || []),
+              pokemonCounts: new Map(state.pokemonCounts || []),
             },
           };
         },
@@ -70,6 +90,7 @@ export const usePokedexStore = create<PokedexStore>()(
             state: {
               ...state,
               unlockedPokemon: Array.from(state.unlockedPokemon),
+              pokemonCounts: Array.from(state.pokemonCounts),
             },
           };
           localStorage.setItem(name, JSON.stringify(serialized));

@@ -46,7 +46,7 @@ const Pokedex: React.FC<PokedexProps> = () => {
   const [hoveredPokemon, setHoveredPokemon] = useState<number | null>(null);
   const [showUnlockedOnly, setShowUnlockedOnly] = useState(false);
   
-  const { isPokemonUnlocked, getUnlockedCount, getTotalPokemonCount } = usePokedexStore();
+  const { isPokemonUnlocked, getPokemonCount, getUnlockedCount, getTotalPokemonCount } = usePokedexStore();
 
   // Pokemon type list
   const pokemonTypes = [
@@ -321,6 +321,30 @@ const Pokedex: React.FC<PokedexProps> = () => {
                         <Center h="100%" bg="gray.1" style={{ borderRadius: '8px' }}>
                           <IconPokeball size={48} color="var(--mantine-color-gray-5)" />
                         </Center>
+                      )}
+                      {/* Pokemon Count Badge */}
+                      {getPokemonCount(poke.id) > 0 && (
+                        <Badge
+                          size="sm"
+                          radius="xl"
+                          variant="filled"
+                          color="blue"
+                          style={{
+                            position: 'absolute',
+                            top: -8,
+                            right: -8,
+                            minWidth: '24px',
+                            height: '24px',
+                            padding: '0 6px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontWeight: 700,
+                            fontSize: '12px'
+                          }}
+                        >
+                          {getPokemonCount(poke.id)}
+                        </Badge>
                       )}
                     </Box>
 
