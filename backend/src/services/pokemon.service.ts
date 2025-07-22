@@ -49,17 +49,34 @@ class PokemonService {
       }
       
       // Get basic data for all Pokemon in range
-      // Batch sprite fetching for better performance
+      // Batch fetching for better performance
+      const pokemonPromises = [];
       const spritePromises = [];
-      const pokemonList = [];
+      const validIds = [];
       
       for (let id = startId; id <= endId; id++) {
-        const pokemon = pokemonShowdownService.getPokemonById(id);
-        if (pokemon) {
-          pokemonList.push(pokemon);
-          spritePromises.push(this.getPokemonSprites(id));
-        }
+        pokemonPromises.push(
+          pokemonShowdownService.createPokemonInstance(id, 50, generation || 9, 'none')
+            .then(instance => {
+              validIds.push(id);
+              return {
+                num: instance.id,
+                name: instance.name,
+                types: instance.types
+              };
+            })
+            .catch(() => null) // Skip non-existent Pokemon
+        );
       }
+      
+      // Wait for all Pokemon data
+      const pokemonResults = await Promise.all(pokemonPromises);
+      const pokemonList = pokemonResults.filter(p => p !== null);
+      
+      // Now fetch sprites for valid Pokemon only
+      validIds.forEach(id => {
+        spritePromises.push(this.getPokemonSprites(id));
+      });
       
       // Fetch all sprites in parallel
       const sprites = await Promise.all(spritePromises);
@@ -87,21 +104,18 @@ class PokemonService {
 
   async getPokemonDataById(id: number): Promise<any> {
     try {
-      const pokemon = pokemonShowdownService.getPokemonById(id);
-      if (!pokemon) {
-        throw new ApiError(404, `Pokemon with ID ${id} not found`);
-      }
-      
+      // Use createPokemonInstance to get Pokemon data
+      const pokemonInstance = await pokemonShowdownService.createPokemonInstance(id, 50, 9, 'none');
       const sprites = await this.getPokemonSprites(id);
       
       return {
-        id: pokemon.num,
-        name: pokemon.name,
-        types: pokemon.types,
+        id: pokemonInstance.id,
+        name: pokemonInstance.name,
+        types: pokemonInstance.types,
         sprite: sprites.front,
         sprites,
-        baseStats: pokemon.baseStats,
-        abilities: Object.keys(pokemon.abilities)
+        baseStats: pokemonInstance.baseStats,
+        abilities: [pokemonInstance.ability]
       };
     } catch (error) {
       if (error instanceof ApiError) throw error;
