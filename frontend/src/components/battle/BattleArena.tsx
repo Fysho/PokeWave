@@ -41,6 +41,21 @@ const PokemonBattleCard: React.FC<PokemonBattleCardProps> = ({
 }) => {
   const theme = useMantineTheme();
   const { colorScheme } = useMantineColorScheme();
+  
+  const badgeStyle = {
+    minWidth: '120px',
+    height: '36px',
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: '0 16px',
+    fontSize: '14px',
+    fontWeight: 600,
+    borderRadius: '18px',
+    cursor: 'pointer',
+    transition: 'transform 0.2s ease',
+  };
+  
   const formatItemName = (item: string): string => {
     // Map of item IDs to proper display names
     const itemNames: { [key: string]: string } = {
@@ -78,9 +93,9 @@ const PokemonBattleCard: React.FC<PokemonBattleCardProps> = ({
     const minSize = 240; // 2x bigger (was 120)
     const maxSize = 400; // 2x bigger (was 200)
     
-    // For left pokemon (position === 'left'), size increases with guessPercentage
-    // For right pokemon (position === 'right'), size decreases with guessPercentage
-    const percentage = position === 'left' ? effectiveGuess : (100 - effectiveGuess);
+    // For left pokemon (position === 'left'), size decreases with guessPercentage (slider right = right wins more)
+    // For right pokemon (position === 'right'), size increases with guessPercentage
+    const percentage = position === 'left' ? (100 - effectiveGuess) : effectiveGuess;
     
     // Scale the size based on percentage (0-100)
     // At 50%, both should be base size (320px)
@@ -106,14 +121,20 @@ const PokemonBattleCard: React.FC<PokemonBattleCardProps> = ({
           ${showResults && pokemon.wins > 500 ? 'ring-2 ring-green-500' : ''}
         `}
       >
-        <Card.Section p="lg">
+        <Card.Section p="lg" pos="relative">
+          <Text 
+            size="lg" 
+            c="dimmed" 
+            pos="absolute" 
+            top="lg" 
+            left="lg"
+          >
+            Lv.{pokemon.level}
+          </Text>
           <Box mb="md">
-            <Group align="baseline" gap="xs">
-              <Text size="lg" c="dimmed">Lv.{pokemon.level}</Text>
-              <Title order={2} size="h1" fw={700} tt="capitalize">
-                {pokemon.name}
-              </Title>
-            </Group>
+            <Title order={2} size="h1" fw={700} tt="capitalize" ta="center">
+              {pokemon.name}
+            </Title>
           </Box>
           
           <Box 
@@ -200,11 +221,8 @@ const PokemonBattleCard: React.FC<PokemonBattleCardProps> = ({
                     color={getTypeColor(type)}
                     tt="capitalize"
                     style={{ 
-                      fontSize: '14px',
+                      ...badgeStyle,
                       fontWeight: 700,
-                      padding: '8px 16px',
-                      cursor: 'pointer',
-                      transition: 'transform 0.2s ease'
                     }}
                     onMouseEnter={(e: React.MouseEvent<HTMLDivElement>) => (e.currentTarget.style.transform = 'scale(1.1)')}
                     onMouseLeave={(e: React.MouseEvent<HTMLDivElement>) => (e.currentTarget.style.transform = 'scale(1)')}
@@ -237,12 +255,7 @@ const PokemonBattleCard: React.FC<PokemonBattleCardProps> = ({
                       leftSection={<IconBolt size={14} />}
                       tt="capitalize"
                       style={{ 
-                        fontSize: '13px',
-                        fontWeight: 600,
-                        padding: '6px 12px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        lineHeight: '1',
+                        ...badgeStyle,
                         cursor: 'help'
                       }}
                     >
@@ -256,14 +269,7 @@ const PokemonBattleCard: React.FC<PokemonBattleCardProps> = ({
                     color="blue"
                     leftSection={<IconBolt size={14} />}
                     tt="capitalize"
-                    style={{ 
-                      fontSize: '13px',
-                      fontWeight: 600,
-                      padding: '6px 12px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      lineHeight: '1'
-                    }}
+                    style={badgeStyle}
                   >
                     {pokemon.ability}
                   </Badge>
@@ -289,12 +295,8 @@ const PokemonBattleCard: React.FC<PokemonBattleCardProps> = ({
                       leftSection={<IconStar size={14} />}
                       tt="capitalize"
                       style={{ 
-                        fontSize: '13px',
+                        ...badgeStyle,
                         fontWeight: 500,
-                        padding: '6px 12px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        lineHeight: '1',
                         cursor: 'help'
                       }}
                     >
@@ -309,12 +311,8 @@ const PokemonBattleCard: React.FC<PokemonBattleCardProps> = ({
                     leftSection={<IconStar size={14} />}
                     tt="capitalize"
                     style={{ 
-                      fontSize: '13px',
-                      fontWeight: 500,
-                      padding: '6px 12px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      lineHeight: '1'
+                      ...badgeStyle,
+                      fontWeight: 500
                     }}
                   >
                     {formatItemName(pokemon.item)}
@@ -327,12 +325,8 @@ const PokemonBattleCard: React.FC<PokemonBattleCardProps> = ({
                   color="gray"
                   leftSection={<IconStar size={14} />}
                   style={{ 
-                    fontSize: '13px',
-                    fontWeight: 500,
-                    padding: '6px 12px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    lineHeight: '1'
+                    ...badgeStyle,
+                    fontWeight: 500
                   }}
                 >
                   No Item
@@ -649,10 +643,11 @@ const BattleArena: React.FC = () => {
     if (!currentBattle) return;
     
     try {
-      // Pass the range for endless mode, or just the percentage for regular mode
+      // Invert the values since slider right = right Pokemon wins more
+      // But backend expects left Pokemon win percentage
       const result = isEndlessActive 
-        ? await submitGuess(Math.round((guessRange[0] + guessRange[1]) / 2), guessRange)
-        : await submitGuess(guessPercentage);
+        ? await submitGuess(Math.round((100 - guessRange[1] + 100 - guessRange[0]) / 2), [100 - guessRange[1], 100 - guessRange[0]])
+        : await submitGuess(100 - guessPercentage);
       
       setGuessResult(result);
       setShowResults(true);
@@ -773,8 +768,8 @@ const BattleArena: React.FC = () => {
                             showResults={showResults}
                             position="left"
                             winPercentage={showResults ? guessResult?.actualWinRate : undefined}
-                            guessPercentage={!showResults && !isEndlessActive ? guessPercentage : undefined}
-                            guessRange={!showResults && isEndlessActive ? guessRange : undefined}
+                            guessPercentage={!showResults && !isEndlessActive ? (100 - guessPercentage) : undefined}
+                            guessRange={!showResults && isEndlessActive ? [100 - guessRange[1], 100 - guessRange[0]] : undefined}
                             totalBattles={currentBattle.totalBattles}
                           />
                         </FadeIn>
@@ -839,9 +834,9 @@ const BattleArena: React.FC = () => {
                           <Stack align="flex-start" gap="xs">
                             <Text fw={600} size="lg">{currentBattle.pokemon1.name}</Text>
                             {isEndlessActive ? (
-                              <Text size="xl" fw={700} c="blue.6">{guessRange[0]}% - {guessRange[1]}%</Text>
+                              <Text size="xl" fw={700} c="blue.6">{100 - guessRange[1]}% - {100 - guessRange[0]}%</Text>
                             ) : (
-                              <Text size="xl" fw={700} c="blue.6">{guessPercentage}%</Text>
+                              <Text size="xl" fw={700} c="blue.6">{100 - guessPercentage}%</Text>
                             )}
                           </Stack>
                           <Text size="xl" fw={700}>VS</Text>
@@ -849,10 +844,10 @@ const BattleArena: React.FC = () => {
                             <Text fw={600} size="lg">{currentBattle.pokemon2.name}</Text>
                             {isEndlessActive ? (
                               <Text size="xl" fw={700} c="grape.6">
-                                {100 - guessRange[1]}% - {100 - guessRange[0]}%
+                                {guessRange[0]}% - {guessRange[1]}%
                               </Text>
                             ) : (
-                              <Text size="xl" fw={700} c="grape.6">{100 - guessPercentage}%</Text>
+                              <Text size="xl" fw={700} c="grape.6">{guessPercentage}%</Text>
                             )}
                           </Stack>
                         </Group>
@@ -958,8 +953,8 @@ const BattleArena: React.FC = () => {
                                     <Text size="lg">
                                       Your guess: <Text component="span" fw={700}>
                                         {isEndlessActive 
-                                          ? `${guessRange[0]}% - ${guessRange[1]}%`
-                                          : `${guessResult.guessPercentage}%`
+                                          ? `${100 - guessRange[1]}% - ${100 - guessRange[0]}% for ${currentBattle.pokemon1.name}`
+                                          : `${100 - guessResult.guessPercentage}% for ${currentBattle.pokemon1.name}`
                                         }
                                       </Text>
                                     </Text>
