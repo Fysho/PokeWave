@@ -150,9 +150,9 @@ export const CenterDraggableRangeSlider: React.FC<CenterDraggableRangeSliderProp
     return colorScheme === 'dark' ? colors[6] : colors[5];
   };
 
-  const trackColor = colorScheme === 'dark' ? theme.colors.dark[6] : theme.colors.gray[2];
+  const trackColor = colorScheme === 'dark' ? theme.colors.dark[4] : theme.colors.gray[3];
   const thumbColor = getColor();
-  const rangeColor = getColor(0.8);
+  const rangeColor = getColor();
 
   return (
     <Box style={{ position: 'relative', padding: '20px 0' }}>
@@ -166,6 +166,8 @@ export const CenterDraggableRangeSlider: React.FC<CenterDraggableRangeSliderProp
           borderRadius: `${height / 2}px`,
           cursor: disabled ? 'not-allowed' : 'pointer',
           opacity: disabled ? 0.5 : 1,
+          border: `1px solid ${colorScheme === 'dark' ? theme.colors.dark[3] : theme.colors.gray[4]}`,
+          boxShadow: 'inset 0 1px 2px rgba(0, 0, 0, 0.1)',
         }}
       >
         {/* Active range */}
