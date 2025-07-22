@@ -11,6 +11,8 @@ interface TypeColorSliderProps {
   max?: number;
   step?: number;
   disabled?: boolean;
+  correctValue?: number;
+  showCorrectIndicator?: boolean;
 }
 
 export const TypeColorSlider: React.FC<TypeColorSliderProps> = ({
@@ -22,6 +24,8 @@ export const TypeColorSlider: React.FC<TypeColorSliderProps> = ({
   max = 100,
   step = 1,
   disabled = false,
+  correctValue,
+  showCorrectIndicator = false,
 }) => {
   const theme = useMantineTheme();
   
@@ -56,6 +60,7 @@ export const TypeColorSlider: React.FC<TypeColorSliderProps> = ({
   };
   
   const percentage = ((value - min) / (max - min)) * 100;
+  const correctPercentage = correctValue !== undefined ? ((correctValue - min) / (max - min)) * 100 : 0;
   
   return (
     <Box
@@ -100,6 +105,40 @@ export const TypeColorSlider: React.FC<TypeColorSliderProps> = ({
           pointerEvents: 'none',
         }}
       />
+      
+      {/* Correct Answer Indicator */}
+      {showCorrectIndicator && correctValue !== undefined && (
+        <>
+          {/* Arrow pointing down */}
+          <Box
+            style={{
+              position: 'absolute',
+              top: '-20px',
+              left: `${correctPercentage}%`,
+              transform: 'translateX(-50%)',
+              width: 0,
+              height: 0,
+              borderLeft: '8px solid transparent',
+              borderRight: '8px solid transparent',
+              borderTop: '12px solid #e74c3c',
+              pointerEvents: 'none',
+            }}
+          />
+          {/* Arrow stem */}
+          <Box
+            style={{
+              position: 'absolute',
+              top: '-20px',
+              left: `${correctPercentage}%`,
+              transform: 'translateX(-50%)',
+              width: '2px',
+              height: '15px',
+              background: '#e74c3c',
+              pointerEvents: 'none',
+            }}
+          />
+        </>
+      )}
     </Box>
   );
 };

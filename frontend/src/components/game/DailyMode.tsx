@@ -398,19 +398,20 @@ const DailyMode: React.FC = () => {
                       </Grid.Col>
                     </Grid>
 
-                    {!submitted && (
-                      <Box>
-                        <TypeColorSlider
-                          value={guesses[index]}
-                          onChange={(value) => handleGuessChange(index, value)}
-                          leftType={battle.pokemon1.types?.[0] || 'normal'}
-                          rightType={battle.pokemon2.types?.[0] || 'normal'}
-                          min={0}
-                          max={100}
-                          step={1}
-                        />
-                      </Box>
-                    )}
+                    <Box style={{ marginTop: submitted ? '25px' : '0' }}>
+                      <TypeColorSlider
+                        value={guesses[index]}
+                        onChange={(value) => handleGuessChange(index, value)}
+                        leftType={battle.pokemon1.types?.[0] || 'normal'}
+                        rightType={battle.pokemon2.types?.[0] || 'normal'}
+                        min={0}
+                        max={100}
+                        step={1}
+                        disabled={submitted}
+                        correctValue={submitted ? Math.round(battle.winRate * 100) : undefined}
+                        showCorrectIndicator={submitted}
+                      />
+                    </Box>
                   </Stack>
                 </Card>
               </Grid.Col>
