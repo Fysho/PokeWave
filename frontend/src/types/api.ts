@@ -62,7 +62,26 @@ export interface BattleResult {
       speed: number;
     };
     ability?: string;
+    abilityDetail?: {
+      name: string;
+      effect: string;
+      shortEffect: string;
+    };
     item?: string;
+    itemDetail?: {
+      name: string;
+      effect: string;
+      shortEffect: string;
+      sprite: string;
+    };
+    moveDetails?: {
+      name: string;
+      type: string;
+      category: 'physical' | 'special' | 'status';
+      power: number | null;
+      accuracy: number | null;
+      pp: number;
+    }[];
     levelupMoves?: Array<{ level: number; move: string }>;
   };
   pokemon2: {
@@ -110,8 +129,28 @@ export interface BattleResult {
       speed: number;
     };
     ability?: string;
+    abilityDetail?: {
+      name: string;
+      effect: string;
+      shortEffect: string;
+    };
     item?: string;
+    itemDetail?: {
+      name: string;
+      effect: string;
+      shortEffect: string;
+      sprite: string;
+    };
+    moveDetails?: {
+      name: string;
+      type: string;
+      category: 'physical' | 'special' | 'status';
+      power: number | null;
+      accuracy: number | null;
+      pp: number;
+    }[];
     levelupMoves?: Array<{ level: number; move: string }>;
+    nature?: string;
   };
   totalBattles: number;
   winRate: number;
@@ -157,7 +196,18 @@ export interface PokemonInstanceData {
   level: number;
   types: string[];
   ability: string;
+  abilityDetail?: {
+    name: string;
+    effect: string;
+    shortEffect: string;
+  };
   item?: string;
+  itemDetail?: {
+    name: string;
+    effect: string;
+    shortEffect: string;
+    sprite: string;
+  };
   moves: string[];
   moveDetails?: {
     name: string;

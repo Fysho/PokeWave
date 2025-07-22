@@ -213,42 +213,108 @@ const PokemonBattleCard: React.FC<PokemonBattleCardProps> = ({
             {/* Ability and Item */}
             <Group justify="center" gap="md">
               {pokemon.ability && (
-                <Badge
-                  variant="light"
-                  size="md"
-                  color="blue"
-                  leftSection={<IconBolt size={14} />}
-                  tt="capitalize"
-                  style={{ 
-                    fontSize: '13px',
-                    fontWeight: 600,
-                    padding: '6px 12px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    lineHeight: '1'
-                  }}
-                >
-                  {pokemon.ability}
-                </Badge>
+                pokemon.abilityDetail ? (
+                  <Tooltip
+                    label={
+                      <Box maw={300}>
+                        <Text size="xs" fw={600} tt="capitalize" mb={4}>{pokemon.abilityDetail.name}</Text>
+                        <Text size="xs">{pokemon.abilityDetail.shortEffect || pokemon.abilityDetail.effect}</Text>
+                      </Box>
+                    }
+                    position="top"
+                    withArrow
+                    multiline
+                  >
+                    <Badge
+                      variant="light"
+                      size="md"
+                      color="blue"
+                      leftSection={<IconBolt size={14} />}
+                      tt="capitalize"
+                      style={{ 
+                        fontSize: '13px',
+                        fontWeight: 600,
+                        padding: '6px 12px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        lineHeight: '1',
+                        cursor: 'help'
+                      }}
+                    >
+                      {pokemon.ability}
+                    </Badge>
+                  </Tooltip>
+                ) : (
+                  <Badge
+                    variant="light"
+                    size="md"
+                    color="blue"
+                    leftSection={<IconBolt size={14} />}
+                    tt="capitalize"
+                    style={{ 
+                      fontSize: '13px',
+                      fontWeight: 600,
+                      padding: '6px 12px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      lineHeight: '1'
+                    }}
+                  >
+                    {pokemon.ability}
+                  </Badge>
+                )
               )}
               {pokemon.item ? (
-                <Badge
-                  variant="outline"
-                  size="md"
-                  color="teal"
-                  leftSection={<IconStar size={14} />}
-                  tt="capitalize"
-                  style={{ 
-                    fontSize: '13px',
-                    fontWeight: 500,
-                    padding: '6px 12px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    lineHeight: '1'
-                  }}
-                >
-                  {formatItemName(pokemon.item)}
-                </Badge>
+                pokemon.itemDetail ? (
+                  <Tooltip
+                    label={
+                      <Box maw={300}>
+                        <Text size="xs" fw={600} tt="capitalize" mb={4}>{formatItemName(pokemon.itemDetail.name)}</Text>
+                        <Text size="xs">{pokemon.itemDetail.shortEffect || pokemon.itemDetail.effect}</Text>
+                      </Box>
+                    }
+                    position="top"
+                    withArrow
+                    multiline
+                  >
+                    <Badge
+                      variant="outline"
+                      size="md"
+                      color="teal"
+                      leftSection={<IconStar size={14} />}
+                      tt="capitalize"
+                      style={{ 
+                        fontSize: '13px',
+                        fontWeight: 500,
+                        padding: '6px 12px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        lineHeight: '1',
+                        cursor: 'help'
+                      }}
+                    >
+                      {formatItemName(pokemon.item)}
+                    </Badge>
+                  </Tooltip>
+                ) : (
+                  <Badge
+                    variant="outline"
+                    size="md"
+                    color="teal"
+                    leftSection={<IconStar size={14} />}
+                    tt="capitalize"
+                    style={{ 
+                      fontSize: '13px',
+                      fontWeight: 500,
+                      padding: '6px 12px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      lineHeight: '1'
+                    }}
+                  >
+                    {formatItemName(pokemon.item)}
+                  </Badge>
+                )
               ) : (
                 <Badge
                   variant="outline"
@@ -319,7 +385,7 @@ const PokemonBattleCard: React.FC<PokemonBattleCardProps> = ({
                             position="top"
                             withArrow
                             multiline
-                            width={200}
+                            styles={{ tooltip: { maxWidth: 200 } }}
                           >
                             <Box 
                               ta="center" 

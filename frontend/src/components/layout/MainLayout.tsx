@@ -15,7 +15,7 @@ import BattleSettings from '../settings/BattleSettings';
 import BattleTester from '../battle/BattleTester';
 import { useSettingsStore } from '../../store/settingsStore';
 import { useGameStore } from '../../store/gameStore';
-import ApiService from '../../services/api';
+// import ApiService from '../../services/api';
 
 interface MainLayoutProps {
   children: React.ReactNode;
@@ -80,17 +80,14 @@ const MainLayout: React.FC<MainLayoutProps> = ({
             
             setIsBattleTesterSimulating(true);
             try {
-              // Call the backend API for single battle simulation with full Pokemon instances
-              const result = await ApiService.simulateSingleBattle(
-                currentBattle.pokemon1,
-                currentBattle.pokemon2,
-                {
-                  generation: battleSettings.generation,
-                  withItems: battleSettings.withItems,
-                  movesetType: battleSettings.movesetType,
-                  aiDifficulty: battleSettings.aiDifficulty
-                }
-              );
+              // Call the backend API for single battle simulation
+              // The backend uses the stored instances from the current battle
+              const response = await fetch('/api/battle/simulate-single', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({})
+              });
+              const result = await response.json();
               
               // The result already contains the formatted data we need
               setBattleTesterSimulation(result);

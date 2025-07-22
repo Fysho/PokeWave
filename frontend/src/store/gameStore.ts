@@ -134,7 +134,9 @@ export const useGameStore = create<GameStore>()(
                 evs: pokemonInstances.pokemon1.evs,
                 ivs: pokemonInstances.pokemon1.ivs,
                 ability: pokemonInstances.pokemon1.ability,
-                item: pokemonInstances.pokemon1.item
+                abilityDetail: pokemonInstances.pokemon1.abilityDetail,
+                item: pokemonInstances.pokemon1.item,
+                itemDetail: pokemonInstances.pokemon1.itemDetail
               },
               pokemon2: {
                 id: pokemonInstances.pokemon2.id,
@@ -150,7 +152,9 @@ export const useGameStore = create<GameStore>()(
                 evs: pokemonInstances.pokemon2.evs,
                 ivs: pokemonInstances.pokemon2.ivs,
                 ability: pokemonInstances.pokemon2.ability,
+                abilityDetail: pokemonInstances.pokemon2.abilityDetail,
                 item: pokemonInstances.pokemon2.item,
+                itemDetail: pokemonInstances.pokemon2.itemDetail,
                 nature: pokemonInstances.pokemon2.nature
               }
             };

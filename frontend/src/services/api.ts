@@ -194,149 +194,136 @@ export class ApiService {
     }
   }
 
-  // Generate new battle with random Pokemon
-  static async generateRandomBattle(battleSettings?: {
-    levelMode?: 'random' | 'set';
-    setLevel?: number;
-    generation?: number;
-    withItems?: boolean;
-    movesetType?: 'random' | 'competitive';
-    aiDifficulty?: 'random' | 'elite';
-  }): Promise<BattleResult> {
-    try {
-      // Determine the generation and range
-      const generation = battleSettings?.generation || 1;
+  // Generate new battle with random Pokemon - DEPRECATED, use getRandomPokemonWithInstances instead
+  // static async generateRandomBattle(battleSettings?: {
+  //   levelMode?: 'random' | 'set';
+  //   setLevel?: number;
+  //   generation?: number;
+  //   withItems?: boolean;
+  //   movesetType?: 'random' | 'competitive';
+  //   aiDifficulty?: 'random' | 'elite';
+  // }): Promise<BattleResult> {
+  //   try {
+  //     // Determine the generation and range
+  //     const generation = battleSettings?.generation || 1;
       
-      // For generations 1-8, use cumulative ranges (all Pokemon up to that generation)
-      // For generation 9, use only generation 9 Pokemon
-      const generationRanges: { [key: number]: { start: number; end: number } } = {
-        1: { start: 1, end: 151 },     // Only Gen 1
-        2: { start: 1, end: 251 },     // Gen 1-2
-        3: { start: 1, end: 386 },     // Gen 1-3
-        4: { start: 1, end: 493 },     // Gen 1-4
-        5: { start: 1, end: 649 },     // Gen 1-5
-        6: { start: 1, end: 721 },     // Gen 1-6
-        7: { start: 1, end: 809 },     // Gen 1-7
-        8: { start: 1, end: 905 },     // Gen 1-8
-        9: { start: 1, end: 1025 }     // Gen 1-9
-      };
+  //     // For generations 1-8, use cumulative ranges (all Pokemon up to that generation)
+  //     // For generation 9, use only generation 9 Pokemon
+  //     const generationRanges: { [key: number]: { start: number; end: number } } = {
+  //       1: { start: 1, end: 151 },     // Only Gen 1
+  //       2: { start: 1, end: 251 },     // Gen 1-2
+  //       3: { start: 1, end: 386 },     // Gen 1-3
+  //       4: { start: 1, end: 493 },     // Gen 1-4
+  //       5: { start: 1, end: 649 },     // Gen 1-5
+  //       6: { start: 1, end: 721 },     // Gen 1-6
+  //       7: { start: 1, end: 809 },     // Gen 1-7
+  //       8: { start: 1, end: 905 },     // Gen 1-8
+  //       9: { start: 1, end: 1025 }     // Gen 1-9
+  //     };
       
-      const range = generationRanges[generation] || generationRanges[1];
+  //     const range = generationRanges[generation] || generationRanges[1];
       
-      // Get two random Pokemon IDs from the selected generation range
-      const pokemon1Id = Math.floor(Math.random() * (range.end - range.start + 1)) + range.start;
-      let pokemon2Id = Math.floor(Math.random() * (range.end - range.start + 1)) + range.start;
+  //     // Get two random Pokemon IDs from the selected generation range
+  //     const pokemon1Id = Math.floor(Math.random() * (range.end - range.start + 1)) + range.start;
+  //     let pokemon2Id = Math.floor(Math.random() * (range.end - range.start + 1)) + range.start;
       
-      // Ensure they're different
-      while (pokemon2Id === pokemon1Id) {
-        pokemon2Id = Math.floor(Math.random() * (range.end - range.start + 1)) + range.start;
-      }
+  //     // Ensure they're different
+  //     while (pokemon2Id === pokemon1Id) {
+  //       pokemon2Id = Math.floor(Math.random() * (range.end - range.start + 1)) + range.start;
+  //     }
       
-      return await this.simulateBattle(pokemon1Id, pokemon2Id, battleSettings);
-    } catch (error) {
-      throw error;
-    }
-  }
+  //     return await this.simulateBattle(pokemon1Id, pokemon2Id, battleSettings);
+  //   } catch (error) {
+  //     throw error;
+  //   }
+  // }
 
-  // Helper function to build a Pokemon instance for battle
-  private static buildPokemonInstance(pokemonData: BattleResult['pokemon1'], options: {
-    generation?: number;
-    withItems?: boolean;
-    movesetType?: 'random' | 'competitive';
-  }) {
-    return {
-      pokemonId: pokemonData.id,
-      level: pokemonData.level,
-      nature: 'random', // Will be randomly selected by backend
-      gender: 'random', // Will be randomly selected by backend based on species
-      ivs: {
-        hp: 31,
-        attack: 31,
-        defense: 31,
-        specialAttack: 31,
-        specialDefense: 31,
-        speed: 31
-      },
-      evs: {
-        hp: 0,
-        attack: 0,
-        defense: 0,
-        specialAttack: 0,
-        specialDefense: 0,
-        speed: 0
-      },
-      status: 'none' as const,
-      heldItem: {
-        mode: options.withItems ? 'random' as const : 'none' as const
-      },
-      ability: {
-        mode: 'random' as const
-      },
-      moves: {
-        mode: 'auto' as const // Use the last 4 learned moves
-      },
-      happiness: 255,
-      generation: options.generation || 1
-    };
-  }
+  // Helper function to build a Pokemon instance for battle - DEPRECATED
+  // private static buildPokemonInstance(pokemonData: BattleResult['pokemon1'], options: {
+  //   generation?: number;
+  //   withItems?: boolean;
+  //   movesetType?: 'random' | 'competitive';
+  // }) {
+  //   return {
+  //     pokemonId: pokemonData.id,
+  //     level: pokemonData.level,
+  //     nature: 'random', // Will be randomly selected by backend
+  //     gender: 'random', // Will be randomly selected by backend based on species
+  //     ivs: {
+  //       hp: 31,
+  //       attack: 31,
+  //       defense: 31,
+  //       specialAttack: 31,
+  //       specialDefense: 31,
+  //       speed: 31
+  //     },
+  //     evs: {
+  //       hp: 0,
+  //       attack: 0,
+  //       defense: 0,
+  //       specialAttack: 0,
+  //       specialDefense: 0,
+  //       speed: 0
+  //     },
+  //     status: 'none' as const,
+  //     heldItem: {
+  //       mode: options.withItems ? 'random' as const : 'none' as const
+  //     },
+  //     ability: {
+  //       mode: 'random' as const
+  //     },
+  //     moves: {
+  //       mode: 'auto' as const // Use the last 4 learned moves
+  //     },
+  //     happiness: 255,
+  //     generation: options.generation || 1
+  //   };
+  // }
 
-  // Simulate a single battle with turn-by-turn details
-  static async simulateSingleBattle(pokemon1Data: BattleResult['pokemon1'], pokemon2Data: BattleResult['pokemon2'], options?: {
-    generation?: number;
-    withItems?: boolean;
-    movesetType?: 'random' | 'competitive';
-    aiDifficulty?: 'random' | 'elite';
-  }): Promise<{
-    winner: string;
-    turns: Array<{
-      turn: number;
-      attacker: string;
-      defender: string;
-      move: string;
-      damage: number;
-      remainingHP: number;
-      critical: boolean;
-      effectiveness: 'super' | 'normal' | 'not very' | 'no';
-    }>;
-    totalTurns: number;
-    finalHP1: number;
-    finalHP2: number;
-    executionTime: number;
-    pokemon1: {
-      name: string;
-      level: number;
-      stats: any;
-    };
-    pokemon2: {
-      name: string;
-      level: number;
-      stats: any;
-    };
-  }> {
-    try {
-      // Build full Pokemon instances
-      const pokemon1Instance = this.buildPokemonInstance(pokemon1Data, {
-        generation: options?.generation,
-        withItems: options?.withItems,
-        movesetType: options?.movesetType
-      });
-      
-      const pokemon2Instance = this.buildPokemonInstance(pokemon2Data, {
-        generation: options?.generation,
-        withItems: options?.withItems,
-        movesetType: options?.movesetType
-      });
-
-      // The backend's simulateSingleBattle expects the Pokemon to be already stored
-      // Since we're using the same Pokemon from the current battle, we just need to call the endpoint
-      const response = await api.post('/battle/simulate-single', {}, {
-        timeout: 15000 // 15 seconds timeout for battle simulations
-      });
-      return response.data;
-    } catch (error) {
-      throw error;
-    }
-  }
+  // Simulate a single battle with turn-by-turn details - DEPRECATED
+  // static async simulateSingleBattle(pokemon1Data: BattleResult['pokemon1'], pokemon2Data: BattleResult['pokemon2'], options?: {
+  //   generation?: number;
+  //   withItems?: boolean;
+  //   movesetType?: 'random' | 'competitive';
+  //   aiDifficulty?: 'random' | 'elite';
+  // }): Promise<{
+  //   winner: string;
+  //   turns: Array<{
+  //     turn: number;
+  //     attacker: string;
+  //     defender: string;
+  //     move: string;
+  //     damage: number;
+  //     remainingHP: number;
+  //     critical: boolean;
+  //     effectiveness: 'super' | 'normal' | 'not very' | 'no';
+  //   }>;
+  //   totalTurns: number;
+  //   finalHP1: number;
+  //   finalHP2: number;
+  //   executionTime: number;
+  //   pokemon1: {
+  //     name: string;
+  //     level: number;
+  //     stats: any;
+  //   };
+  //   pokemon2: {
+  //     name: string;
+  //     level: number;
+  //     stats: any;
+  //   };
+  // }> {
+  //   try {
+  //     // The backend's simulateSingleBattle expects the Pokemon to be already stored
+  //     // Since we're using the same Pokemon from the current battle, we just need to call the endpoint
+  //     const response = await api.post('/battle/simulate-single', {}, {
+  //       timeout: 15000 // 15 seconds timeout for battle simulations
+  //     });
+  //     return response.data;
+  //   } catch (error) {
+  //     throw error;
+  //   }
+  // }
 }
 
 export default ApiService;
