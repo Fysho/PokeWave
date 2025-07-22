@@ -26,8 +26,8 @@ export const CompactBattleCard: React.FC<CompactBattleCardProps> = ({
   
   const displayWinPercentage = winPercentage !== undefined 
     ? winPercentage.toFixed(1) 
-    : showResults 
-      ? ((pokemon.wins / 100) * 100).toFixed(1) 
+    : showResults && totalBattles
+      ? ((pokemon.wins / totalBattles) * 100).toFixed(1) 
       : null;
 
   const calculateSpriteSize = () => {
@@ -54,7 +54,7 @@ export const CompactBattleCard: React.FC<CompactBattleCardProps> = ({
       p="sm"
       className={`
         relative transition-all duration-300
-        ${showResults && pokemon.wins > 500 ? 'ring-2 ring-green-500' : ''}
+        ${showResults && totalBattles && pokemon.wins > totalBattles / 2 ? 'ring-2 ring-green-500' : ''}
       `}
     >
       <Stack gap="xs" h="100%">
@@ -65,7 +65,7 @@ export const CompactBattleCard: React.FC<CompactBattleCardProps> = ({
           ) : (
             <Box w={20} />
           )}
-          {showResults && pokemon.wins > 500 ? (
+          {showResults && totalBattles && pokemon.wins > totalBattles / 2 ? (
             <IconCrown size={16} color="var(--mantine-color-green-6)" />
           ) : (
             <Box w={16} />
