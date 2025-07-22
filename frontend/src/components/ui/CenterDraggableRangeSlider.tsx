@@ -11,6 +11,8 @@ interface CenterDraggableRangeSliderProps {
   label?: (value: number) => string;
   color?: string;
   size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
+  hideHandles?: boolean;
+  disableIndividualDrag?: boolean;
 }
 
 export const CenterDraggableRangeSlider: React.FC<CenterDraggableRangeSliderProps> = ({
@@ -23,6 +25,8 @@ export const CenterDraggableRangeSlider: React.FC<CenterDraggableRangeSliderProp
   label = (val) => `${val}%`,
   color = 'blue',
   size = 'md',
+  hideHandles = false,
+  disableIndividualDrag = false,
 }) => {
   const theme = useMantineTheme();
   const { colorScheme } = useMantineColorScheme();
@@ -59,6 +63,7 @@ export const CenterDraggableRangeSlider: React.FC<CenterDraggableRangeSliderProp
 
   const handleMouseDown = (e: React.MouseEvent, handle: 'left' | 'right' | 'center') => {
     if (disabled) return;
+    if (disableIndividualDrag && handle !== 'center') return;
     e.preventDefault();
     setIsDragging(handle);
     setShowTooltip(handle === 'center' ? 'both' : handle);
@@ -66,6 +71,7 @@ export const CenterDraggableRangeSlider: React.FC<CenterDraggableRangeSliderProp
 
   const handleTouchStart = (e: React.TouchEvent, handle: 'left' | 'right' | 'center') => {
     if (disabled) return;
+    if (disableIndividualDrag && handle !== 'center') return;
     e.preventDefault();
     setIsDragging(handle);
     setShowTooltip(handle === 'center' ? 'both' : handle);
@@ -199,54 +205,58 @@ export const CenterDraggableRangeSlider: React.FC<CenterDraggableRangeSliderProp
         />
 
         {/* Left thumb */}
-        <Box
-          onMouseDown={(e) => handleMouseDown(e, 'left')}
-          onTouchStart={(e) => handleTouchStart(e, 'left')}
-          style={{
-            position: 'absolute',
-            left: `${leftPos}%`,
-            top: '50%',
-            transform: 'translate(-50%, -50%)',
-            width: `${thumbSize}px`,
-            height: `${thumbSize}px`,
-            backgroundColor: thumbColor,
-            borderRadius: '50%',
-            border: `2px solid ${colorScheme === 'dark' ? theme.colors.dark[0] : theme.white}`,
-            cursor: disabled ? 'not-allowed' : 'grab',
-            boxShadow: theme.shadows.sm,
-            zIndex: 2,
-            transition: isDragging === 'left' ? 'none' : 'box-shadow 0.1s',
-            ...(isDragging === 'left' && {
-              boxShadow: theme.shadows.md,
-              transform: 'translate(-50%, -50%) scale(1.1)',
-            }),
-          }}
-        />
+        {!hideHandles && (
+          <Box
+            onMouseDown={(e) => handleMouseDown(e, 'left')}
+            onTouchStart={(e) => handleTouchStart(e, 'left')}
+            style={{
+              position: 'absolute',
+              left: `${leftPos}%`,
+              top: '50%',
+              transform: 'translate(-50%, -50%)',
+              width: `${thumbSize}px`,
+              height: `${thumbSize}px`,
+              backgroundColor: thumbColor,
+              borderRadius: '50%',
+              border: `2px solid ${colorScheme === 'dark' ? theme.colors.dark[0] : theme.white}`,
+              cursor: disabled || disableIndividualDrag ? 'not-allowed' : 'grab',
+              boxShadow: theme.shadows.sm,
+              zIndex: 2,
+              transition: isDragging === 'left' ? 'none' : 'box-shadow 0.1s',
+              ...(isDragging === 'left' && {
+                boxShadow: theme.shadows.md,
+                transform: 'translate(-50%, -50%) scale(1.1)',
+              }),
+            }}
+          />
+        )}
 
         {/* Right thumb */}
-        <Box
-          onMouseDown={(e) => handleMouseDown(e, 'right')}
-          onTouchStart={(e) => handleTouchStart(e, 'right')}
-          style={{
-            position: 'absolute',
-            left: `${rightPos}%`,
-            top: '50%',
-            transform: 'translate(-50%, -50%)',
-            width: `${thumbSize}px`,
-            height: `${thumbSize}px`,
-            backgroundColor: thumbColor,
-            borderRadius: '50%',
-            border: `2px solid ${colorScheme === 'dark' ? theme.colors.dark[0] : theme.white}`,
-            cursor: disabled ? 'not-allowed' : 'grab',
-            boxShadow: theme.shadows.sm,
-            zIndex: 2,
-            transition: isDragging === 'right' ? 'none' : 'box-shadow 0.1s',
-            ...(isDragging === 'right' && {
-              boxShadow: theme.shadows.md,
-              transform: 'translate(-50%, -50%) scale(1.1)',
-            }),
-          }}
-        />
+        {!hideHandles && (
+          <Box
+            onMouseDown={(e) => handleMouseDown(e, 'right')}
+            onTouchStart={(e) => handleTouchStart(e, 'right')}
+            style={{
+              position: 'absolute',
+              left: `${rightPos}%`,
+              top: '50%',
+              transform: 'translate(-50%, -50%)',
+              width: `${thumbSize}px`,
+              height: `${thumbSize}px`,
+              backgroundColor: thumbColor,
+              borderRadius: '50%',
+              border: `2px solid ${colorScheme === 'dark' ? theme.colors.dark[0] : theme.white}`,
+              cursor: disabled || disableIndividualDrag ? 'not-allowed' : 'grab',
+              boxShadow: theme.shadows.sm,
+              zIndex: 2,
+              transition: isDragging === 'right' ? 'none' : 'box-shadow 0.1s',
+              ...(isDragging === 'right' && {
+                boxShadow: theme.shadows.md,
+                transform: 'translate(-50%, -50%) scale(1.1)',
+              }),
+            }}
+          />
+        )}
 
         {/* Tooltips */}
         {(showTooltip === 'left' || showTooltip === 'both') && (

@@ -578,10 +578,24 @@ const BattleArena: React.FC = () => {
   } = useGameStore();
   
   const { battleSettings } = useSettingsStore();
-  const { isEndlessActive } = useEndlessStore();
+  const { isEndlessActive, endlessScore } = useEndlessStore();
 
   const [guessPercentage, setGuessPercentage] = useState<number>(50);
-  const [guessRange, setGuessRange] = useState<[number, number]>([40, 60]);
+  
+  // Calculate range width based on endless score (starts at 50%, shrinks by 1% per score, minimum 20%)
+  const calculateRangeWidth = () => {
+    if (!isEndlessActive) return 20; // Default for non-endless mode
+    const baseWidth = 50;
+    const shrinkPerScore = 1;
+    const minWidth = 20;
+    return Math.max(minWidth, baseWidth - (endlessScore * shrinkPerScore));
+  };
+  
+  const [guessRange, setGuessRange] = useState<[number, number]>(() => {
+    const width = calculateRangeWidth();
+    const center = 50;
+    return [center - width / 2, center + width / 2];
+  });
   const [showResults, setShowResults] = useState(false);
   const [guessResult, setGuessResult] = useState<any>(null);
   const [showStreakCelebration, setShowStreakCelebration] = useState(false);
@@ -604,6 +618,17 @@ const BattleArena: React.FC = () => {
       setLastStreakShown(0);
     }
   }, [streak, lastStreakShown]);
+
+  // Update range width when endless score changes
+  useEffect(() => {
+    if (isEndlessActive) {
+      const width = calculateRangeWidth();
+      const center = guessRange[0] + (guessRange[1] - guessRange[0]) / 2;
+      const newMin = Math.max(0, Math.min(100 - width, center - width / 2));
+      const newMax = Math.min(100, newMin + width);
+      setGuessRange([Math.round(newMin), Math.round(newMax)]);
+    }
+  }, [endlessScore, isEndlessActive]);
 
   const handleSliderChange = (value: number[]) => {
     if (isLoading || showResults) return;
@@ -833,6 +858,8 @@ const BattleArena: React.FC = () => {
                               color="blue"
                               size="lg"
                               label={(value) => `${value}%`}
+                              hideHandles={true}
+                              disableIndividualDrag={true}
                             />
                           ) : (
                             <Slider
