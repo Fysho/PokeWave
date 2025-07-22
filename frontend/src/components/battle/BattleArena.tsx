@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Button, Badge, Slider, RangeSlider, Group, Text, Grid, Box, Stack, Title, Center, Loader, useMantineTheme, useMantineColorScheme, Tooltip } from '@mantine/core';
+import { Card, Button, Badge, Slider, Group, Text, Grid, Box, Stack, Title, Center, Loader, useMantineTheme, useMantineColorScheme, Tooltip } from '@mantine/core';
+import { CenterDraggableRangeSlider } from '../ui/CenterDraggableRangeSlider';
 import { useGameStore } from '../../store/gameStore';
 import { useSettingsStore } from '../../store/settingsStore';
 import { useEndlessStore } from '../../store/endlessStore';
@@ -822,7 +823,7 @@ const BattleArena: React.FC = () => {
                         
                         <Stack gap="md">
                           {isEndlessActive ? (
-                            <RangeSlider
+                            <CenterDraggableRangeSlider
                               value={guessRange}
                               onChange={handleRangeSliderChange}
                               min={0}
@@ -831,7 +832,6 @@ const BattleArena: React.FC = () => {
                               disabled={isLoading}
                               color="blue"
                               size="lg"
-                              style={{ padding: '8px 0' }}
                               label={(value) => `${value}%`}
                             />
                           ) : (
