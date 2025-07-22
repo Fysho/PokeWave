@@ -779,7 +779,7 @@ const BattleArena: React.FC = () => {
                       {/* VS Badge - Positioned absolutely on larger screens */}
                       <Box 
                         pos="absolute" 
-                        top="50%" 
+                        top="40%" 
                         left="50%" 
                         style={{ 
                           transform: 'translate(-50%, -50%)',
