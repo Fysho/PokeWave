@@ -83,6 +83,7 @@ export interface BattleResult {
       pp: number;
     }[];
     levelupMoves?: Array<{ level: number; move: string }>;
+    shiny?: boolean;
   };
   pokemon2: {
     id: number;
@@ -151,6 +152,7 @@ export interface BattleResult {
     }[];
     levelupMoves?: Array<{ level: number; move: string }>;
     nature?: string;
+    shiny?: boolean;
   };
   totalBattles: number;
   winRate: number;
@@ -255,6 +257,7 @@ export interface PokemonInstanceData {
     back: string;
     shiny: string;
   };
+  shiny?: boolean;
 }
 
 export interface GetRandomPokemonWithInstancesResponse {

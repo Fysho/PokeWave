@@ -45,8 +45,18 @@ const Pokedex: React.FC<PokedexProps> = () => {
   const [selectedGeneration, setSelectedGeneration] = useState<string>('all');
   const [hoveredPokemon, setHoveredPokemon] = useState<number | null>(null);
   const [showUnlockedOnly, setShowUnlockedOnly] = useState(false);
+  const [showShinyMode, setShowShinyMode] = useState(false);
   
-  const { isPokemonUnlocked, getPokemonCount, getUnlockedCount, getTotalPokemonCount, resetPokedex } = usePokedexStore();
+  const { 
+    isPokemonUnlocked, 
+    isShinyPokemonUnlocked,
+    getPokemonCount, 
+    getShinyPokemonCount,
+    getUnlockedCount, 
+    getUnlockedShinyCount,
+    getTotalPokemonCount, 
+    resetPokedex 
+  } = usePokedexStore();
 
   // Pokemon type list
   const pokemonTypes = [
@@ -148,11 +158,15 @@ const Pokedex: React.FC<PokedexProps> = () => {
     
     // Unlocked filter
     if (showUnlockedOnly) {
-      filtered = filtered.filter(p => isPokemonUnlocked(p.id));
+      if (showShinyMode) {
+        filtered = filtered.filter(p => isShinyPokemonUnlocked(p.id));
+      } else {
+        filtered = filtered.filter(p => isPokemonUnlocked(p.id));
+      }
     }
     
     setFilteredPokemon(filtered);
-  }, [searchQuery, selectedType, selectedGeneration, pokemon, showUnlockedOnly, isPokemonUnlocked]);
+  }, [searchQuery, selectedType, selectedGeneration, pokemon, showUnlockedOnly, showShinyMode, isPokemonUnlocked, isShinyPokemonUnlocked]);
 
   const clearFilters = () => {
     setSearchQuery('');
@@ -201,21 +215,34 @@ const Pokedex: React.FC<PokedexProps> = () => {
               Browse all {allPokemon.length > 0 ? allPokemon.length : ''} Pokémon in numerical order
             </Text>
             <Text size="md" c="dimmed" ta="center">
-              {getUnlockedCount()} / {getTotalPokemonCount()} Pokémon unlocked
+              {showShinyMode 
+                ? `${getUnlockedShinyCount()} / ${getTotalPokemonCount()} Shiny Pokémon unlocked`
+                : `${getUnlockedCount()} / ${getTotalPokemonCount()} Pokémon unlocked`
+              }
             </Text>
-            <Button
-              variant="subtle"
-              color="red"
-              size="sm"
-              leftSection={<IconTrash size={16} />}
-              onClick={() => {
-                if (window.confirm('Are you sure you want to clear your Pokédex? This will reset all collected Pokémon.')) {
-                  resetPokedex();
-                }
-              }}
-            >
-              Clear Pokédex
-            </Button>
+            <Group justify="center" gap="sm">
+              <Button
+                variant={showShinyMode ? "filled" : "light"}
+                color="yellow"
+                size="sm"
+                onClick={() => setShowShinyMode(!showShinyMode)}
+              >
+                {showShinyMode ? "✨ Shiny Mode" : "Normal Mode"}
+              </Button>
+              <Button
+                variant="subtle"
+                color="red"
+                size="sm"
+                leftSection={<IconTrash size={16} />}
+                onClick={() => {
+                  if (window.confirm('Are you sure you want to clear your Pokédex? This will reset all collected Pokémon.')) {
+                    resetPokedex();
+                  }
+                }}
+              >
+                Clear Pokédex
+              </Button>
+            </Group>
           </Stack>
 
           {/* Filters */}
@@ -302,8 +329,12 @@ const Pokedex: React.FC<PokedexProps> = () => {
                     transition: 'all 0.2s ease',
                     transform: hoveredPokemon === poke.id ? 'translateY(-4px)' : 'none',
                     boxShadow: hoveredPokemon === poke.id ? 'var(--mantine-shadow-lg)' : 'none',
-                    opacity: isPokemonUnlocked(poke.id) ? 1 : 0.4,
-                    filter: isPokemonUnlocked(poke.id) ? 'none' : 'grayscale(100%)'
+                    opacity: showShinyMode 
+                      ? (isShinyPokemonUnlocked(poke.id) ? 1 : 0.4)
+                      : (isPokemonUnlocked(poke.id) ? 1 : 0.4),
+                    filter: showShinyMode
+                      ? (isShinyPokemonUnlocked(poke.id) ? 'none' : 'grayscale(100%)')
+                      : (isPokemonUnlocked(poke.id) ? 'none' : 'grayscale(100%)')
                   }}
                   onMouseEnter={() => setHoveredPokemon(poke.id)}
                   onMouseLeave={() => setHoveredPokemon(null)}
@@ -322,7 +353,7 @@ const Pokedex: React.FC<PokedexProps> = () => {
                     >
                       {poke.sprite ? (
                         <Image
-                          src={poke.sprite}
+                          src={showShinyMode ? poke.sprite.replace('/pokemon/', '/pokemon/shiny/') : poke.sprite}
                           alt={poke.name}
                           fit="contain"
                           style={{
@@ -336,7 +367,7 @@ const Pokedex: React.FC<PokedexProps> = () => {
                         </Center>
                       )}
                       {/* Pokemon Count */}
-                      {getPokemonCount(poke.id) > 0 && (
+                      {(showShinyMode ? getShinyPokemonCount(poke.id) : getPokemonCount(poke.id)) > 0 && (
                         <Badge
                           size="md"
                           variant="light"
@@ -346,11 +377,11 @@ const Pokedex: React.FC<PokedexProps> = () => {
                             right: 2,
                             fontWeight: 600,
                             fontSize: '14px',
-                            backgroundColor: 'var(--mantine-color-default)',
+                            backgroundColor: showShinyMode ? 'var(--mantine-color-yellow-2)' : 'var(--mantine-color-default)',
                             color: 'var(--mantine-color-text)'
                           }}
                         >
-                          {getPokemonCount(poke.id)}
+                          {showShinyMode ? getShinyPokemonCount(poke.id) : getPokemonCount(poke.id)}
                         </Badge>
                       )}
                     </Box>

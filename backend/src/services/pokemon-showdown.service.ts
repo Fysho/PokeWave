@@ -1160,6 +1160,9 @@ class PokemonShowdownService {
         speed: species.baseStats.spe
       };
 
+      // 1/10 chance for shiny
+      const isShiny = Math.random() < 0.1;
+      
       const pokemonInstance: PokemonInstanceData = {
         id: pokemonId,
         name: species.name,
@@ -1177,7 +1180,8 @@ class PokemonShowdownService {
         evs,
         ivs,
         nature,
-        sprites
+        sprites,
+        shiny: isShiny
       };
 
       return pokemonInstance;

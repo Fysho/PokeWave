@@ -149,8 +149,26 @@ const PokemonBattleCard: React.FC<PokemonBattleCardProps> = ({
           >
             {pokemon.sprites?.front ? (
               <Box pos="relative">
+                {pokemon.shiny && (
+                  <Badge
+                    size="lg"
+                    variant="filled"
+                    color="yellow"
+                    pos="absolute"
+                    top={-10}
+                    left="50%"
+                    style={{
+                      transform: 'translateX(-50%)',
+                      zIndex: 10,
+                      fontWeight: 700,
+                      boxShadow: '0 0 20px rgba(255,223,0,0.8)'
+                    }}
+                  >
+                    ✨ SHINY ✨
+                  </Badge>
+                )}
                 <img 
-                  src={pokemon.sprites.front} 
+                  src={pokemon.shiny && pokemon.sprites.shiny ? pokemon.sprites.shiny : pokemon.sprites.front} 
                   alt={pokemon.name}
                   className="pokemon-sprite"
                   style={{
@@ -158,7 +176,9 @@ const PokemonBattleCard: React.FC<PokemonBattleCardProps> = ({
                     height: `${spriteSize}px`,
                     objectFit: 'contain',
                     margin: '0 auto',
-                    filter: 'drop-shadow(0 25px 25px rgb(0 0 0 / 0.15))',
+                    filter: pokemon.shiny 
+                      ? 'drop-shadow(0 0 25px rgba(255,223,0,0.7)) drop-shadow(0 25px 25px rgb(0 0 0 / 0.15))' 
+                      : 'drop-shadow(0 25px 25px rgb(0 0 0 / 0.15))',
                     transition: 'transform 0.3s ease, width 0.3s ease, height 0.3s ease',
                     cursor: 'pointer'
                   }}

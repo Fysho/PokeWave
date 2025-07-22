@@ -214,7 +214,12 @@ export const useGameStore = create<GameStore>()(
             if (guessResult.isCorrect && currentBattle.pokemon1 && currentBattle.pokemon2) {
               const { usePokedexStore } = await import('./pokedexStore');
               const pokedexStore = usePokedexStore.getState();
-              pokedexStore.unlockMultiplePokemon([currentBattle.pokemon1.id, currentBattle.pokemon2.id]);
+              const pokemon1Shiny = currentBattle.pokemon1.shiny || false;
+              const pokemon2Shiny = currentBattle.pokemon2.shiny || false;
+              pokedexStore.unlockMultiplePokemon(
+                [currentBattle.pokemon1.id, currentBattle.pokemon2.id],
+                [pokemon1Shiny, pokemon2Shiny]
+              );
             }
 
             // Add to battle history

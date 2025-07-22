@@ -150,6 +150,7 @@ export interface PokemonInstanceData {
     back: string;
     shiny: string;
   };
+  shiny?: boolean;        // Is this Pokemon shiny?
 }
 
 export interface GetRandomPokemonWithInstancesResponse {
