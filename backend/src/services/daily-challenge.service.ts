@@ -184,7 +184,7 @@ class DailyChallengeService {
           battleId: crypto.randomUUID(),
           pokemon1,
           pokemon2,
-          winRate: (battleResult.pokemon1Wins / battleResult.totalBattles) * 100,
+          winRate: battleResult.pokemon1Wins / battleResult.totalBattles,
           totalBattles: battleResult.totalBattles,
           executionTime: battleResult.executionTime
         };
