@@ -23,11 +23,23 @@ PokeWave is a web-based Pokemon battle prediction game where users predict the w
   - Pokemon instances include: stats, moves, abilities, items, types, sprites, IVs, EVs, nature
   - Support for flexible level settings (fixed or random levels)
   - Support for item settings (random with 50% chance or none)
+  - Now includes detailed move, ability, and item information from data stores
+- **Data Stores Implementation**:
+  - Created persistent stores for moves, items, and abilities fetched from PokeAPI
+  - 3-tier storage architecture: in-memory cache, Redis (24hr TTL), permanent JSON files
+  - Stores initialized in parallel on server startup for optimal performance
+  - Move store provides: type, power, accuracy, category, PP for each move
+  - Item store provides: effects, sprites, cost, attributes for each item
+  - Ability store provides: effects, descriptions, compatible Pokemon for each ability
 - **Frontend Integration**:
   - Frontend now fetches full Pokemon instances before battle simulation
   - Displays comprehensive Pokemon stats calculated with level, IVs, EVs, and nature
   - Shows Pokemon abilities, held items (or "No Item"), and nature
   - "Perfect IVs" indicator displayed for all Pokemon
+  - Move buttons colored by type with hover tooltips showing power, accuracy, PP
+  - Ability badges with hover tooltips showing effect descriptions
+  - Item badges with hover tooltips showing effects and item sprites
+  - Ensured consistent 2x2 grid layout for moves regardless of move count
 - **API Query Parameters**:
   - `generation`: Pokemon generation (1-9, default: 1)
   - `level_mode`: "fixed" or "random" (default: "fixed")
@@ -103,6 +115,7 @@ PokeWave is a web-based Pokemon battle prediction game where users predict the w
   - Provides Pokemon stats, types, moves, and abilities
   - Handles all battle simulations (17 battles per request, configured in shared/config/battle.config.ts)
   - Generates type-appropriate move pools for each Pokemon
+  - Fetches move, item, and ability details from respective stores
 - **Battle Service** (`battle.service.ts`): 
   - Orchestrates battle flow and game state
   - Manages guess validation and scoring logic
@@ -111,6 +124,21 @@ PokeWave is a web-based Pokemon battle prediction game where users predict the w
   - **ONLY** fetches sprite images from PokeAPI
   - No longer provides stats, types, or moves (these come from Pokemon Showdown)
   - Caches sprite URLs for 24 hours
+- **Pokemon Move Store Service** (`pokemon-move-store.service.ts`):
+  - Fetches and stores all Pokemon moves from PokeAPI
+  - 3-tier storage: in-memory cache, Redis (24hr TTL), permanent JSON file
+  - Provides move details including type, power, accuracy, category, PP
+  - Initialized on server startup
+- **Pokemon Item Store Service** (`pokemon-item-store.service.ts`):
+  - Fetches and stores all Pokemon items from PokeAPI
+  - Same 3-tier storage architecture as move store
+  - Provides item effects, sprites, cost, and attributes
+  - Initialized on server startup
+- **Pokemon Ability Store Service** (`pokemon-ability-store.service.ts`):
+  - Fetches and stores all Pokemon abilities from PokeAPI
+  - Same 3-tier storage architecture as other stores
+  - Provides ability effects and which Pokemon can have them
+  - Initialized on server startup
 - **Showdown Service** (`showdown.service.ts`): 
   - Simple wrapper that delegates to pokemon-showdown.service.ts
 - **Cache Service**: Redis caching with graceful fallback to in-memory
@@ -338,8 +366,13 @@ Response:
   - Stats, types, moves, abilities from Pokemon Showdown (@pkmn)
   - Sprite images from PokeAPI
   - Move validation from local @pkmn/dex learnset data
+  - Move details (power, accuracy, PP) from pokemon-move-store
+  - Item details (effects, sprites) from pokemon-item-store
+  - Ability details (effects, descriptions) from pokemon-ability-store
 - ✅ Strict level-up move enforcement (no invalid moves)
 - ✅ Interactive Pokemon cards with sprites and types
+- ✅ Move buttons colored by Pokemon type with hover tooltips
+- ✅ Ability and item badges with detailed hover tooltips
 - ✅ Percentage-based prediction system with slider (0-100%)
 - ✅ 10% accuracy requirement for scoring points
 - ✅ Score tracking and persistence via Zustand
@@ -356,6 +389,7 @@ Response:
 - ✅ 15-second timeout for battle API calls (handles cold starts)
 - ✅ Preloaded learnset data for improved performance
 - ✅ Battle Tester tool for turn-by-turn battle visualization
+- ✅ Persistent data stores for moves, items, and abilities
 
 ## Battle Tester Feature
 The Battle Tester is a debugging tool that shows detailed turn-by-turn breakdowns of individual battles.
@@ -466,10 +500,14 @@ curl -X POST http://localhost:4000/api/battle/simulate \
 - `backend/src/services/pokemon-showdown.service.ts` - Primary Pokemon data and battle engine
 - `backend/src/services/battle.service.ts` - Game orchestration and scoring logic
 - `backend/src/services/pokemon.service.ts` - Sprite fetching ONLY (not full Pokemon data)
+- `backend/src/services/pokemon-move-store.service.ts` - Move data storage and retrieval
+- `backend/src/services/pokemon-item-store.service.ts` - Item data storage and retrieval
+- `backend/src/services/pokemon-ability-store.service.ts` - Ability data storage and retrieval
 - `frontend/src/components/battle/BattleArena.tsx` - Main game UI with prediction slider
 - `frontend/src/components/ui/loading.tsx` - Loading states (check battle count display)
 - `frontend/src/store/gameStore.ts` - Persistent game state management
 - `frontend/src/services/api.ts` - API client with 15-second timeout for battle simulations
+- `frontend/src/utils/typeColors.ts` - Pokemon type color mappings
 
 ### Common Tasks
 - **Adding new Pokemon generations**: Update `GENERATION_RANGES` in pokemon.service.ts
@@ -492,6 +530,19 @@ curl -X POST http://localhost:4000/api/battle/simulate \
 9. **Shared config imports** - backend tsconfig doesn't include ../shared by default
 
 ### Recent Updates
+- **Pokemon Data Stores**: Implemented persistent stores for moves, items, and abilities
+  - Created `pokemon-move-store.service.ts` with 3-tier storage (memory, Redis, JSON file)
+  - Created `pokemon-item-store.service.ts` with similar architecture
+  - Created `pokemon-ability-store.service.ts` for ability data
+  - All stores fetch from PokeAPI on first run and persist data permanently
+  - Stores are initialized in parallel on server startup
+- **Enhanced Frontend Display**:
+  - Move buttons now colored based on move type (using hex colors)
+  - Added hover tooltips showing move details (power, accuracy, PP, category)
+  - Added hover tooltips for abilities showing effect descriptions
+  - Added hover tooltips for items showing effect descriptions and sprites
+  - Ensured 2x2 grid layout for moves even with fewer than 4 moves
+- **Frontend Types**: Updated BattleResult type to include moveDetails, abilityDetail, and itemDetail
 - **Battle Tester**: Fixed HP parsing to skip percentage values (34/100 format)
 - **Pokemon Instances**: Implemented backend storage of Pokemon data
 - **Battle Count Change**: Someone changed battle count from 17 to 170 (reason unknown)
