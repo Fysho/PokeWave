@@ -20,7 +20,7 @@ import {
   NumberInput,
   Switch
 } from '@mantine/core';
-import { IconSearch, IconPokeball, IconFilter, IconX } from '@tabler/icons-react';
+import { IconSearch, IconPokeball, IconFilter, IconX, IconTrash } from '@tabler/icons-react';
 import { FadeIn } from '../ui/transitions';
 import { getTypeColor } from '../../utils/typeColors';
 import ApiService from '../../services/api';
@@ -46,7 +46,7 @@ const Pokedex: React.FC<PokedexProps> = () => {
   const [hoveredPokemon, setHoveredPokemon] = useState<number | null>(null);
   const [showUnlockedOnly, setShowUnlockedOnly] = useState(false);
   
-  const { isPokemonUnlocked, getPokemonCount, getUnlockedCount, getTotalPokemonCount } = usePokedexStore();
+  const { isPokemonUnlocked, getPokemonCount, getUnlockedCount, getTotalPokemonCount, resetPokedex } = usePokedexStore();
 
   // Pokemon type list
   const pokemonTypes = [
@@ -203,6 +203,19 @@ const Pokedex: React.FC<PokedexProps> = () => {
             <Text size="md" c="dimmed" ta="center">
               {getUnlockedCount()} / {getTotalPokemonCount()} Pokémon unlocked
             </Text>
+            <Button
+              variant="subtle"
+              color="red"
+              size="sm"
+              leftSection={<IconTrash size={16} />}
+              onClick={() => {
+                if (window.confirm('Are you sure you want to clear your Pokédex? This will reset all collected Pokémon.')) {
+                  resetPokedex();
+                }
+              }}
+            >
+              Clear Pokédex
+            </Button>
           </Stack>
 
           {/* Filters */}
@@ -322,29 +335,22 @@ const Pokedex: React.FC<PokedexProps> = () => {
                           <IconPokeball size={48} color="var(--mantine-color-gray-5)" />
                         </Center>
                       )}
-                      {/* Pokemon Count Badge */}
+                      {/* Pokemon Count */}
                       {getPokemonCount(poke.id) > 0 && (
-                        <Badge
+                        <Text
                           size="sm"
-                          radius="xl"
-                          variant="filled"
-                          color="blue"
+                          fw={700}
+                          c="dark"
                           style={{
                             position: 'absolute',
-                            top: -8,
-                            right: -8,
-                            minWidth: '24px',
-                            height: '24px',
-                            padding: '0 6px',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            fontWeight: 700,
-                            fontSize: '12px'
+                            top: 2,
+                            right: 2,
+                            fontSize: '14px',
+                            textShadow: '0 0 3px rgba(255,255,255,0.8), 0 0 6px rgba(255,255,255,0.6)'
                           }}
                         >
                           {getPokemonCount(poke.id)}
-                        </Badge>
+                        </Text>
                       )}
                     </Box>
 
