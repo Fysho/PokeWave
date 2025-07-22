@@ -31,11 +31,12 @@ class PokemonService {
     try {
       // Check cache first
       const cacheKey = generation ? `pokedex:gen${generation}` : 'pokedex:all';
-      const cached = await cacheService.get<any[]>(cacheKey);
-      if (cached) {
-        logger.info(`Pokedex data found in cache for ${cacheKey}`);
-        return cached;
-      }
+      // Temporarily skip cache to debug the issue
+      // const cached = await cacheService.get<any[]>(cacheKey);
+      // if (cached) {
+      //   logger.info(`Pokedex data found in cache for ${cacheKey}`);
+      //   return cached;
+      // }
 
       const pokedexData = [];
       
@@ -62,7 +63,11 @@ class PokemonService {
                 name: instance.name,
                 types: instance.types
               };
-              pokemonDataMap.set(id, data);
+              // Log potential mismatches around Pokemon #77
+              if (id >= 75 && id <= 80) {
+                logger.info(`Requested ID: ${id}, Instance ID: ${instance.id}, Name: ${instance.name}`);
+              }
+              pokemonDataMap.set(instance.id, data); // Use instance.id as the key, not the loop id
               return data;
             })
             .catch(() => null) // Skip non-existent Pokemon
@@ -105,6 +110,12 @@ class PokemonService {
       
       // Sort by ID to ensure correct order
       pokedexData.sort((a, b) => a.id - b.id);
+      
+      // Debug logging for Pokemon around #77
+      logger.info('Debugging Pokemon around #77:');
+      pokedexData.filter(p => p.id >= 75 && p.id <= 80).forEach(p => {
+        logger.info(`Pokemon #${p.id}: ${p.name}`);
+      });
       
       // Cache for 7 days since Pokemon data rarely changes
       await cacheService.set(cacheKey, pokedexData, 7 * 24 * 60 * 60);
