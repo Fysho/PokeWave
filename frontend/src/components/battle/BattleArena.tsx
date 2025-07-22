@@ -185,7 +185,7 @@ const PokemonBattleCard: React.FC<PokemonBattleCardProps> = ({
               size="lg"
               pos="absolute"
               top={-8}
-              left={-8}
+              right={-8}
               style={{ border: '2px solid var(--mantine-color-white)' }}
             >
               Lv.{pokemon.level}
@@ -193,8 +193,8 @@ const PokemonBattleCard: React.FC<PokemonBattleCardProps> = ({
           </Box>
         </Card.Section>
 
-        <Card.Section p="lg">
-          <Stack gap="md">
+        <Card.Section p="md">
+          <Stack gap="sm">
             {/* Types */}
             {pokemon.types && pokemon.types.length > 0 && (
               <Group justify="center" gap="sm">
@@ -349,7 +349,6 @@ const PokemonBattleCard: React.FC<PokemonBattleCardProps> = ({
             {/* Moves */}
             {pokemon.moves && pokemon.moves.length > 0 && (
               <Box>
-                <Text size="sm" c="gray.6" ta="center" mb="xs">Moves</Text>
                 <Grid gutter="xs">
                   {pokemon.moveDetails ? (
                     // If we have move details, show colored buttons with tooltips
@@ -851,12 +850,7 @@ const BattleArena: React.FC = () => {
                               <Text size="xl" fw={700} c="blue.6">{guessPercentage}%</Text>
                             )}
                           </Stack>
-                          <Stack align="center" gap="xs">
-                            <Text size="sm" c="dimmed">
-                              {isEndlessActive ? 'Win Range Prediction' : 'Win Rate Prediction'}
-                            </Text>
-                            <Text size="xl" fw={700}>VS</Text>
-                          </Stack>
+                          <Text size="xl" fw={700}>VS</Text>
                           <Stack align="flex-end" gap="xs">
                             <Text fw={600} size="lg">{currentBattle.pokemon2.name}</Text>
                             {isEndlessActive ? (
