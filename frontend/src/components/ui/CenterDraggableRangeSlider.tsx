@@ -34,6 +34,7 @@ export const CenterDraggableRangeSlider: React.FC<CenterDraggableRangeSliderProp
   const [showTooltip, setShowTooltip] = useState<'left' | 'right' | 'both' | null>(null);
   const sliderRef = useRef<HTMLDivElement>(null);
   const [localValue, setLocalValue] = useState(value);
+  const [dragOffset, setDragOffset] = useState(0);
 
   useEffect(() => {
     setLocalValue(value);
@@ -65,6 +66,14 @@ export const CenterDraggableRangeSlider: React.FC<CenterDraggableRangeSliderProp
     if (disabled) return;
     if (disableIndividualDrag && handle !== 'center') return;
     e.preventDefault();
+    
+    // Calculate offset for center dragging
+    if (handle === 'center') {
+      const clickPosition = getValueFromPosition(e.clientX);
+      const rangeCenter = (localValue[0] + localValue[1]) / 2;
+      setDragOffset(clickPosition - rangeCenter);
+    }
+    
     setIsDragging(handle);
     setShowTooltip(handle === 'center' ? 'both' : handle);
   };
@@ -73,6 +82,15 @@ export const CenterDraggableRangeSlider: React.FC<CenterDraggableRangeSliderProp
     if (disabled) return;
     if (disableIndividualDrag && handle !== 'center') return;
     e.preventDefault();
+    
+    // Calculate offset for center dragging
+    if (handle === 'center') {
+      const touch = e.touches[0];
+      const clickPosition = getValueFromPosition(touch.clientX);
+      const rangeCenter = (localValue[0] + localValue[1]) / 2;
+      setDragOffset(clickPosition - rangeCenter);
+    }
+    
     setIsDragging(handle);
     setShowTooltip(handle === 'center' ? 'both' : handle);
   };
@@ -90,7 +108,8 @@ export const CenterDraggableRangeSlider: React.FC<CenterDraggableRangeSliderProp
       onChange([currentMin, newMax]);
     } else if (isDragging === 'center') {
       const range = currentMax - currentMin;
-      const center = newValue;
+      // Apply the offset to maintain the relative position
+      const center = newValue - dragOffset;
       let newMin = center - range / 2;
       let newMax = center + range / 2;
 
@@ -125,11 +144,13 @@ export const CenterDraggableRangeSlider: React.FC<CenterDraggableRangeSliderProp
   const handleMouseUp = () => {
     setIsDragging(null);
     setShowTooltip(null);
+    setDragOffset(0);
   };
 
   const handleTouchEnd = () => {
     setIsDragging(null);
     setShowTooltip(null);
+    setDragOffset(0);
   };
 
   useEffect(() => {
