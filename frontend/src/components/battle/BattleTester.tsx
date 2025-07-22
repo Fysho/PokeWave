@@ -324,6 +324,13 @@ const BattleTester: React.FC<BattleTesterProps> = ({
                                     </Text>
                                     {turn.attacker === 'confusion' && '!'}
                                   </>
+                                ) : turn.move.startsWith("Can't move") ? (
+                                  <Text size="xs" c="gray.6" fs="italic">
+                                    <Text component="span" fw={500} tt="capitalize">
+                                      {turn.attacker}
+                                    </Text>
+                                    {' '}{turn.move.replace("Can't move", "couldn't move")}
+                                  </Text>
                                 ) : (
                                   <>
                                     <Text component="span" fw={500} tt="capitalize">

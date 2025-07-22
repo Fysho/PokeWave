@@ -583,6 +583,7 @@ class PokemonShowdownService {
     const turns: BattleTurn[] = [];
     let currentTurn = 0;
     const pokemonHP: { [key: string]: { current: number; max: number; lastHP?: number } } = {};
+    let turnEvents: BattleTurn[] = []; // Temporary storage for events in current turn
     
     // First pass - initialize HP values
     for (const output of outputs) {
@@ -635,6 +636,11 @@ class PokemonShowdownService {
         
         switch (eventType) {
           case 'turn':
+            // When a new turn starts, add all events from previous turn to the main array
+            if (turnEvents.length > 0) {
+              turns.push(...turnEvents);
+              turnEvents = [];
+            }
             currentTurn = parseInt(parts[2]) || 0;
             break;
             
@@ -649,7 +655,7 @@ class PokemonShowdownService {
                 pokemonHP[defender].lastHP = pokemonHP[defender].current;
               }
               
-              turns.push({
+              turnEvents.push({
                 turn: currentTurn,
                 attacker,
                 defender,
@@ -658,6 +664,37 @@ class PokemonShowdownService {
                 remainingHP: pokemonHP[defender]?.current || 100,
                 critical: false,
                 effectiveness: 'normal'
+              });
+            }
+            break;
+            
+          case 'cant':
+            if (parts.length >= 4) {
+              const pokemonName = this.extractPokemonName(parts[2]);
+              const reason = parts[3];
+              
+              // Create a special turn entry for cant move
+              let cantReason = 'immobilized';
+              if (reason.includes('par') || reason.includes('paralysis')) {
+                cantReason = 'paralyzed';
+              } else if (reason.includes('slp') || reason.includes('sleep')) {
+                cantReason = 'asleep';
+              } else if (reason.includes('frz') || reason.includes('freeze')) {
+                cantReason = 'frozen';
+              } else if (reason.includes('flinch')) {
+                cantReason = 'flinched';
+              }
+              
+              turnEvents.push({
+                turn: currentTurn,
+                attacker: pokemonName,
+                defender: pokemonName,
+                move: `Can't move (${cantReason})`,
+                damage: 0,
+                remainingHP: pokemonHP[pokemonName]?.current || 100,
+                critical: false,
+                effectiveness: 'normal',
+                missed: true
               });
             }
             break;
@@ -673,8 +710,8 @@ class PokemonShowdownService {
                 if (pokemonHP[pokemonName]) {
                   pokemonHP[pokemonName].current = 0;
                 }
-                if (turns.length > 0) {
-                  const lastTurn = turns[turns.length - 1];
+                if (turnEvents.length > 0) {
+                  const lastTurn = turnEvents[turnEvents.length - 1];
                   if (lastTurn.defender === pokemonName) {
                     lastTurn.damage = pokemonHP[pokemonName]?.lastHP || pokemonHP[pokemonName]?.max || 0;
                     lastTurn.remainingHP = 0;
@@ -719,7 +756,7 @@ class PokemonShowdownService {
                       damageType = 'hail';
                     }
                     
-                    turns.push({
+                    turnEvents.push({
                       turn: currentTurn,
                       attacker: damageType,
                       defender: pokemonName,
@@ -736,8 +773,8 @@ class PokemonShowdownService {
                     pokemonHP[pokemonName].lastHP = current;
                   } else {
                     // Normal move damage - update the last turn
-                    if (turns.length > 0) {
-                      const lastTurn = turns[turns.length - 1];
+                    if (turnEvents.length > 0) {
+                      const lastTurn = turnEvents[turnEvents.length - 1];
                       if (lastTurn.defender === pokemonName && damage > 0) {
                         lastTurn.damage = damage;
                         lastTurn.remainingHP = current;
@@ -746,8 +783,8 @@ class PokemonShowdownService {
                   }
                 } else {
                   // Normal move damage - update the last turn
-                  if (turns.length > 0) {
-                    const lastTurn = turns[turns.length - 1];
+                  if (turnEvents.length > 0) {
+                    const lastTurn = turnEvents[turnEvents.length - 1];
                     if (lastTurn.defender === pokemonName && damage > 0) {
                       lastTurn.damage = damage;
                       lastTurn.remainingHP = current;
@@ -773,42 +810,42 @@ class PokemonShowdownService {
             break;
             
           case '-crit':
-            if (turns.length > 0) {
-              turns[turns.length - 1].critical = true;
+            if (turnEvents.length > 0) {
+              turnEvents[turnEvents.length - 1].critical = true;
             }
             break;
             
           case '-supereffective':
-            if (turns.length > 0) {
-              turns[turns.length - 1].effectiveness = 'super';
+            if (turnEvents.length > 0) {
+              turnEvents[turnEvents.length - 1].effectiveness = 'super';
             }
             break;
             
           case '-resisted':
-            if (turns.length > 0) {
-              turns[turns.length - 1].effectiveness = 'not very';
+            if (turnEvents.length > 0) {
+              turnEvents[turnEvents.length - 1].effectiveness = 'not very';
             }
             break;
             
           case '-immune':
-            if (turns.length > 0) {
-              turns[turns.length - 1].effectiveness = 'no';
-              turns[turns.length - 1].damage = 0;
+            if (turnEvents.length > 0) {
+              turnEvents[turnEvents.length - 1].effectiveness = 'no';
+              turnEvents[turnEvents.length - 1].damage = 0;
             }
             break;
             
           case '-miss':
-            if (turns.length > 0) {
-              turns[turns.length - 1].missed = true;
-              turns[turns.length - 1].damage = 0;
+            if (turnEvents.length > 0) {
+              turnEvents[turnEvents.length - 1].missed = true;
+              turnEvents[turnEvents.length - 1].damage = 0;
             }
             break;
             
           case '-status':
-            if (parts.length >= 4 && turns.length > 0) {
+            if (parts.length >= 4 && turnEvents.length > 0) {
               const pokemonName = this.extractPokemonName(parts[2]);
               const status = parts[3]; // brn, par, psn, slp, frz, etc.
-              const lastTurn = turns[turns.length - 1];
+              const lastTurn = turnEvents[turnEvents.length - 1];
               if (lastTurn.defender === pokemonName) {
                 lastTurn.statusEffect = status;
                 lastTurn.statusInflicted = true;
@@ -822,8 +859,8 @@ class PokemonShowdownService {
               const condition = parts[3];
               // Check for status conditions like confusion, infatuation, etc.
               if (condition && (condition.includes('confusion') || condition.includes('Confusion'))) {
-                if (turns.length > 0) {
-                  const lastTurn = turns[turns.length - 1];
+                if (turnEvents.length > 0) {
+                  const lastTurn = turnEvents[turnEvents.length - 1];
                   if (lastTurn.defender === pokemonName) {
                     lastTurn.statusEffect = 'confusion';
                     lastTurn.statusInflicted = true;
@@ -840,8 +877,8 @@ class PokemonShowdownService {
           case 'faint':
             if (parts.length >= 3) {
               const pokemonName = this.extractPokemonName(parts[2]);
-              if (turns.length > 0) {
-                const lastTurn = turns[turns.length - 1];
+              if (turnEvents.length > 0) {
+                const lastTurn = turnEvents[turnEvents.length - 1];
                 if (lastTurn.defender === pokemonName) {
                   lastTurn.fainted = true;
                 }
@@ -850,6 +887,11 @@ class PokemonShowdownService {
             break;
         }
       }
+    }
+    
+    // Push any remaining events from the last turn
+    if (turnEvents.length > 0) {
+      turns.push(...turnEvents);
     }
     
     return turns;
