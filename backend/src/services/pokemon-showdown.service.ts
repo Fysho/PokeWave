@@ -37,6 +37,11 @@ interface BattleTurn {
   remainingHP: number;
   critical: boolean;
   effectiveness: 'super' | 'normal' | 'not very' | 'no';
+  missed?: boolean;
+  statusEffect?: string;
+  statusInflicted?: boolean;
+  healing?: number;
+  fainted?: boolean;
 }
 
 interface SingleBattleResult {
@@ -742,6 +747,58 @@ class PokemonShowdownService {
             if (turns.length > 0) {
               turns[turns.length - 1].effectiveness = 'no';
               turns[turns.length - 1].damage = 0;
+            }
+            break;
+            
+          case '-miss':
+            if (turns.length > 0) {
+              turns[turns.length - 1].missed = true;
+              turns[turns.length - 1].damage = 0;
+            }
+            break;
+            
+          case '-status':
+            if (parts.length >= 4 && turns.length > 0) {
+              const pokemonName = this.extractPokemonName(parts[2]);
+              const status = parts[3]; // brn, par, psn, slp, frz, etc.
+              const lastTurn = turns[turns.length - 1];
+              if (lastTurn.defender === pokemonName) {
+                lastTurn.statusEffect = status;
+                lastTurn.statusInflicted = true;
+              }
+            }
+            break;
+            
+          case '-start':
+            if (parts.length >= 4) {
+              const pokemonName = this.extractPokemonName(parts[2]);
+              const condition = parts[3];
+              // Check for status conditions like confusion, infatuation, etc.
+              if (condition && (condition.includes('confusion') || condition.includes('Confusion'))) {
+                if (turns.length > 0) {
+                  const lastTurn = turns[turns.length - 1];
+                  if (lastTurn.defender === pokemonName) {
+                    lastTurn.statusEffect = 'confusion';
+                    lastTurn.statusInflicted = true;
+                  }
+                }
+              }
+            }
+            break;
+            
+          case '-end':
+            // Track when status effects end - could be useful for future enhancements
+            break;
+            
+          case 'faint':
+            if (parts.length >= 3) {
+              const pokemonName = this.extractPokemonName(parts[2]);
+              if (turns.length > 0) {
+                const lastTurn = turns[turns.length - 1];
+                if (lastTurn.defender === pokemonName) {
+                  lastTurn.fainted = true;
+                }
+              }
             }
             break;
         }

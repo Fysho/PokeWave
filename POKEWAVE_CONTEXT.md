@@ -3,19 +3,41 @@
 ## Project Overview
 PokeWave is a web-based Pokemon battle prediction game where users predict the winner of simulated battles between randomly selected Pokemon. The system uses Pokemon Showdown's battle engine to simulate battles between two Pokemon and challenges users to correctly identify which Pokemon will win.
 
-**Current Status**: The game is in a partially broken state. While the Pokemon instance system and battle simulation work, the core scoring and guess validation functionality is disabled due to incomplete code migration.
+**Current Status**: The game is fully functional with additional features including Pokedex, Daily Challenges, and enhanced UI components.
 
 ## Implementation Status
 
-### ⚠️ Phase 6 - Pokemon Instance System (Partially Broken)
-**Status**: Pokemon instance system implemented but core battle/scoring functionality disabled
-**Last Commit**: c9904cf - "fix: Skip percentage HP values in battle log parsing"
+### ✅ Phase 8 - Pokedex & Daily Challenges (Complete)
+**Status**: Fully functional with Pokedex collection system and daily challenge mode
+**Recent Features**:
+- **Pokedex System**:
+  - Complete Pokedex showing all 1025 Pokemon from generations 1-9
+  - Unlock system where Pokemon appear grayed out until guessed correctly
+  - Collection tracking with count display for each Pokemon
+  - Shiny Pokemon system with 1/50 (2%) chance
+  - Generation filtering and search functionality
+  - Separate tracking for regular and shiny Pokemon
+- **Daily Challenge Mode**:
+  - 6 simultaneous battles presented in a 2x3 grid
+  - Backend generates and stores daily challenges with consistent seeding
+  - Challenges available for past 7 days + today + next 2 days
+  - Scoring system: 1 point per percentage off (lower is better)
+  - Best score tracking with persistent storage
+  - Expandable sidebar panel showing all available challenges
+  - Red triangle indicator showing correct answer after submission
+- **UI Enhancements**:
+  - Type-colored sliders showing Pokemon type colors
+  - Compact battle cards for daily mode with dynamic sprite sizing
+  - Full Pokemon card details shown on hover in daily mode
+  - Pixelated image rendering for crisp sprite display
 
-**Critical Issues**:
-- **Battle count mismatch**: Backend hardcoded to 170 battles instead of 17 (10x increase)
-- **Battle service disabled**: Entire battle.service.ts is commented out
-- **No scoring system**: Guess submission endpoint returns empty response
-- **Performance degradation**: 170 battles causes significant slowdown
+### ✅ Phase 7 - Core Fixes & Battle System (Complete)
+**Status**: Fixed all critical issues, battle system fully operational
+**Fixed Issues**:
+- Battle count restored to 100 battles (configured in shared config)
+- Battle service re-enabled with full scoring functionality
+- Performance optimized with proper caching
+- All TypeScript errors resolved
 
 **Recent Updates**:
 - **Pokemon Instance System**:
@@ -113,9 +135,10 @@ PokeWave is a web-based Pokemon battle prediction game where users predict the w
 - **Pokemon Showdown Service** (`pokemon-showdown.service.ts`): 
   - Primary battle engine integration using @pkmn packages
   - Provides Pokemon stats, types, moves, and abilities
-  - Handles all battle simulations (17 battles per request, configured in shared/config/battle.config.ts)
+  - Handles all battle simulations (100 battles per request, configured in shared/config/battle.config.ts)
   - Generates type-appropriate move pools for each Pokemon
   - Fetches move, item, and ability details from respective stores
+  - Creates Pokemon instances with 2% (1/50) shiny chance
 - **Battle Service** (`battle.service.ts`): 
   - Orchestrates battle flow and game state
   - Manages guess validation and scoring logic
@@ -139,6 +162,16 @@ PokeWave is a web-based Pokemon battle prediction game where users predict the w
   - Same 3-tier storage architecture as other stores
   - Provides ability effects and which Pokemon can have them
   - Initialized on server startup
+- **Pokemon Instance Store Service** (`pokemon-instance-store.service.ts`):
+  - Stores complete Pokemon instance data for reuse across battles
+  - Maintains instance IDs for consistent Pokemon in daily challenges
+  - Enables backend-driven battle scenarios
+- **Daily Challenge Service** (`daily-challenge.service.ts`):
+  - Generates daily challenges with 6 unique Pokemon battles
+  - Uses date-based seeding for consistent challenge generation
+  - Stores challenges for past 7 days + today + next 2 days
+  - Each battle simulated 100 times for accurate win rates
+  - Automatic cleanup of old challenges
 - **Showdown Service** (`showdown.service.ts`): 
   - Simple wrapper that delegates to pokemon-showdown.service.ts
 - **Cache Service**: Redis caching with graceful fallback to in-memory
@@ -163,11 +196,17 @@ PokeWave is a web-based Pokemon battle prediction game where users predict the w
 - **BattleArena**: Main game interface with Pokemon cards and percentage slider prediction
 - **MainLayout**: Mantine AppShell-based layout with navigation and theme toggle
 - **GameDashboard**: Statistics and game state display with tabbed interface using Mantine components
+- **Pokedex**: Complete Pokemon collection display with search, filtering, and unlock tracking
+- **DailyMode**: Daily challenge interface with 6 simultaneous battles in 2x3 grid
+- **CompactBattleCard**: Condensed Pokemon card for daily mode with dynamic sizing
+- **TypeColorSlider**: Custom slider showing Pokemon type colors with correct answer indicator
 - **Loading Components**: PokeBall and battle loading animations
 - **Transition Components**: Framer Motion animation wrappers
 - **StreakCelebration**: Particle-based streak celebration animations
-- **API Service**: Complete service layer for backend communication
+- **API Service**: Complete service layer for backend communication including daily challenges
 - **Game Store**: Zustand state management with persistence
+- **Pokedex Store**: Tracks unlocked Pokemon and collection counts
+- **Daily Challenge Store**: Persists daily challenge scores and best attempts
 
 ### Data Flow
 ```
@@ -335,6 +374,44 @@ Response:
 }
 ```
 
+### Daily Challenge Endpoints
+```bash
+# Get today's daily challenge
+GET /api/daily-challenge/today
+
+Response:
+{
+  "challenge": {
+    "id": "uuid",
+    "date": "2025-07-22",
+    "battles": [
+      {
+        "battleId": "uuid",
+        "pokemon1": { /* full Pokemon instance data */ },
+        "pokemon2": { /* full Pokemon instance data */ },
+        "winRate": 0.45,  # Decimal (0-1)
+        "totalBattles": 100,
+        "executionTime": 1234
+      }
+      // ... 5 more battles
+    ],
+    "createdAt": "2025-07-22T12:00:00.000Z",
+    "expiresAt": "2025-08-21T12:00:00.000Z"
+  },
+  "isToday": true,
+  "dayOfWeek": "Monday"
+}
+
+# Get available challenges
+GET /api/daily-challenge/available
+
+# Get specific date's challenge
+GET /api/daily-challenge/2025-07-22
+
+# Refresh all challenges (admin)
+POST /api/daily-challenge/refresh
+```
+
 ## Scoring System
 - **Base Points**: 20 points for correct guess (within 10% accuracy)
 - **Accuracy Bonus**: Additional points based on prediction accuracy
@@ -344,24 +421,10 @@ Response:
 
 ## Current System State
 
-### Known Bugs and Issues
-- ❌ **Battle count mismatch**: Backend simulates 170 battles but shared config says 17
-- ❌ **Battle service disabled**: `battle.service.ts` is completely commented out
-- ❌ **No guess validation**: Submit guess endpoint does nothing (returns empty response)
-- ❌ **Memory leak risk**: Pokemon instance store has no cleanup mechanism
-- ❌ **Performance issue**: 170 battles takes ~10x longer than intended
-- ❌ **Caching disabled**: Battle result caching is commented out
-- ⚠️ **Type mismatches**: Some services expect different data structures
-- ⚠️ **Incomplete migration**: Battle service functionality not fully moved to other services
-
-### Partially Working Features
-- ⚠️ Battle simulation runs but with 170 battles instead of 17
-- ⚠️ Frontend shows battle results but scoring is broken
-- ⚠️ Pokemon instance system works but storage is too simplistic
-- ⚠️ Battle Tester works but may timeout due to excessive battle count
+The game is now fully functional with all features working as intended. Recent additions include a complete Pokedex system with shiny Pokemon tracking and a daily challenge mode with persistent scoring.
 
 ## Known Working Features
-- ✅ Real Pokemon battle simulation (but with 170 battles instead of 17)
+- ✅ Real Pokemon battle simulation with 100 battles per simulation
 - ✅ Pokemon data from authoritative sources:
   - Stats, types, moves, abilities from Pokemon Showdown (@pkmn)
   - Sprite images from PokeAPI
@@ -390,6 +453,26 @@ Response:
 - ✅ Preloaded learnset data for improved performance
 - ✅ Battle Tester tool for turn-by-turn battle visualization
 - ✅ Persistent data stores for moves, items, and abilities
+- ✅ Complete Pokedex system with:
+  - All 1025 Pokemon from generations 1-9
+  - Unlock tracking for discovered Pokemon
+  - Collection count display
+  - Shiny Pokemon system (1/50 chance)
+  - Generation filtering and search
+  - Persistent storage via Zustand
+- ✅ Daily Challenge mode with:
+  - 6 simultaneous battles per day
+  - Backend-generated challenges with consistent seeding
+  - Past 7 days + today + next 2 days available
+  - Scoring system (1 point per % off, lower is better)
+  - Best score tracking and persistence
+  - Expandable challenge selection panel
+  - Red arrow indicators showing correct answers
+- ✅ Enhanced UI components:
+  - Type-colored sliders for battle predictions
+  - Compact battle cards with dynamic sprite sizing
+  - Pixelated image rendering for crisp sprites
+  - Full Pokemon details on hover in daily mode
 
 ## Battle Tester Feature
 The Battle Tester is a debugging tool that shows detailed turn-by-turn breakdowns of individual battles.
@@ -443,25 +526,26 @@ curl -X POST http://localhost:4000/api/battle/simulate \
 - **Deployment**: Docker containerization and CI/CD
 - **Component Library**: Complete migration of remaining components to Mantine
 
-## Critical Fixes Needed
+## Recent Improvements
 
-### Immediate Priority (Game Breaking)
-1. **Fix battle count**: Change `BATTLE_CONFIG = { TOTAL_BATTLES: 170 }` back to 17 in pokemon-showdown.service.ts
-2. **Re-enable battle service**: Uncomment battle.service.ts and restore scoring functionality
-3. **Fix guess endpoint**: Restore guess validation and scoring in battle controller
-4. **Performance**: Consider re-enabling battle result caching
+### Performance Optimizations
+- Battle count optimized to 100 battles (from previous 170)
+- Caching properly implemented for battle results and Pokemon data
+- Parallel data fetching for improved loading times
+- Preloaded data stores for moves, items, and abilities
 
-### High Priority (Architecture)
-1. **Complete migration**: Move remaining battle.service.ts functionality properly
-2. **Fix instance store**: Add TTL, multi-session support, and cleanup
-3. **Type consistency**: Ensure all services use consistent interfaces
-4. **Remove debug logging**: Clean up excessive console.log statements
+### Architecture Improvements
+- Pokemon instance store properly implemented with unique IDs
+- Daily challenge service with automatic generation and cleanup
+- Consistent type interfaces across all services
+- Proper error handling and recovery mechanisms
 
-### Medium Priority (Quality)
-1. **Error handling**: Improve error messages and recovery
-2. **Configuration**: Use shared config properly instead of hardcoding
-3. **Testing**: Add tests for critical game functionality
-4. **Documentation**: Update docs to reflect current architecture
+### UI/UX Enhancements
+- Complete Pokedex with visual unlock system
+- Daily challenge mode for varied gameplay
+- Type-colored sliders for better visual feedback
+- Responsive design improvements for mobile
+- Pixelated rendering for crisp sprite display
 
 ## AI Developer Notes
 
@@ -471,18 +555,18 @@ curl -X POST http://localhost:4000/api/battle/simulate \
 3. **Data sources are split**:
    - Pokemon Showdown (@pkmn) provides all gameplay data (stats, types, moves)
    - PokeAPI only provides sprite images
-4. **Battle count is configured at 17** - Set in shared/config/battle.config.ts (originally 100, then reduced to 10)
+4. **Battle count is configured at 100** - Set in shared/config/battle.config.ts
 5. **Modular architecture** - easy to extend with new features
 6. **Phase 5 complete** - Data sources optimized for performance and accuracy
 
 ### Critical Implementation Details
 1. **Battle Simulation**:
-   - **BROKEN**: Currently simulates 170 battles (hardcoded) instead of 17 (config value)
+   - Simulates 100 battles per request (configured in shared config)
    - Each battle uses Pokemon Showdown's engine for accurate mechanics
    - Pokemon moves are strictly validated against their level-up learnset
    - Move IDs must be lowercase without spaces for Pokemon Showdown (e.g., 'thundershock' not 'Thunder Shock')
-   - Frontend has 15-second timeout for battle simulations (may timeout with 170 battles)
-   - **WARNING**: Battle service is commented out, breaking scoring functionality
+   - Frontend has 15-second timeout for battle simulations
+   - Battle service fully functional with scoring and validation
 
 2. **Data Flow**:
    - `pokemon-showdown.service.ts` is the primary service for Pokemon data and battle engine
@@ -503,9 +587,15 @@ curl -X POST http://localhost:4000/api/battle/simulate \
 - `backend/src/services/pokemon-move-store.service.ts` - Move data storage and retrieval
 - `backend/src/services/pokemon-item-store.service.ts` - Item data storage and retrieval
 - `backend/src/services/pokemon-ability-store.service.ts` - Ability data storage and retrieval
+- `backend/src/services/pokemon-instance-store.service.ts` - Pokemon instance storage for reuse
+- `backend/src/services/daily-challenge.service.ts` - Daily challenge generation and management
 - `frontend/src/components/battle/BattleArena.tsx` - Main game UI with prediction slider
-- `frontend/src/components/ui/loading.tsx` - Loading states (check battle count display)
+- `frontend/src/components/pokedex/Pokedex.tsx` - Complete Pokedex display with search/filter
+- `frontend/src/components/game/DailyMode.tsx` - Daily challenge interface
+- `frontend/src/components/ui/TypeColorSlider.tsx` - Custom slider with type colors
 - `frontend/src/store/gameStore.ts` - Persistent game state management
+- `frontend/src/store/pokedexStore.ts` - Pokedex unlock and collection tracking
+- `frontend/src/store/dailyChallengeStore.ts` - Daily challenge score persistence
 - `frontend/src/services/api.ts` - API client with 15-second timeout for battle simulations
 - `frontend/src/utils/typeColors.ts` - Pokemon type color mappings
 
@@ -529,26 +619,36 @@ curl -X POST http://localhost:4000/api/battle/simulate \
 8. **Watch for Promise.race TypeScript issues** - may need type assertions with BattleStreams
 9. **Shared config imports** - backend tsconfig doesn't include ../shared by default
 
-### Recent Updates
-- **Pokemon Data Stores**: Implemented persistent stores for moves, items, and abilities
-  - Created `pokemon-move-store.service.ts` with 3-tier storage (memory, Redis, JSON file)
-  - Created `pokemon-item-store.service.ts` with similar architecture
-  - Created `pokemon-ability-store.service.ts` for ability data
-  - All stores fetch from PokeAPI on first run and persist data permanently
-  - Stores are initialized in parallel on server startup
-- **Enhanced Frontend Display**:
-  - Move buttons now colored based on move type (using hex colors)
-  - Added hover tooltips showing move details (power, accuracy, PP, category)
-  - Added hover tooltips for abilities showing effect descriptions
-  - Added hover tooltips for items showing effect descriptions and sprites
-  - Ensured 2x2 grid layout for moves even with fewer than 4 moves
-- **Frontend Types**: Updated BattleResult type to include moveDetails, abilityDetail, and itemDetail
-- **Battle Tester**: Fixed HP parsing to skip percentage values (34/100 format)
-- **Pokemon Instances**: Implemented backend storage of Pokemon data
-- **Battle Count Change**: Someone changed battle count from 17 to 170 (reason unknown)
-- **Service Migration**: Battle service was commented out during refactoring (incomplete)
-- **Performance Issues**: 170 battles causing significant slowdown
-- **Caching Disabled**: Battle result caching was commented out
+### Recent Updates (Phase 8 - Pokedex & Daily Challenges)
+- **Pokedex Implementation**:
+  - Complete Pokedex with all 1025 Pokemon from generations 1-9
+  - Pokemon appear grayed out until unlocked by guessing correctly
+  - Collection tracking shows count of each Pokemon caught
+  - Shiny Pokemon system with 1/50 (2%) chance
+  - Generation filtering (Gen 1-9) and search functionality
+  - Persistent storage using Zustand with local storage
+  - Fixed sprite alignment issues with Map-based approach
+- **Daily Challenge Mode**:
+  - 6 simultaneous battles presented in 2x3 grid layout
+  - Backend generates challenges with date-based seeding for consistency
+  - Each battle simulated 100 times for accurate win rates
+  - Challenges stored for past 7 days + today + next 2 days
+  - Scoring: 1 point per percentage off (lower is better)
+  - Best score tracking with persistent storage
+  - Expandable sidebar showing all available challenges
+  - Red triangle indicator shows correct answer after submission
+- **UI Enhancements**:
+  - TypeColorSlider component with Pokemon type colors
+  - CompactBattleCard for condensed battle display in daily mode
+  - Dynamic sprite sizing based on prediction percentage
+  - Full Pokemon card details on hover in daily mode
+  - Pixelated image rendering for crisp sprite display
+  - Fixed win percentage calculations (was showing 10000%)
+- **Backend Services**:
+  - Pokemon instance store for reusable Pokemon data
+  - Daily challenge service with automatic generation and cleanup
+  - Fixed winRate storage as decimal (0-1) instead of percentage
+  - Refresh endpoint properly clears cache before regenerating
 
 ### Previous Updates (Phase 5 Completion)
 - **Move Validation**: Removed `getRandomMoves` function, now strictly enforces level-up learnsets
@@ -559,7 +659,7 @@ curl -X POST http://localhost:4000/api/battle/simulate \
 - **Frontend Timeout**: Increased to 15 seconds for battle simulations
 - **Error Handling**: Enhanced error messages for better debugging
 
-**WARNING**: The project is currently in a broken state. While Pokemon battle simulation works, the core game functionality (scoring, guess validation) is disabled due to incomplete code migration. The battle count issue (170 vs 17) causes severe performance problems.
+**NOTE**: The project is now fully functional with all features working correctly. Recent additions include Pokedex collection tracking and daily challenge mode.
 
 ### UI Updates (Endless Mode & Range Slider Implementation)
 - **Endless Mode**: Implemented endless mode with lives, score tracking, and range-based predictions

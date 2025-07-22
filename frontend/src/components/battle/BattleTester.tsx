@@ -46,6 +46,11 @@ interface BattleTurn {
   remainingHP: number;
   critical: boolean;
   effectiveness: 'super' | 'normal' | 'not very' | 'no';
+  missed?: boolean;
+  statusEffect?: string;
+  statusInflicted?: boolean;
+  healing?: number;
+  fainted?: boolean;
 }
 
 
@@ -98,6 +103,47 @@ const BattleTester: React.FC<BattleTesterProps> = ({
     }
   };
 
+  const getStatusEffectText = (status: string) => {
+    switch (status) {
+      case 'brn':
+        return 'burned';
+      case 'par':
+        return 'paralyzed';
+      case 'psn':
+        return 'poisoned';
+      case 'tox':
+        return 'badly poisoned';
+      case 'slp':
+        return 'fell asleep';
+      case 'frz':
+        return 'frozen';
+      case 'confusion':
+        return 'confused';
+      default:
+        return status;
+    }
+  };
+
+  const getStatusEffectColor = (status: string) => {
+    switch (status) {
+      case 'brn':
+        return 'red';
+      case 'par':
+        return 'yellow';
+      case 'psn':
+      case 'tox':
+        return 'violet';
+      case 'slp':
+        return 'indigo';
+      case 'frz':
+        return 'cyan';
+      case 'confusion':
+        return 'gray';
+      default:
+        return 'gray';
+    }
+  };
+
   return (
     <Box
       pos="fixed"
@@ -108,7 +154,7 @@ const BattleTester: React.FC<BattleTesterProps> = ({
         width: isExpanded ? '400px' : '60px',
         transition: 'width 0.3s ease, right 0.3s ease',
         borderLeft: `1px solid ${colorScheme === 'dark' ? theme.colors.dark[5] : theme.colors.gray[3]}`,
-        zIndex: 998,
+        zIndex: 1100,
         boxShadow: 'var(--mantine-shadow-lg)',
         backgroundColor: colorScheme === 'dark' ? theme.colors.dark[7] : theme.white
       }}
@@ -125,11 +171,18 @@ const BattleTester: React.FC<BattleTesterProps> = ({
             <Group gap="sm">
               <ActionIcon
                 onClick={onToggleExpanded}
-                variant="subtle"
-                size="sm"
+                variant="filled"
+                size="lg"
                 color="grape"
+                style={{
+                  position: 'absolute',
+                  left: '-20px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  zIndex: 1101
+                }}
               >
-                {isExpanded ? <IconChevronRight size={16} /> : <IconChevronLeft size={16} />}
+                {isExpanded ? <IconChevronRight size={20} /> : <IconChevronLeft size={20} />}
               </ActionIcon>
               <Collapse in={isExpanded} transitionDuration={200}>
                 <Group gap="sm">
@@ -222,9 +275,21 @@ const BattleTester: React.FC<BattleTesterProps> = ({
                     {/* Turn-by-turn breakdown */}
                     <ScrollArea style={{ flex: 1, minHeight: '400px', maxHeight: 'calc(100vh - 400px)' }}>
                       <Stack gap="xs">
-                        {simulation.turns?.map((turn: BattleTurn, index: number) => (
-                          <Card key={index} withBorder p="sm">
-                            <Stack gap="xs">
+                        {simulation.turns?.map((turn: BattleTurn, index: number) => {
+                          // Check if this is the start of a new turn number
+                          const isNewTurn = index === 0 || turn.turn !== simulation.turns[index - 1].turn;
+                          
+                          return (
+                            <Box key={index}>
+                              {isNewTurn && index > 0 && (
+                                <>
+                                  <Box style={{ height: '8px' }} />
+                                  <Divider size="xs" label={`Turn ${turn.turn}`} labelPosition="center" />
+                                  <Box style={{ height: '8px' }} />
+                                </>
+                              )}
+                              <Card withBorder p="sm">
+                                <Stack gap="xs">
                               <Group justify="space-between" align="center">
                                 <Text size="xs" fw={600} c="gray.7">
                                   Turn {turn.turn}
@@ -244,21 +309,45 @@ const BattleTester: React.FC<BattleTesterProps> = ({
                                 <Text component="span" fw={500} tt="capitalize">
                                   {turn.move}
                                 </Text>
+                                {turn.missed && (
+                                  <Text component="span" c="gray.6" fs="italic">
+                                    {' '}but it missed!
+                                  </Text>
+                                )}
                               </Text>
                               
-                              <Group gap="xs" align="center">
-                                <Text size="xs" c="red.6">
-                                  {turn.damage} damage
-                                </Text>
-                                {turn.effectiveness !== 'normal' && (
-                                  <Group gap={2}>
-                                    {getEffectivenessIcon(turn.effectiveness)}
-                                    <Text size="xs" c="gray.6">
-                                      {getEffectivenessText(turn.effectiveness)}
+                              {!turn.missed && (
+                                <Group gap="xs" align="center">
+                                  {turn.damage > 0 && (
+                                    <Text size="xs" c="red.6">
+                                      {turn.damage} damage
                                     </Text>
-                                  </Group>
-                                )}
-                              </Group>
+                                  )}
+                                  {turn.effectiveness !== 'normal' && (
+                                    <Group gap={2}>
+                                      {getEffectivenessIcon(turn.effectiveness)}
+                                      <Text size="xs" c="gray.6">
+                                        {getEffectivenessText(turn.effectiveness)}
+                                      </Text>
+                                    </Group>
+                                  )}
+                                </Group>
+                              )}
+                              
+                              {turn.statusInflicted && turn.statusEffect && (
+                                <Group gap="xs" align="center">
+                                  <Badge 
+                                    size="xs" 
+                                    variant="filled" 
+                                    color={getStatusEffectColor(turn.statusEffect)}
+                                  >
+                                    Status Effect
+                                  </Badge>
+                                  <Text size="xs" c="gray.7">
+                                    {turn.defender} was {getStatusEffectText(turn.statusEffect)}!
+                                  </Text>
+                                </Group>
+                              )}
                               
                               <Group gap="xs" align="center">
                                 <IconHeart size={12} color="var(--mantine-color-red-6)" />
@@ -276,7 +365,9 @@ const BattleTester: React.FC<BattleTesterProps> = ({
                               </Group>
                             </Stack>
                           </Card>
-                        ))}
+                            </Box>
+                          );
+                        })}
                       </Stack>
                     </ScrollArea>
                   </Stack>
