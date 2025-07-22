@@ -337,20 +337,20 @@ const Pokedex: React.FC<PokedexProps> = () => {
                       )}
                       {/* Pokemon Count */}
                       {getPokemonCount(poke.id) > 0 && (
-                        <Text
-                          size="sm"
-                          fw={700}
-                          c="dark"
+                        <Badge
+                          size="xs"
+                          variant="light"
                           style={{
                             position: 'absolute',
                             top: 2,
                             right: 2,
-                            fontSize: '14px',
-                            textShadow: '0 0 3px rgba(255,255,255,0.8), 0 0 6px rgba(255,255,255,0.6)'
+                            fontWeight: 600,
+                            backgroundColor: 'var(--mantine-color-default)',
+                            color: 'var(--mantine-color-text)'
                           }}
                         >
                           {getPokemonCount(poke.id)}
-                        </Text>
+                        </Badge>
                       )}
                     </Box>
 
