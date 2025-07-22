@@ -74,7 +74,7 @@ class PokemonService {
       
       // Now fetch sprites for valid Pokemon only
       const spritePromises: Promise<{ id: number; sprites: PokemonSprites }>[] = [];
-      for (const [id, data] of pokemonDataMap.entries()) {
+      for (const [id] of pokemonDataMap.entries()) {
         spritePromises.push(
           this.getPokemonSprites(id)
             .then(sprites => ({ id, sprites }))
