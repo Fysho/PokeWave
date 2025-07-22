@@ -45,6 +45,21 @@ api.interceptors.response.use(
 );
 
 export class ApiService {
+  // Get Pokedex data
+  static async getPokedexData(generation?: number): Promise<any[]> {
+    try {
+      const params = generation ? `?generation=${generation}` : '';
+      // Use a longer timeout for loading all Pokemon data
+      const response = await api.get(`/pokemon/pokedex${params}`, {
+        timeout: 30000 // 30 seconds for loading all generations
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching Pokedex data:', error);
+      throw error;
+    }
+  }
+
   // Health check
   static async checkHealth(): Promise<{ status: string; timestamp: string }> {
     try {

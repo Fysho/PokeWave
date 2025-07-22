@@ -29,6 +29,14 @@ class PokemonService {
 
   async getPokedexData(generation?: number): Promise<any[]> {
     try {
+      // Check cache first
+      const cacheKey = generation ? `pokedex:gen${generation}` : 'pokedex:all';
+      const cached = await cacheService.get<any[]>(cacheKey);
+      if (cached) {
+        logger.info(`Pokedex data found in cache for ${cacheKey}`);
+        return cached;
+      }
+
       const pokedexData = [];
       
       // Determine range based on generation
@@ -41,18 +49,34 @@ class PokemonService {
       }
       
       // Get basic data for all Pokemon in range
+      // Batch sprite fetching for better performance
+      const spritePromises = [];
+      const pokemonList = [];
+      
       for (let id = startId; id <= endId; id++) {
         const pokemon = pokemonShowdownService.getPokemonById(id);
         if (pokemon) {
-          const sprites = await this.getPokemonSprites(id);
-          pokedexData.push({
-            id: pokemon.num,
-            name: pokemon.name,
-            types: pokemon.types,
-            sprite: sprites.front
-          });
+          pokemonList.push(pokemon);
+          spritePromises.push(this.getPokemonSprites(id));
         }
       }
+      
+      // Fetch all sprites in parallel
+      const sprites = await Promise.all(spritePromises);
+      
+      // Combine data
+      for (let i = 0; i < pokemonList.length; i++) {
+        const pokemon = pokemonList[i];
+        pokedexData.push({
+          id: pokemon.num,
+          name: pokemon.name,
+          types: pokemon.types,
+          sprite: sprites[i].front
+        });
+      }
+      
+      // Cache for 7 days since Pokemon data rarely changes
+      await cacheService.set(cacheKey, pokedexData, 7 * 24 * 60 * 60);
       
       return pokedexData;
     } catch (error) {
