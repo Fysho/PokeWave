@@ -669,6 +669,15 @@ const BattleArena: React.FC = () => {
   };
 
   const handleNewBattle = () => {
+    setShowResults(false);
+    setGuessResult(null);
+    setGuessPercentage(50);
+    // Reset range to default width for endless mode
+    if (isEndlessActive) {
+      const width = calculateRangeWidth();
+      const center = 50;
+      setGuessRange([Math.round(center - width / 2), Math.round(center + width / 2)]);
+    }
     generateNewBattle(battleSettings);
   };
 
@@ -727,11 +736,11 @@ const BattleArena: React.FC = () => {
               }}
             />
             <Card.Section p={{ base: 'lg', md: 'xl' }} pos="relative">
-              {isLoading ? (
+              {isLoading && !currentBattle ? (
                 <div className="py-16">
                   <BattleLoading 
-                    pokemon1Name={currentBattle?.pokemon1.name || 'Pokemon'} 
-                    pokemon2Name={currentBattle?.pokemon2.name || 'Pokemon'} 
+                    pokemon1Name={'Pokemon'} 
+                    pokemon2Name={'Pokemon'} 
                     className="py-8"
                   />
                 </div>
@@ -765,15 +774,17 @@ const BattleArena: React.FC = () => {
                     <Grid gutter={{ base: 'md', md: 'xl' }} align="flex-start" justify="center" maw={1200} mx="auto">
                       <Grid.Col span={{ base: 12, sm: 6 }}>
                         {/* Pokemon 1 */}
-                        <PokemonBattleCard
-                          pokemon={currentBattle.pokemon1}
-                          showResults={showResults}
-                          position="left"
-                          winPercentage={showResults ? guessResult?.actualWinRate : undefined}
-                          guessPercentage={!showResults && !isEndlessActive ? guessPercentage : undefined}
-                          guessRange={!showResults && isEndlessActive ? guessRange : undefined}
-                          totalBattles={currentBattle.totalBattles}
-                        />
+                        <FadeIn key={`pokemon1-${currentBattle.pokemon1.id}`}>
+                          <PokemonBattleCard
+                            pokemon={currentBattle.pokemon1}
+                            showResults={showResults}
+                            position="left"
+                            winPercentage={showResults ? guessResult?.actualWinRate : undefined}
+                            guessPercentage={!showResults && !isEndlessActive ? guessPercentage : undefined}
+                            guessRange={!showResults && isEndlessActive ? guessRange : undefined}
+                            totalBattles={currentBattle.totalBattles}
+                          />
+                        </FadeIn>
                       </Grid.Col>
 
                       {/* VS Badge - Positioned absolutely on larger screens */}
@@ -810,15 +821,17 @@ const BattleArena: React.FC = () => {
                       <Grid.Col span={{ base: 12, sm: 6 }}>
 
                         {/* Pokemon 2 */}
-                        <PokemonBattleCard
-                          pokemon={currentBattle.pokemon2}
-                          showResults={showResults}
-                          position="right"
-                          winPercentage={showResults ? (100 - (guessResult?.actualWinRate || 0)) : undefined}
-                          guessPercentage={!showResults && !isEndlessActive ? guessPercentage : undefined}
-                          guessRange={!showResults && isEndlessActive ? guessRange : undefined}
-                          totalBattles={currentBattle.totalBattles}
-                        />
+                        <FadeIn key={`pokemon2-${currentBattle.pokemon2.id}`}>
+                          <PokemonBattleCard
+                            pokemon={currentBattle.pokemon2}
+                            showResults={showResults}
+                            position="right"
+                            winPercentage={showResults ? (100 - (guessResult?.actualWinRate || 0)) : undefined}
+                            guessPercentage={!showResults && !isEndlessActive ? guessPercentage : undefined}
+                            guessRange={!showResults && isEndlessActive ? guessRange : undefined}
+                            totalBattles={currentBattle.totalBattles}
+                          />
+                        </FadeIn>
                       </Grid.Col>
                     </Grid>
                   
