@@ -699,12 +699,59 @@ class PokemonShowdownService {
                 
                 logger.info(`Battle Tester: ${pokemonName} HP change: ${previousHP} -> ${current} (damage: ${damage})`);
                 
-                // Update the last turn with damage info
-                if (turns.length > 0) {
-                  const lastTurn = turns[turns.length - 1];
-                  if (lastTurn.defender === pokemonName && damage > 0) {
-                    lastTurn.damage = damage;
-                    lastTurn.remainingHP = current;
+                // Check if this is status damage or confusion damage
+                if (parts.length >= 5 && damage > 0) {
+                  const source = parts[4];
+                  
+                  // Create a special turn entry for status/confusion damage
+                  if (source && (source.includes('[from]') || source.includes('confusion'))) {
+                    let damageType = 'unknown';
+                    
+                    if (source.includes('confusion')) {
+                      damageType = 'confusion';
+                    } else if (source.includes('psn') || source.includes('tox')) {
+                      damageType = 'poison';
+                    } else if (source.includes('brn')) {
+                      damageType = 'burn';
+                    } else if (source.includes('sandstorm')) {
+                      damageType = 'sandstorm';
+                    } else if (source.includes('hail')) {
+                      damageType = 'hail';
+                    }
+                    
+                    turns.push({
+                      turn: currentTurn,
+                      attacker: damageType,
+                      defender: pokemonName,
+                      move: damageType === 'confusion' ? 'Confusion damage' : `${damageType} damage`,
+                      damage: damage,
+                      remainingHP: current,
+                      critical: false,
+                      effectiveness: 'normal',
+                      statusEffect: damageType,
+                      statusInflicted: false
+                    });
+                    
+                    // Update HP tracking
+                    pokemonHP[pokemonName].lastHP = current;
+                  } else {
+                    // Normal move damage - update the last turn
+                    if (turns.length > 0) {
+                      const lastTurn = turns[turns.length - 1];
+                      if (lastTurn.defender === pokemonName && damage > 0) {
+                        lastTurn.damage = damage;
+                        lastTurn.remainingHP = current;
+                      }
+                    }
+                  }
+                } else {
+                  // Normal move damage - update the last turn
+                  if (turns.length > 0) {
+                    const lastTurn = turns[turns.length - 1];
+                    if (lastTurn.defender === pokemonName && damage > 0) {
+                      lastTurn.damage = damage;
+                      lastTurn.remainingHP = current;
+                    }
                   }
                 }
               }

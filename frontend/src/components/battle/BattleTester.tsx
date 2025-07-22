@@ -127,18 +127,24 @@ const BattleTester: React.FC<BattleTesterProps> = ({
   const getStatusEffectColor = (status: string) => {
     switch (status) {
       case 'brn':
+      case 'burn':
         return 'red';
       case 'par':
         return 'yellow';
       case 'psn':
       case 'tox':
+      case 'poison':
         return 'violet';
       case 'slp':
         return 'indigo';
       case 'frz':
         return 'cyan';
       case 'confusion':
-        return 'gray';
+        return 'pink';
+      case 'sandstorm':
+        return 'orange';
+      case 'hail':
+        return 'blue';
       default:
         return 'gray';
     }
@@ -302,21 +308,41 @@ const BattleTester: React.FC<BattleTesterProps> = ({
                               </Group>
                               
                               <Text size="xs">
-                                <Text component="span" fw={500} tt="capitalize">
-                                  {turn.attacker}
-                                </Text>
-                                {' '}used{' '}
-                                <Text component="span" fw={500} tt="capitalize">
-                                  {turn.move}
-                                </Text>
-                                {turn.missed && (
-                                  <Text component="span" c="gray.6" fs="italic">
-                                    {' '}but it missed!
-                                  </Text>
+                                {/* Check if this is status damage or a regular move */}
+                                {['confusion', 'poison', 'burn', 'sandstorm', 'hail'].includes(turn.attacker) ? (
+                                  <>
+                                    <Text component="span" fw={500} tt="capitalize">
+                                      {turn.defender}
+                                    </Text>
+                                    {' '}took{' '}
+                                    <Text component="span" fw={500} c={getStatusEffectColor(turn.attacker)}>
+                                      {turn.damage} damage
+                                    </Text>
+                                    {' '}from{' '}
+                                    <Text component="span" fw={500}>
+                                      {turn.attacker === 'confusion' ? 'confusion' : turn.attacker}
+                                    </Text>
+                                    {turn.attacker === 'confusion' && '!'}
+                                  </>
+                                ) : (
+                                  <>
+                                    <Text component="span" fw={500} tt="capitalize">
+                                      {turn.attacker}
+                                    </Text>
+                                    {' '}used{' '}
+                                    <Text component="span" fw={500} tt="capitalize">
+                                      {turn.move}
+                                    </Text>
+                                    {turn.missed && (
+                                      <Text component="span" c="gray.6" fs="italic">
+                                        {' '}but it missed!
+                                      </Text>
+                                    )}
+                                  </>
                                 )}
                               </Text>
                               
-                              {!turn.missed && (
+                              {!turn.missed && !['confusion', 'poison', 'burn', 'sandstorm', 'hail'].includes(turn.attacker) && (
                                 <Group gap="xs" align="center">
                                   {turn.damage > 0 && (
                                     <Text size="xs" c="red.6">
