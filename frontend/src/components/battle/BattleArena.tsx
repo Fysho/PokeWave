@@ -644,13 +644,11 @@ const BattleArena: React.FC = () => {
     if (!currentBattle) return;
     
     try {
-      // In endless mode, we'll check if the actual result falls within the range
-      // For now, we'll use the midpoint of the range for scoring
-      const guessValue = isEndlessActive 
-        ? Math.round((guessRange[0] + guessRange[1]) / 2) 
-        : guessPercentage;
+      // Pass the range for endless mode, or just the percentage for regular mode
+      const result = isEndlessActive 
+        ? await submitGuess(Math.round((guessRange[0] + guessRange[1]) / 2), guessRange)
+        : await submitGuess(guessPercentage);
       
-      const result = await submitGuess(guessValue);
       setGuessResult(result);
       setShowResults(true);
     } catch (error) {
@@ -935,13 +933,10 @@ const BattleArena: React.FC = () => {
                                     <Text 
                                       size="xl" 
                                       fw={700} 
-                                      c={isEndlessActive 
-                                        ? (guessResult.actualWinRate >= guessRange[0] && guessResult.actualWinRate <= guessRange[1] ? 'green.7' : 'red.7')
-                                        : (guessResult.isCorrect ? 'green.7' : 'red.7')
-                                      }
+                                      c={guessResult.isCorrect ? 'green.7' : 'red.7'}
                                     >
                                       {isEndlessActive 
-                                        ? (guessResult.actualWinRate >= guessRange[0] && guessResult.actualWinRate <= guessRange[1] 
+                                        ? (guessResult.isCorrect 
                                           ? '🎉 Within your range!' 
                                           : '❌ Outside your range!')
                                         : (guessResult.isCorrect ? '🎉 Within 10%!' : '❌ Not close enough!')

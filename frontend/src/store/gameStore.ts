@@ -4,7 +4,7 @@ import type { GameState, ApiError, BattleResult } from '../types/api';
 import { Pokemon } from './pokemon';
 import ApiService from '../services/api';
 // import { simulateMainBattle } from '../utils/mainBattleSimulation'; // Using backend API instead
-import { evaluateGuess } from '../utils/guessEvaluation';
+import { evaluateGuess, evaluateRangeGuess } from '../utils/guessEvaluation';
 
 interface BattleHistoryEntry {
   id: string;
@@ -42,7 +42,7 @@ interface GameStore extends GameState {
     movesetType?: 'random' | 'competitive';
     aiDifficulty?: 'random' | 'elite';
   }) => Promise<void>;
-  submitGuess: (guessPercentage: number) => Promise<any>;
+  submitGuess: (guessPercentage: number, guessRange?: [number, number]) => Promise<any>;
   resetGame: () => void;
   clearError: () => void;
   setLoading: (loading: boolean) => void;
@@ -179,7 +179,7 @@ export const useGameStore = create<GameStore>()(
           }
         },
 
-        submitGuess: async (guessPercentage: number) => {
+        submitGuess: async (guessPercentage: number, guessRange?: [number, number]) => {
           const { currentBattle, score, streak, totalGuesses, correctGuesses, battleHistory } = get();
           
           if (!currentBattle) {
@@ -193,8 +193,10 @@ export const useGameStore = create<GameStore>()(
             // Calculate the actual win rate from the battle results
             const actualWinRate = currentBattle.winRate;
             
-            // Evaluate the guess locally
-            const guessResult = evaluateGuess(guessPercentage, actualWinRate);
+            // Evaluate the guess locally - use range evaluation if range is provided
+            const guessResult = guessRange 
+              ? evaluateRangeGuess(guessRange, actualWinRate)
+              : evaluateGuess(guessPercentage, actualWinRate);
 
             const newTotalGuesses = totalGuesses + 1;
             const newCorrectGuesses = guessResult.isCorrect ? correctGuesses + 1 : correctGuesses;
