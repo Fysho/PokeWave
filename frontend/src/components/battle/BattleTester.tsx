@@ -268,9 +268,21 @@ const BattleTester: React.FC<BattleTesterProps> = ({
               {pokemon1 && pokemon2 && (
                 <Card withBorder p="md">
                   <Stack gap="sm">
-                    <Text fw={600} size="sm" ta="center">
-                      Battle Setup
-                    </Text>
+                    <Group justify="space-between" align="center">
+                      <Text fw={600} size="sm">
+                        Battle Setup
+                      </Text>
+                      <ActionIcon
+                        onClick={onSimulateBattle}
+                        disabled={isSimulating || !pokemon1 || !pokemon2}
+                        variant="filled"
+                        size="sm"
+                        color="grape"
+                        loading={isSimulating}
+                      >
+                        {isSimulating ? <Loader size={14} /> : <IconSwords size={16} />}
+                      </ActionIcon>
+                    </Group>
                     <Group justify="space-between" align="center">
                       <Stack align="center" gap={4}>
                         <Text size="sm" fw={500} tt="capitalize">
@@ -294,18 +306,6 @@ const BattleTester: React.FC<BattleTesterProps> = ({
                 </Card>
               )}
 
-              {/* Simulate Button */}
-              <ActionIcon
-                onClick={onSimulateBattle}
-                disabled={isSimulating || !pokemon1 || !pokemon2}
-                variant="filled"
-                size="lg"
-                color="grape"
-                style={{ alignSelf: 'center' }}
-                loading={isSimulating}
-              >
-                {isSimulating ? <Loader size={16} /> : <IconSwords size={20} />}
-              </ActionIcon>
 
               {/* Battle Results */}
               {simulation && (
@@ -342,7 +342,7 @@ const BattleTester: React.FC<BattleTesterProps> = ({
                         border: `1px solid ${colorScheme === 'dark' ? theme.colors.dark[5] : theme.colors.gray[3]}`,
                         borderRadius: '4px',
                         padding: '8px',
-                        maxHeight: '300px',
+                        maxHeight: '500px',
                         overflowY: 'auto'
                       }}
                     >
