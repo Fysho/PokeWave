@@ -330,7 +330,9 @@ const BattleTester: React.FC<BattleTesterProps> = ({
                         Duration: {simulation.executionTime}ms
                       </Text>
                       <Text size="xs" c="dimmed">
-                        {simulation.totalTurns} turns
+                        {simulation.turns && simulation.turns.length > 0 
+                          ? Math.max(...simulation.turns.map((t: BattleTurn) => t.turn)) 
+                          : 0} turns
                       </Text>
                     </Group>
 
