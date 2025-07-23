@@ -113,13 +113,40 @@ export const submitGuess = async (
         points = Math.round(100 * (1 - rangePenalty));
       }
     } else {
-      // Single value guess evaluation
-      const difference = Math.abs(guessPercentage - actualWinRate);
-      isCorrect = difference <= 10; // Within 10% is considered correct
-      accuracy = Math.max(0, 100 - difference);
+      // Single value guess evaluation with boundary adjustments
       
-      if (isCorrect) {
-        points = Math.round(100 - difference);
+      // Check if guess is at boundaries and adjust the effective range
+      if (guessPercentage < 10) {
+        // For guesses below 10%, check if actual is in 0-20% range
+        isCorrect = actualWinRate >= 0 && actualWinRate <= 20;
+        if (isCorrect) {
+          // Calculate accuracy based on distance from the guess within the valid range
+          const difference = Math.abs(guessPercentage - actualWinRate);
+          accuracy = Math.max(0, 100 - difference * 5); // Scale up the penalty since range is larger
+          points = Math.round(accuracy);
+        } else {
+          accuracy = 0;
+        }
+      } else if (guessPercentage > 90) {
+        // For guesses above 90%, check if actual is in 80-100% range
+        isCorrect = actualWinRate >= 80 && actualWinRate <= 100;
+        if (isCorrect) {
+          // Calculate accuracy based on distance from the guess within the valid range
+          const difference = Math.abs(guessPercentage - actualWinRate);
+          accuracy = Math.max(0, 100 - difference * 5); // Scale up the penalty since range is larger
+          points = Math.round(accuracy);
+        } else {
+          accuracy = 0;
+        }
+      } else {
+        // Normal case: check within ±10% of guess
+        const difference = Math.abs(guessPercentage - actualWinRate);
+        isCorrect = difference <= 10;
+        accuracy = Math.max(0, 100 - difference);
+        
+        if (isCorrect) {
+          points = Math.round(100 - difference);
+        }
       }
     }
 

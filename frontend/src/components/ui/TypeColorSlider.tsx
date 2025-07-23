@@ -111,8 +111,37 @@ export const TypeColorSlider: React.FC<TypeColorSliderProps> = ({
       {/* Tolerance Range Indicators - Show based on current value when not showing results */}
       {!showCorrectIndicator && (
         <>
-          {/* Left range indicator (-10%) */}
-          {percentage - 10 > 0 && (
+          {/* Left range indicator */}
+          {percentage < 10 ? (
+            // If guess is below 10%, show bar at 0% (left edge)
+            <Box
+              style={{
+                position: 'absolute',
+                top: '-8px',
+                left: '0%',
+                width: '2px',
+                height: '28px',
+                backgroundColor: 'rgba(0, 0, 0, 0.3)',
+                transform: 'translateX(-50%)',
+                pointerEvents: 'none',
+              }}
+            />
+          ) : percentage > 90 ? (
+            // If guess is above 90%, show bar at 80%
+            <Box
+              style={{
+                position: 'absolute',
+                top: '-8px',
+                left: '80%',
+                width: '2px',
+                height: '28px',
+                backgroundColor: 'rgba(0, 0, 0, 0.3)',
+                transform: 'translateX(-50%)',
+                pointerEvents: 'none',
+              }}
+            />
+          ) : (
+            // Normal case: show bar at -10%
             <Box
               style={{
                 position: 'absolute',
@@ -127,8 +156,37 @@ export const TypeColorSlider: React.FC<TypeColorSliderProps> = ({
             />
           )}
           
-          {/* Right range indicator (+10%) */}
-          {percentage + 10 < 100 && (
+          {/* Right range indicator */}
+          {percentage < 10 ? (
+            // If guess is below 10%, show bar at 20%
+            <Box
+              style={{
+                position: 'absolute',
+                top: '-8px',
+                left: '20%',
+                width: '2px',
+                height: '28px',
+                backgroundColor: 'rgba(0, 0, 0, 0.3)',
+                transform: 'translateX(-50%)',
+                pointerEvents: 'none',
+              }}
+            />
+          ) : percentage > 90 ? (
+            // If guess is above 90%, show bar at 100% (right edge)
+            <Box
+              style={{
+                position: 'absolute',
+                top: '-8px',
+                left: '100%',
+                width: '2px',
+                height: '28px',
+                backgroundColor: 'rgba(0, 0, 0, 0.3)',
+                transform: 'translateX(-50%)',
+                pointerEvents: 'none',
+              }}
+            />
+          ) : (
+            // Normal case: show bar at +10%
             <Box
               style={{
                 position: 'absolute',
