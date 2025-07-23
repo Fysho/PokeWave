@@ -1,7 +1,6 @@
 import { prisma } from '../lib/prisma';
-import { v4 as uuidv4 } from 'uuid';
 import logger from '../utils/logger';
-import type { User, Pokedex, GameStats } from '@prisma/client';
+import type { Prisma, User, Pokedex, GameStats } from '@prisma/client';
 
 interface PokedexData {
   unlockedPokemon: number[];
@@ -15,10 +14,12 @@ interface CreateUserData {
   password: string;
 }
 
-interface UserWithRelations extends User {
-  pokedex: Pokedex | null;
-  gameStats: GameStats | null;
-}
+type UserWithRelations = Prisma.UserGetPayload<{
+  include: {
+    pokedex: true;
+    gameStats: true;
+  }
+}>;
 
 class UserServiceDB {
   async createUser(data: CreateUserData): Promise<UserWithRelations> {

@@ -59,7 +59,7 @@ export const getEndlessLeaderboard = async (
 
     res.json({
       leaderboard,
-      totalPlayers: leaderboardService.getPlayerCount()
+      totalPlayers: leaderboardService.getPlayerCount ? leaderboardService.getPlayerCount() : 0
     });
   } catch (error) {
     next(error);
@@ -78,7 +78,9 @@ export const getUserEndlessStats = async (
       throw new ApiError(400, 'User ID required');
     }
 
-    const stats = await leaderboardService.getUserEndlessStats(userId);
+    const stats = leaderboardService.getUserEndlessStats 
+      ? await leaderboardService.getUserEndlessStats(userId)
+      : { highScore: 0, totalRuns: 0, recentScores: [] };
 
     res.json({
       userId,
@@ -101,7 +103,9 @@ export const getRecentScores = async (
       throw new ApiError(400, 'Limit must be between 1 and 50');
     }
 
-    const recentScores = await leaderboardService.getRecentScores(limit);
+    const recentScores = leaderboardService.getRecentScores 
+      ? await leaderboardService.getRecentScores(limit)
+      : [];
 
     res.json({
       recentScores

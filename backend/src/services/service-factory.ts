@@ -3,26 +3,28 @@ import { userService } from './user.service';
 import { userServiceDB } from './user.service.db';
 import { leaderboardService } from './leaderboard.service';
 import { leaderboardServiceDB } from './leaderboard.service.db';
+import { IUserService } from './interfaces/user.service.interface';
+import { ILeaderboardService } from './interfaces/leaderboard.service.interface';
 import logger from '../utils/logger';
 
 // Service factory that returns the appropriate implementation
-export function getUserService() {
+export function getUserService(): IUserService {
   if (isDatabaseEnabled()) {
     logger.info('Using database-backed user service');
-    return userServiceDB;
+    return userServiceDB as IUserService;
   } else {
     logger.info('Using in-memory user service');
-    return userService;
+    return userService as IUserService;
   }
 }
 
-export function getLeaderboardService() {
+export function getLeaderboardService(): ILeaderboardService {
   if (isDatabaseEnabled()) {
     logger.info('Using database-backed leaderboard service');
-    return leaderboardServiceDB;
+    return leaderboardServiceDB as ILeaderboardService;
   } else {
     logger.info('Using in-memory leaderboard service');
-    return leaderboardService;
+    return leaderboardService as ILeaderboardService;
   }
 }
 

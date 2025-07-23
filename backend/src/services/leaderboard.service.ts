@@ -37,10 +37,14 @@ class LeaderboardService {
       if (username) {
         // If user doesn't exist in memory but has a valid JWT, recreate from token data
         // This handles server restarts where in-memory storage is lost
-        user = await userService.ensureUserExists({
-          id: userId,
-          username: username
-        });
+        if (userService.ensureUserExists) {
+          user = await userService.ensureUserExists({
+            id: userId,
+            username: username
+          });
+        } else {
+          throw new Error('User not found and cannot recreate');
+        }
         logger.info(`User ${username} (${userId}) recreated successfully`);
       } else {
         logger.error(`Cannot recreate user ${userId} - no username provided`);
@@ -150,7 +154,7 @@ class LeaderboardService {
   }
 
   // Clear all scores (for development)
-  clearAllScores(): void {
+  async clearAllScores(): Promise<void> {
     this.endlessScores.clear();
     this.dailyScores.clear();
     logger.info('All leaderboard scores cleared');

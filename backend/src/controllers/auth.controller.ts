@@ -178,7 +178,7 @@ export const updateAvatar = async (
 
     // For development: ensure user exists (recreate if needed)
     const username = req.user?.username;
-    if (username) {
+    if (username && userService.ensureUserExists) {
       await userService.ensureUserExists({ id: userId, username });
     }
 

@@ -130,7 +130,7 @@ export const getUserData = async (
         endlessHighScore: 0,
         dailyChallengeScores: {}
       },
-      lastUpdated: user.lastUpdated
+      lastUpdated: 'updatedAt' in user ? user.updatedAt : (user as any).lastUpdated
     });
   } catch (error) {
     next(error);
