@@ -342,7 +342,8 @@ const BattleTester: React.FC<BattleTesterProps> = ({
                         border: `1px solid ${colorScheme === 'dark' ? theme.colors.dark[5] : theme.colors.gray[3]}`,
                         borderRadius: '4px',
                         padding: '8px',
-                        maxHeight: '500px',
+                        maxHeight: 'calc(100vh - 400px)',
+                        minHeight: '400px',
                         overflowY: 'auto'
                       }}
                     >
