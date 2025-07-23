@@ -3,6 +3,7 @@ import { ApiError } from '../middleware/error.middleware';
 import { pokemonService } from '../services/pokemon.service';
 import { battleCacheService } from '../services/battle-cache.service';
 import { RandomPokemonSettings } from '../types/pokemon-instance.types';
+import logger from '../utils/logger';
 
 export const getPokemon = async (
   req: Request,
@@ -211,10 +212,34 @@ export const getCachedBattle = async (
     // Generate a unique instance ID for this battle retrieval
     const battleInstanceId = `${cachedBattle.battleId}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     
+    // Calculate shiny status for each Pokemon (1/4096 chance)
+    const SHINY_CHANCE = 1 / 4096;
+    const pokemon1Shiny = Math.random() < SHINY_CHANCE;
+    const pokemon2Shiny = Math.random() < SHINY_CHANCE;
+    
+    // Log if any shiny Pokemon appeared
+    if (pokemon1Shiny || pokemon2Shiny) {
+      logger.info('✨ Shiny Pokemon appeared!', {
+        pokemon1: pokemon1Shiny ? `${cachedBattle.pokemon1.name} (shiny)` : cachedBattle.pokemon1.name,
+        pokemon2: pokemon2Shiny ? `${cachedBattle.pokemon2.name} (shiny)` : cachedBattle.pokemon2.name,
+      });
+    }
+    
+    // Create copies of the Pokemon with shiny status
+    const pokemon1WithShiny = {
+      ...cachedBattle.pokemon1,
+      shiny: pokemon1Shiny
+    };
+    
+    const pokemon2WithShiny = {
+      ...cachedBattle.pokemon2,
+      shiny: pokemon2Shiny
+    };
+    
     // Return the Pokemon instances and battle info
     res.json({
-      pokemon1: cachedBattle.pokemon1,
-      pokemon2: cachedBattle.pokemon2,
+      pokemon1: pokemon1WithShiny,
+      pokemon2: pokemon2WithShiny,
       battleId: cachedBattle.battleId,
       battleInstanceId: battleInstanceId, // Unique for each retrieval
       totalBattles: cachedBattle.totalBattles,
