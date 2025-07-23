@@ -12,6 +12,7 @@ import {
   Loader,
   ScrollArea,
   Divider,
+  Button,
   useMantineTheme,
   useMantineColorScheme
 } from '@mantine/core';
