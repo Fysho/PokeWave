@@ -3,8 +3,8 @@ import { api } from './api';
 interface PokedexData {
   unlockedPokemon: number[];
   unlockedShinyPokemon: number[];
-  pokemonCounts?: [number, number][];
-  shinyPokemonCounts?: [number, number][];
+  pokemonCounts?: [number, number][] | { [key: string]: number };
+  shinyPokemonCounts?: [number, number][] | { [key: string]: number };
 }
 
 interface GameStats {
@@ -80,11 +80,32 @@ class UserDataService {
 
   // Helper to convert API format to Pokedex store format
   static convertApiToPokedexFormat(data: PokedexData) {
+    // Helper function to convert object or array to Map
+    const toMap = (counts: any): Map<number, number> => {
+      if (!counts) return new Map();
+      
+      // If it's already an array of tuples, use it directly
+      if (Array.isArray(counts)) {
+        return new Map(counts);
+      }
+      
+      // If it's an object, convert to array of tuples
+      if (typeof counts === 'object') {
+        const entries = Object.entries(counts).map(([key, value]) => [
+          parseInt(key, 10),
+          value as number
+        ]);
+        return new Map(entries as [number, number][]);
+      }
+      
+      return new Map();
+    };
+
     return {
       unlockedPokemon: new Set(data.unlockedPokemon || []),
       unlockedShinyPokemon: new Set(data.unlockedShinyPokemon || []),
-      pokemonCounts: new Map(data.pokemonCounts || []),
-      shinyPokemonCounts: new Map(data.shinyPokemonCounts || [])
+      pokemonCounts: toMap(data.pokemonCounts),
+      shinyPokemonCounts: toMap(data.shinyPokemonCounts)
     };
   }
 }
