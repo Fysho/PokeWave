@@ -73,6 +73,51 @@ router.post('/guess', optionalAuthMiddleware, submitGuess);
 // Simulate a single battle with turn-by-turn details
 router.post('/simulate-single', simulateSingleBattle);
 
+// Simulate multiple random battles for testing
+router.post('/simulate-random', async (req, res, next) => {
+  try {
+    const { count = 100, options = {} } = req.body;
+    
+    // Validate count
+    if (count < 1 || count > 1000) {
+      return res.status(400).json({ error: 'Count must be between 1 and 1000' });
+    }
+    
+    logger.info(`Simulating ${count} random battles with options:`, options);
+    
+    // Import required services
+    const { pokemonService } = require('../services/pokemon.service');
+    const { showdownService } = require('../services/showdown.service');
+    const { pokemonInstanceStore } = require('../services/pokemon-instance-store.service');
+    
+    // Get two random Pokemon with instances
+    const pokemon1Data = await pokemonService.getRandomPokemonWithInstances(options);
+    const pokemon2Data = await pokemonService.getRandomPokemonWithInstances(options);
+    
+    // Store instances for battle simulation
+    pokemonInstanceStore.storeInstances(pokemon1Data.pokemon1, pokemon2Data.pokemon1);
+    
+    // Simulate the battles
+    const result = await showdownService.simulateBattle(count);
+    
+    logger.info(`Simulated ${count} battles: ${pokemon1Data.pokemon1.name} (${result.pokemon1Wins} wins) vs ${pokemon2Data.pokemon1.name} (${result.pokemon2Wins} wins)`);
+    
+    res.json({
+      battleCount: count,
+      pokemon1Name: pokemon1Data.pokemon1.name,
+      pokemon2Name: pokemon2Data.pokemon1.name,
+      pokemon1Wins: result.pokemon1Wins,
+      pokemon2Wins: result.pokemon2Wins,
+      draws: result.draws,
+      winRate: result.winRate,
+      executionTime: result.executionTime
+    });
+  } catch (error) {
+    logger.error('Error in simulate-random:', error);
+    next(error);
+  }
+});
+
 // Get battle cache statistics
 router.get('/cache-stats', getBattleCacheStats);
 

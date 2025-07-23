@@ -136,6 +136,9 @@ const BattleSettingsContent: React.FC<{
   onSettingsChange: (settings: any) => void;
 }> = ({ isExpanded, settings, onSettingsChange }) => {
   const { generateNewBattle } = useGameStore();
+  const [battleCount, setBattleCount] = useState(100);
+  const [isGenerating, setIsGenerating] = useState(false);
+  
   const handleLevelModeChange = (checked: boolean) => {
     onSettingsChange({
       ...settings,
@@ -188,6 +191,79 @@ const BattleSettingsContent: React.FC<{
           >
             Generate New Battle
           </Button>
+          
+          {/* Battle Count for Test Generation */}
+          <Card withBorder p="md">
+            <Stack gap="md">
+              <Group gap="sm">
+                <IconSwords size={18} color="var(--mantine-color-blue-6)" />
+                <Text fw={600} size="sm">
+                  Test Battle Generation
+                </Text>
+              </Group>
+              
+              <NumberInput
+                label="Number of battles to simulate"
+                description="For testing random Pokemon matchups"
+                value={battleCount}
+                onChange={(value) => setBattleCount(typeof value === 'string' ? parseInt(value) || 100 : value)}
+                min={10}
+                max={1000}
+                step={10}
+                leftSection={<IconSwords size={16} />}
+              />
+              
+              <Button
+                fullWidth
+                size="sm"
+                variant="light"
+                leftSection={<IconDice size={16} />}
+                onClick={async () => {
+                  setIsGenerating(true);
+                  try {
+                    // Call new endpoint for random battle generation
+                    const response = await fetch('http://localhost:4000/api/battle/simulate-random', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        count: battleCount,
+                        options: settings
+                      })
+                    });
+                    
+                    if (!response.ok) {
+                      throw new Error(`Failed to generate battles: ${response.statusText}`);
+                    }
+                    
+                    const result = await response.json();
+                    console.log('Generated battles result:', result);
+                    
+                    // Show notification or handle result
+                    const { notifications } = await import('@mantine/notifications');
+                    notifications.show({
+                      title: 'Battles Generated',
+                      message: `Successfully simulated ${battleCount} random battles. Winner: ${result.pokemon1Name} (${result.pokemon1Wins} wins) vs ${result.pokemon2Name} (${result.pokemon2Wins} wins)`,
+                      color: 'green',
+                      autoClose: 5000
+                    });
+                  } catch (error) {
+                    console.error('Error generating test battles:', error);
+                    const { notifications } = await import('@mantine/notifications');
+                    notifications.show({
+                      title: 'Error',
+                      message: 'Failed to generate test battles',
+                      color: 'red'
+                    });
+                  } finally {
+                    setIsGenerating(false);
+                  }
+                }}
+                loading={isGenerating}
+              >
+                Generate Test Battles
+              </Button>
+            </Stack>
+          </Card>
           
           {/* Level Settings */}
           <Card withBorder p="md">
