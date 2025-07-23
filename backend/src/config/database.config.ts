@@ -1,3 +1,8 @@
+import dotenv from 'dotenv';
+
+// Load environment variables
+dotenv.config();
+
 // Database configuration
 export const DATABASE_CONFIG = {
   // Set to true to use database, false for in-memory storage
