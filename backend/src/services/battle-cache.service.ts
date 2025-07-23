@@ -79,21 +79,8 @@ class BattleCacheService {
         return await this.generateAndCacheBattle();
       }
       
-      // Remove this battle from the list so it won't be used again immediately
-      await this.removeBattleFromList(selectedBattleId);
-      
-      // Generate a replacement battle asynchronously
-      logger.info(`Replenishing battle cache after serving battle ${selectedBattleId}...`);
-      this.generateAndCacheBattle()
-        .then((newBattle) => {
-          logger.info(`Successfully replenished battle cache with new battle ${newBattle.battleId} (${newBattle.pokemon1.name} vs ${newBattle.pokemon2.name})`);
-        })
-        .catch(error => {
-          logger.error('Failed to generate replacement battle:', error);
-        });
-      
-      const remainingBattles = battleIds.length - 1;
-      logger.info(`Serving cached battle ${selectedBattleId} - ${remainingBattles} battles remaining in cache before replenishment`);
+      // Don't remove the battle - allow it to be selected again
+      logger.info(`Serving cached battle ${selectedBattleId} from pool of ${battleIds.length} battles`);
       return cachedBattle;
     } catch (error) {
       logger.error('Failed to get random battle:', error);
@@ -208,18 +195,6 @@ class BattleCacheService {
     }
   }
   
-  /**
-   * Remove a battle ID from the cached list
-   */
-  private async removeBattleFromList(battleId: string): Promise<void> {
-    try {
-      const battleIds = await this.getCachedBattleIds();
-      const updatedIds = battleIds.filter(id => id !== battleId);
-      await cacheService.set(this.BATTLE_LIST_KEY, updatedIds, this.CACHE_TTL);
-    } catch (error) {
-      logger.error('Failed to remove battle from list:', error);
-    }
-  }
   
   /**
    * Clear all cached battles (useful for maintenance)
