@@ -536,6 +536,12 @@ class PokemonShowdownService {
     let winner: 0 | 1 | 2 = 1;
     let turnCount = 0;
     const maxTurns = 50;
+    
+    // Track HP for both Pokemon
+    let p1CurrentHP = 0;
+    let p2CurrentHP = 0;
+    let p1MaxHP = 0;
+    let p2MaxHP = 0;
 
     //logger.info(`\n\n==========================================================================='`);
     //logger.info(`NewTurnCourt ` + turnCount);
@@ -552,9 +558,48 @@ class PokemonShowdownService {
 
       if (!chunk) break;
 
+      // Track HP updates
+      if (chunk.includes('|-damage|') || chunk.includes('|switch|')) {
+        const lines = chunk.split('\n');
+        for (const line of lines) {
+          if (line.includes('|-damage|') || line.includes('|switch|')) {
+            const parts = line.split('|');
+            if (parts.length >= 4) {
+              const pokemonSide = parts[2];
+              const hpInfo = parts[3];
+              
+              if (hpInfo === '0 fnt') {
+                if (pokemonSide.startsWith('p1a:')) {
+                  p1CurrentHP = 0;
+                } else if (pokemonSide.startsWith('p2a:')) {
+                  p2CurrentHP = 0;
+                }
+              } else if (hpInfo.includes('/')) {
+                const [current, max] = hpInfo.split('/').map(h => parseInt(h) || 0);
+                if (pokemonSide.startsWith('p1a:')) {
+                  p1CurrentHP = current;
+                  p1MaxHP = max;
+                } else if (pokemonSide.startsWith('p2a:')) {
+                  p2CurrentHP = current;
+                  p2MaxHP = max;
+                }
+              }
+            }
+          }
+        }
+      }
+
       // Check for win first
       if (chunk.includes('|win|')) {
-        winner = chunk.includes('Player 1') ? 1 : 2;
+        const declaredWinner = chunk.includes('Player 1') ? 1 : 2;
+        
+        // Check if the winning Pokemon actually has 0 HP (indicating a draw from explosion/etc)
+        if ((declaredWinner === 1 && p1CurrentHP === 0) || (declaredWinner === 2 && p2CurrentHP === 0)) {
+          winner = 0; // Draw
+          logger.debug(`Battle ended in DRAW - winner had 0 HP. P1: ${p1CurrentHP}/${p1MaxHP}, P2: ${p2CurrentHP}/${p2MaxHP}`);
+        } else {
+          winner = declaredWinner;
+        }
         break;
       }
       
