@@ -261,10 +261,9 @@ const BattleTester: React.FC<BattleTesterProps> = ({
 
         {/* Content */}
         <Collapse in={isExpanded} transitionDuration={300} style={{ flex: 1, overflow: 'hidden' }}>
-          <Box style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-            <ScrollArea style={{ height: 'calc(100vh - 140px)' }} offsetScrollbars scrollbarSize={8} type="hover">
-              <Box p="md">
-                <Stack gap="md">
+          <ScrollArea h="calc(100vh - 140px)" offsetScrollbars scrollbarSize={8} type="hover">
+            <Box p="md">
+              <Stack gap="md">
               {/* Battle Setup */}
               {pokemon1 && pokemon2 && (
                 <Card withBorder p="md">
@@ -515,10 +514,9 @@ const BattleTester: React.FC<BattleTesterProps> = ({
                   </Stack>
                 </Card>
               )}
-                </Stack>
-              </Box>
-            </ScrollArea>
-          </Box>
+              </Stack>
+            </Box>
+          </ScrollArea>
         </Collapse>
 
         {/* Collapsed State Icon */}
