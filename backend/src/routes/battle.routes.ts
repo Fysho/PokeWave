@@ -77,7 +77,7 @@ router.post('/simulate-single', simulateSingleBattle);
 // Simulate a test battle with specific Pokemon IDs and settings
 router.post('/simulate-test', async (req, res, next) => {
   try {
-    const { pokemon1Id, pokemon2Id, pokemon1InstanceId, pokemon2InstanceId, options = {} } = req.body;
+    const { pokemon1Id, pokemon2Id, options = {} } = req.body;
     
     // Validate input
     if (!pokemon1Id || !pokemon2Id) {
