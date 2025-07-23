@@ -226,11 +226,15 @@ class PokemonShowdownService {
         }
         
         // Check for tie message from Pokemon Showdown
-        if (chunk.includes('|tie')) {
-          battleEnded = true;
-          winner = 'draw';
-          logger.info(`🎮 Battle Tester: Battle ended in a TIE!`);
-          break;
+        // Must be a complete |tie| message, not part of another word like |tier|
+        const tieLines = chunk.split('\n');
+        for (const line of tieLines) {
+          if (line === '|tie' || line.startsWith('|tie|')) {
+            battleEnded = true;
+            winner = 'draw';
+            logger.info(`🎮 Battle Tester: Battle ended in a TIE!`);
+            break;
+          }
         }
         
         // Only check for faints after the battle has started (after turn 1)
@@ -514,9 +518,13 @@ class PokemonShowdownService {
       }
       
       // Check for tie message from Pokemon Showdown
-      if (chunk.includes('|tie')) {
-        winner = 0;
-        break;
+      // Must be a complete |tie| message, not part of another word like |tier|
+      const tieLines = chunk.split('\n');
+      for (const line of tieLines) {
+        if (line === '|tie' || line.startsWith('|tie|')) {
+          winner = 0;
+          break;
+        }
       }
       
       // Only check for faints after the battle has started (after turn 1)
