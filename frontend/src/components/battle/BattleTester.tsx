@@ -51,6 +51,11 @@ interface BattleTurn {
   statusInflicted?: boolean;
   healing?: number;
   fainted?: boolean;
+  statChange?: {
+    stat: string;
+    stages: number;
+    type: 'boost' | 'unboost' | 'failed';
+  };
 }
 
 
@@ -145,9 +150,58 @@ const BattleTester: React.FC<BattleTesterProps> = ({
         return 'orange';
       case 'hail':
         return 'blue';
+      case 'recoil':
+        return 'red';
+      case 'Life Orb':
+        return 'violet';
       default:
         return 'gray';
     }
+  };
+
+  const getStatName = (stat: string) => {
+    switch (stat) {
+      case 'atk':
+        return 'Attack';
+      case 'def':
+        return 'Defense';
+      case 'spa':
+        return 'Special Attack';
+      case 'spd':
+        return 'Special Defense';
+      case 'spe':
+        return 'Speed';
+      case 'accuracy':
+        return 'Accuracy';
+      case 'evasion':
+        return 'Evasion';
+      default:
+        return stat;
+    }
+  };
+
+  const getStatChangeText = (statChange: { stat: string; stages: number; type: string }) => {
+    if (statChange.type === 'failed') {
+      if (statChange.stages > 0) {
+        return "stats can't go any higher!";
+      } else if (statChange.stages < 0) {
+        return "stats can't go any lower!";
+      }
+      return "stat change failed!";
+    }
+    
+    const statName = getStatName(statChange.stat);
+    const stages = Math.abs(statChange.stages);
+    const direction = statChange.stages > 0 ? 'rose' : 'fell';
+    
+    if (stages === 1) {
+      return `${statName} ${direction}!`;
+    } else if (stages === 2) {
+      return `${statName} ${direction} sharply!`;
+    } else if (stages >= 3) {
+      return `${statName} ${direction} drastically!`;
+    }
+    return `${statName} ${direction} by ${stages} stages!`;
   };
 
   return (
@@ -308,8 +362,18 @@ const BattleTester: React.FC<BattleTesterProps> = ({
                               </Group>
                               
                               <Text size="xs">
-                                {/* Check if this is status damage or a regular move */}
-                                {['confusion', 'poison', 'burn', 'sandstorm', 'hail'].includes(turn.attacker) ? (
+                                {/* Check if this is a stat change */}
+                                {turn.move === 'Stat Change' && turn.statChange ? (
+                                  <>
+                                    <Text component="span" fw={500} tt="capitalize">
+                                      {turn.attacker}
+                                    </Text>
+                                    {"'s "}
+                                    <Text component="span" fw={500} c={turn.statChange.stages > 0 ? 'green.6' : turn.statChange.stages < 0 ? 'red.6' : 'gray.6'}>
+                                      {getStatChangeText(turn.statChange)}
+                                    </Text>
+                                  </>
+                                ) : ['confusion', 'poison', 'burn', 'sandstorm', 'hail', 'recoil', 'Life Orb'].includes(turn.attacker) ? (
                                   <>
                                     <Text component="span" fw={500} tt="capitalize">
                                       {turn.defender}
@@ -320,7 +384,10 @@ const BattleTester: React.FC<BattleTesterProps> = ({
                                     </Text>
                                     {' '}from{' '}
                                     <Text component="span" fw={500}>
-                                      {turn.attacker === 'confusion' ? 'confusion' : turn.attacker}
+                                      {turn.attacker === 'confusion' ? 'confusion' : 
+                                       turn.attacker === 'recoil' ? 'recoil' :
+                                       turn.attacker === 'Life Orb' ? 'Life Orb' :
+                                       turn.attacker}
                                     </Text>
                                     {turn.attacker === 'confusion' && '!'}
                                   </>
@@ -349,7 +416,7 @@ const BattleTester: React.FC<BattleTesterProps> = ({
                                 )}
                               </Text>
                               
-                              {!turn.missed && !['confusion', 'poison', 'burn', 'sandstorm', 'hail'].includes(turn.attacker) && (
+                              {!turn.missed && turn.move !== 'Stat Change' && !['confusion', 'poison', 'burn', 'sandstorm', 'hail', 'recoil', 'Life Orb'].includes(turn.attacker) && (
                                 <Group gap="xs" align="center">
                                   {turn.damage > 0 && (
                                     <Text size="xs" c="red.6">
@@ -382,20 +449,23 @@ const BattleTester: React.FC<BattleTesterProps> = ({
                                 </Group>
                               )}
                               
-                              <Group gap="xs" align="center">
-                                <IconHeart size={12} color="var(--mantine-color-red-6)" />
-                                <Text size="xs" c="gray.7">
-                                  {turn.defender}: {turn.remainingHP} HP left
-                                </Text>
-                                {turn.remainingHP <= 0 && (
-                                  <Group gap={2}>
-                                    <IconSkull size={12} color="var(--mantine-color-gray-6)" />
-                                    <Text size="xs" c="gray.6">
-                                      Fainted!
-                                    </Text>
-                                  </Group>
-                                )}
-                              </Group>
+                              {/* Don't show HP line for stat changes */}
+                              {turn.move !== 'Stat Change' && (
+                                <Group gap="xs" align="center">
+                                  <IconHeart size={12} color="var(--mantine-color-red-6)" />
+                                  <Text size="xs" c="gray.7">
+                                    {turn.defender}: {turn.remainingHP} HP left
+                                  </Text>
+                                  {turn.remainingHP <= 0 && (
+                                    <Group gap={2}>
+                                      <IconSkull size={12} color="var(--mantine-color-gray-6)" />
+                                      <Text size="xs" c="gray.6">
+                                        Fainted!
+                                      </Text>
+                                    </Group>
+                                  )}
+                                </Group>
+                              )}
                             </Stack>
                           </Card>
                             </Box>

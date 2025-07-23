@@ -853,13 +853,20 @@ class PokemonShowdownService {
                       damageType = 'sandstorm';
                     } else if (source.includes('hail')) {
                       damageType = 'hail';
+                    } else if (source.includes('recoil')) {
+                      damageType = 'recoil';
+                    } else if (source.includes('Life Orb')) {
+                      damageType = 'Life Orb';
                     }
                     
                     turnEvents.push({
                       turn: currentTurn,
                       attacker: damageType,
                       defender: pokemonName,
-                      move: damageType === 'confusion' ? 'Confusion damage' : `${damageType} damage`,
+                      move: damageType === 'confusion' ? 'Confusion damage' : 
+                            damageType === 'recoil' ? 'Recoil damage' :
+                            damageType === 'Life Orb' ? 'Life Orb damage' :
+                            `${damageType} damage`,
                       damage: damage,
                       remainingHP: current,
                       critical: false,
@@ -980,6 +987,97 @@ class PokemonShowdownService {
                 const lastTurn = turnEvents[turnEvents.length - 1];
                 if (lastTurn.defender === pokemonName) {
                   lastTurn.fainted = true;
+                }
+              }
+            }
+            break;
+            
+          case '-boost':
+            if (parts.length >= 5) {
+              const pokemonName = this.extractPokemonName(parts[2]);
+              const stat = parts[3];
+              const stages = parseInt(parts[4]) || 1;
+              
+              // Create a special turn entry for stat boost
+              turnEvents.push({
+                turn: currentTurn,
+                attacker: pokemonName,
+                defender: pokemonName,
+                move: 'Stat Change',
+                damage: 0,
+                remainingHP: pokemonHP[pokemonName]?.current || 100,
+                critical: false,
+                effectiveness: 'normal',
+                statChange: {
+                  stat: stat,
+                  stages: stages,
+                  type: 'boost'
+                }
+              });
+            }
+            break;
+            
+          case '-unboost':
+            if (parts.length >= 5) {
+              const pokemonName = this.extractPokemonName(parts[2]);
+              const stat = parts[3];
+              const stages = parseInt(parts[4]) || 1;
+              
+              // Create a special turn entry for stat drop
+              turnEvents.push({
+                turn: currentTurn,
+                attacker: pokemonName,
+                defender: pokemonName,
+                move: 'Stat Change',
+                damage: 0,
+                remainingHP: pokemonHP[pokemonName]?.current || 100,
+                critical: false,
+                effectiveness: 'normal',
+                statChange: {
+                  stat: stat,
+                  stages: -stages,
+                  type: 'unboost'
+                }
+              });
+            }
+            break;
+            
+          case '-fail':
+            if (parts.length >= 3) {
+              const pokemonName = this.extractPokemonName(parts[2]);
+              
+              // Check if this is a stat change failure
+              if (parts.length >= 4) {
+                let isStatFail = false;
+                let failureType = 'unknown';
+                
+                // Check for different stat failure messages
+                if (parts[3].includes('stat') || parts[3].includes('boost') || parts[3].includes('unboost')) {
+                  isStatFail = true;
+                  if (parts[3].includes('higher') || parts[3].includes('boost')) {
+                    failureType = 'too-high';
+                  } else if (parts[3].includes('lower') || parts[3].includes('unboost')) {
+                    failureType = 'too-low';
+                  }
+                }
+                
+                if (isStatFail) {
+                  // Create a special turn entry for failed stat change
+                  turnEvents.push({
+                    turn: currentTurn,
+                    attacker: pokemonName,
+                    defender: pokemonName,
+                    move: 'Stat Change',
+                    damage: 0,
+                    remainingHP: pokemonHP[pokemonName]?.current || 100,
+                    critical: false,
+                    effectiveness: 'normal',
+                    statChange: {
+                      stat: 'unknown',
+                      stages: failureType === 'too-high' ? 1 : failureType === 'too-low' ? -1 : 0,
+                      type: 'failed'
+                    }
+                  });
                 }
               }
             }
