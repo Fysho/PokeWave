@@ -685,3 +685,27 @@ curl -X POST http://localhost:4000/api/battle/simulate \
   - Simplified result display: "Correct!" or "Incorrect!" only
   - Removed percentage increment labels (0%, 50%, 100%) below slider
   - Added space after Pokemon name, removed space after sprite
+
+### Recent Battle Mode Updates
+- **Green Arrow Fix**: TypeColorSlider now uses `isCorrect` prop from backend instead of custom calculation
+  - Frontend was checking 5% tolerance while backend uses 10% tolerance
+  - Fixed inconsistency where slightly higher guesses weren't showing as correct
+- **Pokedex Notifications**: Pokemon are automatically added to Pokedex on successful guesses
+  - Custom `PokedexNotification` component shows Pokemon sprite in circular frame
+  - Notifications only appear for newly unlocked Pokemon (not duplicates)
+  - Shiny sprites shown when shiny Pokemon is caught
+  - Notification duration reduced from 4000ms to 2500ms for quicker dismissal
+- **Streak Celebration Removal**: Disabled flying text animations
+  - Removed "Streak Started!" text that would rotate and fly across screen
+  - Commented out `StreakCelebration` component and related state management
+  - Cleaned up unused imports (ResultReveal, ScaleIn)
+- **Range Indicators**: Added visual indicators for correct answer tolerance
+  - Two vertical lines show ±10% range from correct answer in battle mode
+  - Lines only appear when results are shown (after guess submission)
+  - Smart boundary detection: lines hidden if they would appear at 0% or 100%
+  - Helps users understand the acceptable range for correct guesses
+- **Battle Tester Improvements**:
+  - Fixed scrolling issues with proper absolute positioning inside relative container
+  - Resolved nested `<p>` tag hydration errors by converting parent Text to Box
+  - Used `component="span"` for inline text elements to maintain proper HTML structure
+  - ScrollArea now correctly displays scrollbar when battle has many turns
