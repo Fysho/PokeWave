@@ -43,9 +43,12 @@ class BattleCacheService {
             await new Promise(resolve => setTimeout(resolve, 100));
           }
         }
+      } else {
+        logger.info(`Battle cache already at full capacity (${existingBattles.length}/${this.CACHE_SIZE} battles)`);
       }
       
-      logger.info(`Battle cache initialized with ${this.CACHE_SIZE} battles`);
+      const finalBattleCount = await this.getCachedBattleIds();
+      logger.info(`Battle cache initialized with ${finalBattleCount.length}/${this.CACHE_SIZE} battles`);
     } catch (error) {
       logger.error('Failed to initialize battle cache:', error);
       throw error;
@@ -80,11 +83,17 @@ class BattleCacheService {
       await this.removeBattleFromList(selectedBattleId);
       
       // Generate a replacement battle asynchronously
-      this.generateAndCacheBattle().catch(error => {
-        logger.error('Failed to generate replacement battle:', error);
-      });
+      logger.info(`Replenishing battle cache after serving battle ${selectedBattleId}...`);
+      this.generateAndCacheBattle()
+        .then((newBattle) => {
+          logger.info(`Successfully replenished battle cache with new battle ${newBattle.battleId} (${newBattle.pokemon1.name} vs ${newBattle.pokemon2.name})`);
+        })
+        .catch(error => {
+          logger.error('Failed to generate replacement battle:', error);
+        });
       
-      logger.info(`Serving cached battle ${selectedBattleId}`);
+      const remainingBattles = battleIds.length - 1;
+      logger.info(`Serving cached battle ${selectedBattleId} - ${remainingBattles} battles remaining in cache before replenishment`);
       return cachedBattle;
     } catch (error) {
       logger.error('Failed to get random battle:', error);
