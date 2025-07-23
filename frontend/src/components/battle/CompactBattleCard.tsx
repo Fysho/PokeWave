@@ -95,7 +95,7 @@ export const CompactBattleCard: React.FC<CompactBattleCardProps> = ({
               transitionProps={{ transition: 'fade', duration: 200 }}
               events={{ hover: true, focus: false, touch: false }}
               multiline
-              width={500}
+              w={500}
               styles={{
                 tooltip: {
                   padding: 0,
