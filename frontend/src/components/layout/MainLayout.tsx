@@ -74,7 +74,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({
             try {
               // Call the backend API for single battle simulation
               // The backend uses the stored instances from the current battle
-              const response = await fetch('/api/battle/simulate-single', {
+              const response = await fetch('http://localhost:4000/api/battle/simulate-single', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({})
