@@ -6,7 +6,7 @@ import { useGameStore } from '../../store/gameStore';
 import { useSettingsStore } from '../../store/settingsStore';
 import { useEndlessStore } from '../../store/endlessStore';
 import { BattleLoading } from '../ui/loading';
-import { FadeIn, SlideIn, ResultReveal, BounceIn, ScaleIn } from '../ui/transitions';
+import { FadeIn, SlideIn, BounceIn } from '../ui/transitions';
 import StreakCelebration from '../ui/streak-celebration';
 import { getTypeColor, getCategoryIcon } from '../../utils/typeColors';
 import { getTypeEffectiveness, formatTypeList } from '../../utils/typeEffectiveness';
@@ -1029,6 +1029,7 @@ const BattleArena: React.FC<BattleArenaProps> = ({ hideStats = false }) => {
                             leftSection={isLoading ? <Loader size={20} /> : <IconSwords size={20} />}
                             loading={isLoading}
                             loaderProps={{ size: 20 }}
+                            style={{ minWidth: '200px' }}
                           >
                             {isLoading ? 'Simulating...' : 'Submit Prediction'}
                           </Button>
