@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { ApiError } from '../middleware/error.middleware';
 import { pokemonService } from '../services/pokemon.service';
+import { battleCacheService } from '../services/battle-cache.service';
 import { RandomPokemonSettings } from '../types/pokemon-instance.types';
 
 export const getPokemon = async (
@@ -189,6 +190,34 @@ export const updatePokemonInstanceMove = async (
     await pokemonService.updatePokemonInstanceMove(id, moveIndex, newMove);
     
     res.json({ success: true, message: 'Move updated successfully' });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getCachedBattle = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    // Get a random cached battle
+    const cachedBattle = await battleCacheService.getRandomBattle();
+    
+    if (!cachedBattle) {
+      throw new ApiError(500, 'No cached battles available');
+    }
+    
+    // Return the Pokemon instances and battle info
+    res.json({
+      pokemon1: cachedBattle.pokemon1,
+      pokemon2: cachedBattle.pokemon2,
+      battleId: cachedBattle.battleId,
+      totalBattles: cachedBattle.totalBattles,
+      pokemon1Wins: cachedBattle.pokemon1Wins,
+      pokemon2Wins: cachedBattle.pokemon2Wins,
+      winRate: cachedBattle.winRate
+    });
   } catch (error) {
     next(error);
   }

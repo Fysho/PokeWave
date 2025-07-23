@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getRandomPokemon, getRandomPokemonWithInstances, getPokedex, getPokemonById, getAvailableMovesForPokemon, updatePokemonInstanceMove } from '../controllers/pokemon.controller';
+import { getRandomPokemon, getRandomPokemonWithInstances, getPokedex, getPokemonById, getAvailableMovesForPokemon, updatePokemonInstanceMove, getCachedBattle } from '../controllers/pokemon.controller';
 
 const router = Router();
 
@@ -8,6 +8,9 @@ router.get('/random', getRandomPokemon);
 
 // Get random Pokemon with full instance data (must be before /:id route)
 router.get('/random-instances', getRandomPokemonWithInstances);
+
+// Get cached battle with pre-generated Pokemon instances
+router.get('/cached-battle', getCachedBattle);
 
 // Get all Pokemon for Pokedex (must be before /:id route)
 router.get('/pokedex', getPokedex);

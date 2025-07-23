@@ -91,76 +91,64 @@ export const useGameStore = create<GameStore>()(
           set({ isLoading: true, error: null });
           
           try {
-            // First, get random Pokemon instances with full data
-            const pokemonInstances = await ApiService.getRandomPokemonWithInstances({
-              generation: battleSettings?.generation || 1,
-              levelMode: battleSettings?.levelMode === 'random' ? 'random' : 'fixed',
-              level: battleSettings?.setLevel || 50,
-              itemMode: battleSettings?.withItems ? 'random' : 'none'
-            });
+            // Get a cached battle with pre-generated Pokemon instances
+            const battleData = await ApiService.getCachedBattle();
 
-            // Then simulate battle using the Pokemon instance data
-            const battleResult = await ApiService.simulateBattle(
-              pokemonInstances.pokemon1.id, 
-              pokemonInstances.pokemon2.id, 
-              {
-                generation: battleSettings?.generation || 1,
-                levelMode: battleSettings?.levelMode || 'set',
-                setLevel: battleSettings?.setLevel || 50,
-                withItems: battleSettings?.withItems || false,
-                movesetType: battleSettings?.movesetType || 'random',
-                aiDifficulty: battleSettings?.aiDifficulty || 'random',
-                pokemon1Level: pokemonInstances.pokemon1.level,
-                pokemon2Level: pokemonInstances.pokemon2.level,
-                pokemon1InstanceId: pokemonInstances.pokemon1InstanceId,
-                pokemon2InstanceId: pokemonInstances.pokemon2InstanceId
-              }
-            );
+            // The cached battle already includes battle results
+            const battleResult = {
+              battleId: battleData.battleId,
+              pokemon1Wins: battleData.pokemon1Wins,
+              pokemon2Wins: battleData.pokemon2Wins,
+              draws: battleData.draws || 0,
+              totalBattles: battleData.totalBattles,
+              winRate: battleData.winRate,
+              executionTime: battleData.executionTime || 0
+            };
             
-            // Construct the full battle result using instance data and battle simulation results
+            // Construct the full battle result using cached data
             const enhancedBattleResult: BattleResult = {
               battleId: battleResult.battleId,
               totalBattles: battleResult.totalBattles,
               winRate: battleResult.winRate,
               executionTime: battleResult.executionTime,
               pokemon1: {
-                id: pokemonInstances.pokemon1.id,
-                name: pokemonInstances.pokemon1.name,
-                level: pokemonInstances.pokemon1.level,
+                id: battleData.pokemon1.id,
+                name: battleData.pokemon1.name,
+                level: battleData.pokemon1.level,
                 wins: battleResult.pokemon1Wins,
-                types: pokemonInstances.pokemon1.types,
-                sprites: pokemonInstances.pokemon1.sprites,
-                moves: pokemonInstances.pokemon1.moves,
-                moveDetails: pokemonInstances.pokemon1.moveDetails,
-                stats: pokemonInstances.pokemon1.stats,
-                baseStats: pokemonInstances.pokemon1.baseStats,
-                evs: pokemonInstances.pokemon1.evs,
-                ivs: pokemonInstances.pokemon1.ivs,
-                ability: pokemonInstances.pokemon1.ability,
-                abilityDetail: pokemonInstances.pokemon1.abilityDetail,
-                item: pokemonInstances.pokemon1.item,
-                itemDetail: pokemonInstances.pokemon1.itemDetail,
-                shiny: pokemonInstances.pokemon1.shiny
+                types: battleData.pokemon1.types,
+                sprites: battleData.pokemon1.sprites,
+                moves: battleData.pokemon1.moves,
+                moveDetails: battleData.pokemon1.moveDetails,
+                stats: battleData.pokemon1.stats,
+                baseStats: battleData.pokemon1.baseStats,
+                evs: battleData.pokemon1.evs,
+                ivs: battleData.pokemon1.ivs,
+                ability: battleData.pokemon1.ability,
+                abilityDetail: battleData.pokemon1.abilityDetail,
+                item: battleData.pokemon1.item,
+                itemDetail: battleData.pokemon1.itemDetail,
+                shiny: battleData.pokemon1.shiny
               },
               pokemon2: {
-                id: pokemonInstances.pokemon2.id,
-                name: pokemonInstances.pokemon2.name,
-                level: pokemonInstances.pokemon2.level,
+                id: battleData.pokemon2.id,
+                name: battleData.pokemon2.name,
+                level: battleData.pokemon2.level,
                 wins: battleResult.pokemon2Wins,
-                types: pokemonInstances.pokemon2.types,
-                sprites: pokemonInstances.pokemon2.sprites,
-                moves: pokemonInstances.pokemon2.moves,
-                moveDetails: pokemonInstances.pokemon2.moveDetails,
-                stats: pokemonInstances.pokemon2.stats,
-                baseStats: pokemonInstances.pokemon2.baseStats,
-                evs: pokemonInstances.pokemon2.evs,
-                ivs: pokemonInstances.pokemon2.ivs,
-                ability: pokemonInstances.pokemon2.ability,
-                abilityDetail: pokemonInstances.pokemon2.abilityDetail,
-                item: pokemonInstances.pokemon2.item,
-                itemDetail: pokemonInstances.pokemon2.itemDetail,
-                nature: pokemonInstances.pokemon2.nature,
-                shiny: pokemonInstances.pokemon2.shiny
+                types: battleData.pokemon2.types,
+                sprites: battleData.pokemon2.sprites,
+                moves: battleData.pokemon2.moves,
+                moveDetails: battleData.pokemon2.moveDetails,
+                stats: battleData.pokemon2.stats,
+                baseStats: battleData.pokemon2.baseStats,
+                evs: battleData.pokemon2.evs,
+                ivs: battleData.pokemon2.ivs,
+                ability: battleData.pokemon2.ability,
+                abilityDetail: battleData.pokemon2.abilityDetail,
+                item: battleData.pokemon2.item,
+                itemDetail: battleData.pokemon2.itemDetail,
+                nature: battleData.pokemon2.nature,
+                shiny: battleData.pokemon2.shiny
               }
             };
             

@@ -111,6 +111,16 @@ export class ApiService {
     }
   }
 
+  // Get cached battle with pre-generated Pokemon
+  static async getCachedBattle(): Promise<GetRandomPokemonWithInstancesResponse> {
+    try {
+      const response = await api.get<GetRandomPokemonWithInstancesResponse>('/pokemon/cached-battle');
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  }
+
   // Get Pokemon sprites from PokeAPI
   static async getPokemonSprites(pokemonId: number): Promise<{ front: string; back: string; shiny: string }> {
     try {
