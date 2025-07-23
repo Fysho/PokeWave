@@ -272,16 +272,17 @@ const BattleTester: React.FC<BattleTesterProps> = ({
                       <Text fw={600} size="sm">
                         Battle Setup
                       </Text>
-                      <ActionIcon
+                      <Button
                         onClick={onSimulateBattle}
                         disabled={isSimulating || !pokemon1 || !pokemon2}
                         variant="filled"
-                        size="sm"
+                        size="xs"
                         color="grape"
                         loading={isSimulating}
+                        leftSection={!isSimulating && <IconSwords size={14} />}
                       >
-                        {isSimulating ? <Loader size={14} /> : <IconSwords size={16} />}
-                      </ActionIcon>
+                        Battle
+                      </Button>
                     </Group>
                     <Group justify="space-between" align="center">
                       <Stack align="center" gap={4}>
