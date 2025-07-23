@@ -333,13 +333,13 @@ const BattleTester: React.FC<BattleTesterProps> = ({
                     <Divider />
 
                     {/* Turn-by-turn breakdown */}
-                    <ScrollArea 
-                      style={{ flex: 1 }} 
-                      scrollbarSize={8} 
-                      type="always"
-                      offsetScrollbars
-                      viewportProps={{ style: { minHeight: 0 } }}
-                    >
+                    <Box style={{ flex: 1, minHeight: 0, position: 'relative' }}>
+                      <ScrollArea 
+                        style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} 
+                        scrollbarSize={8} 
+                        type="always"
+                        offsetScrollbars
+                      >
                         <Stack gap="xs" p="xs">
                         {simulation.turns?.map((turn: BattleTurn, index: number) => {
                           // Check if this is the start of a new turn number
@@ -480,7 +480,8 @@ const BattleTester: React.FC<BattleTesterProps> = ({
                           );
                         })}
                         </Stack>
-                    </ScrollArea>
+                      </ScrollArea>
+                    </Box>
                   </Stack>
                 </Card>
               )}
