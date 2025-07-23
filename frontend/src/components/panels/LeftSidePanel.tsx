@@ -6,7 +6,6 @@ import {
   ActionIcon,
   Collapse,
   Group,
-  SegmentedControl,
   useMantineTheme,
   useMantineColorScheme,
   Card,
@@ -94,55 +93,60 @@ const LeftSidePanel: React.FC<LeftSidePanelProps> = ({
             borderBottom: `1px solid ${colorScheme === 'dark' ? theme.colors.dark[5] : theme.colors.gray[3]}`
           }}
         >
-          <Group justify="space-between" align="center">
-            <Group gap="sm">
-              <ActionIcon
-                onClick={onToggleExpanded}
-                variant="filled"
-                size="lg"
-                color={activeSection === 'settings' ? 'blue' : 'grape'}
-                style={{
-                  position: 'absolute',
-                  right: '-20px',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  zIndex: 1001
-                }}
-              >
-                {isExpanded ? <IconChevronLeft size={20} /> : <IconChevronRight size={20} />}
-              </ActionIcon>
-              <Collapse in={isExpanded} transitionDuration={200}>
-                <Stack gap="sm">
-                  <SegmentedControl
-                    value={activeSection}
-                    onChange={setActiveSection}
-                    data={[
-                      {
-                        value: 'settings',
-                        label: (
-                          <Group gap="xs">
-                            <IconSettings size={16} />
-                            <span>Settings</span>
-                          </Group>
-                        )
-                      },
-                      {
-                        value: 'tester',
-                        label: (
-                          <Group gap="xs">
-                            <IconSwords size={16} />
-                            <span>Battle Tester</span>
-                          </Group>
-                        )
-                      }
-                    ]}
-                    size="sm"
-                    fullWidth
-                  />
-                </Stack>
-              </Collapse>
-            </Group>
-          </Group>
+          <Stack gap="xs">
+            <ActionIcon
+              onClick={onToggleExpanded}
+              variant="filled"
+              size="lg"
+              color={activeSection === 'settings' ? 'blue' : 'grape'}
+              style={{
+                position: 'absolute',
+                right: '-20px',
+                top: '20px',
+                zIndex: 1001
+              }}
+            >
+              {isExpanded ? <IconChevronLeft size={20} /> : <IconChevronRight size={20} />}
+            </ActionIcon>
+            <Collapse in={isExpanded} transitionDuration={200}>
+              <Stack gap="xs">
+                <Group
+                  onClick={() => setActiveSection('settings')}
+                  style={{ 
+                    cursor: 'pointer',
+                    padding: '8px 12px',
+                    borderRadius: '8px',
+                    backgroundColor: activeSection === 'settings' ? 
+                      (colorScheme === 'dark' ? theme.colors.blue[9] : theme.colors.blue[0]) : 
+                      'transparent',
+                    transition: 'background-color 0.2s'
+                  }}
+                >
+                  <IconSettings size={20} color={activeSection === 'settings' ? theme.colors.blue[6] : theme.colors.gray[6]} />
+                  <Text size="sm" fw={activeSection === 'settings' ? 600 : 400} c={activeSection === 'settings' ? 'blue.6' : undefined}>
+                    Battle Settings
+                  </Text>
+                </Group>
+                <Group
+                  onClick={() => setActiveSection('tester')}
+                  style={{ 
+                    cursor: 'pointer',
+                    padding: '8px 12px',
+                    borderRadius: '8px',
+                    backgroundColor: activeSection === 'tester' ? 
+                      (colorScheme === 'dark' ? theme.colors.grape[9] : theme.colors.grape[0]) : 
+                      'transparent',
+                    transition: 'background-color 0.2s'
+                  }}
+                >
+                  <IconSwords size={20} color={activeSection === 'tester' ? theme.colors.grape[6] : theme.colors.gray[6]} />
+                  <Text size="sm" fw={activeSection === 'tester' ? 600 : 400} c={activeSection === 'tester' ? 'grape.6' : undefined}>
+                    Battle Tester
+                  </Text>
+                </Group>
+              </Stack>
+            </Collapse>
+          </Stack>
         </Box>
 
         {/* Content */}
@@ -167,16 +171,26 @@ const LeftSidePanel: React.FC<LeftSidePanelProps> = ({
 
         {/* Collapsed State Icons */}
         {!isExpanded && (
-          <Box ta="center" mt="md">
+          <Stack gap="xs" p="xs">
             <ActionIcon
-              onClick={onToggleExpanded}
-              variant="subtle"
+              onClick={() => setActiveSection('settings')}
+              variant={activeSection === 'settings' ? 'filled' : 'subtle'}
               size="lg"
-              color={activeSection === 'settings' ? 'blue' : 'grape'}
+              color="blue"
+              title="Battle Settings"
             >
-              {activeSection === 'settings' ? <IconSettings size={20} /> : <IconSwords size={20} />}
+              <IconSettings size={20} />
             </ActionIcon>
-          </Box>
+            <ActionIcon
+              onClick={() => setActiveSection('tester')}
+              variant={activeSection === 'tester' ? 'filled' : 'subtle'}
+              size="lg"
+              color="grape"
+              title="Battle Tester"
+            >
+              <IconSwords size={20} />
+            </ActionIcon>
+          </Stack>
         )}
       </Stack>
     </Box>

@@ -127,32 +127,36 @@ export const TypeColorSlider: React.FC<TypeColorSliderProps> = ({
           />
           
           {/* Left range indicator (-10%) */}
-          <Box
-            style={{
-              position: 'absolute',
-              top: '-8px',
-              left: `${Math.max(0, correctPercentage - 10)}%`,
-              width: '2px',
-              height: '28px',
-              backgroundColor: 'rgba(0, 0, 0, 0.3)',
-              transform: 'translateX(-50%)',
-              pointerEvents: 'none',
-            }}
-          />
+          {correctPercentage - 10 > 0 && (
+            <Box
+              style={{
+                position: 'absolute',
+                top: '-8px',
+                left: `${correctPercentage - 10}%`,
+                width: '2px',
+                height: '28px',
+                backgroundColor: 'rgba(0, 0, 0, 0.3)',
+                transform: 'translateX(-50%)',
+                pointerEvents: 'none',
+              }}
+            />
+          )}
           
           {/* Right range indicator (+10%) */}
-          <Box
-            style={{
-              position: 'absolute',
-              top: '-8px',
-              left: `${Math.min(100, correctPercentage + 10)}%`,
-              width: '2px',
-              height: '28px',
-              backgroundColor: 'rgba(0, 0, 0, 0.3)',
-              transform: 'translateX(-50%)',
-              pointerEvents: 'none',
-            }}
-          />
+          {correctPercentage + 10 < 100 && (
+            <Box
+              style={{
+                position: 'absolute',
+                top: '-8px',
+                left: `${correctPercentage + 10}%`,
+                width: '2px',
+                height: '28px',
+                backgroundColor: 'rgba(0, 0, 0, 0.3)',
+                transform: 'translateX(-50%)',
+                pointerEvents: 'none',
+              }}
+            />
+          )}
         </>
       )}
     </Box>
