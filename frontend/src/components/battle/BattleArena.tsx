@@ -1233,7 +1233,9 @@ const BattleArena: React.FC<BattleArenaProps> = ({ hideStats = false }) => {
                               <Stack gap={4}>
                                 <Text size="xs" c="dimmed">Correct Answer</Text>
                                 <Text size="lg" fw={700} c="teal">
-                                  {guessResult.actualWinRate.toFixed(1)}%
+                                  {guessResult.actualWinRate % 1 === 0 
+                                    ? guessResult.actualWinRate.toFixed(0) 
+                                    : guessResult.actualWinRate.toFixed(1)}%
                                 </Text>
                               </Stack>
                             </Group>
