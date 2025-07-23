@@ -6,7 +6,6 @@ import MoveSelector from '../ui/MoveSelector';
 import { useGameStore } from '../../store/gameStore';
 import { useSettingsStore } from '../../store/settingsStore';
 import { useEndlessStore } from '../../store/endlessStore';
-import { BattleLoading } from '../ui/loading';
 import { FadeIn, SlideIn, BounceIn } from '../ui/transitions';
 // import StreakCelebration from '../ui/streak-celebration'; // Disabled to prevent flying text
 import { getTypeColor, getCategoryIcon } from '../../utils/typeColors';
@@ -1004,13 +1003,9 @@ const BattleArena: React.FC<BattleArenaProps> = ({ hideStats = false }) => {
             />
             <Card.Section p={{ base: 'lg', md: 'xl' }} pos="relative">
               {isLoading && !currentBattle ? (
-                <div className="py-16">
-                  <BattleLoading 
-                    pokemon1Name={'Pokemon'} 
-                    pokemon2Name={'Pokemon'} 
-                    className="py-8"
-                  />
-                </div>
+                <Center py="xl">
+                  <Loader size="lg" />
+                </Center>
               ) : currentBattle ? (
                 <div className="space-y-8">
                   {/* Pokemon Battle */}
