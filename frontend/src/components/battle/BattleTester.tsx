@@ -257,8 +257,8 @@ const BattleTester: React.FC<BattleTesterProps> = ({
         </Box>
 
         {/* Content */}
-        <Collapse in={isExpanded} transitionDuration={300} style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-          <Box p="md" style={{ overflowY: 'auto', flex: 1, height: '100%', display: 'flex', flexDirection: 'column' }}>
+        <Collapse in={isExpanded} transitionDuration={300} style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
+          <Box p="md" style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
             <Stack gap="md" style={{ flex: 1, minHeight: 0 }}>
               {/* Battle Setup */}
               {pokemon1 && pokemon2 && (
@@ -305,8 +305,8 @@ const BattleTester: React.FC<BattleTesterProps> = ({
 
               {/* Battle Results */}
               {simulation && (
-                <Card withBorder p="md" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-                  <Stack gap="md" style={{ flex: 1, minHeight: 0 }}>
+                <Card withBorder p="md" style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+                  <Stack gap="md" style={{ flex: 1, minHeight: 0, height: '100%' }}>
                     <Group justify="space-between" align="center">
                       <Text fw={600} size="sm">
                         Battle Result
@@ -333,7 +333,7 @@ const BattleTester: React.FC<BattleTesterProps> = ({
                     <Divider />
 
                     {/* Turn-by-turn breakdown */}
-                    <ScrollArea style={{ flex: 1, minHeight: '400px', maxHeight: 'calc(100vh - 400px)' }}>
+                    <ScrollArea style={{ flex: 1, height: '100%' }} scrollbarSize={8} offsetScrollbars>
                       <Stack gap="xs">
                         {simulation.turns?.map((turn: BattleTurn, index: number) => {
                           // Check if this is the start of a new turn number
