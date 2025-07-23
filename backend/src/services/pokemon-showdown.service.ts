@@ -738,6 +738,13 @@ class PokemonShowdownService {
         
         const eventType = parts[1];
         
+        // Log unknown event types for debugging
+        if (eventType && !['turn', 'move', 'cant', '-damage', '-sethp', '-heal', '-crit', '-supereffective', '-resisted', '-immune', '-miss', '-status', '-start', '-end', 'faint', '-boost', '-unboost', '-fail', 'switch', 'drag'].includes(eventType)) {
+          if (!eventType.startsWith('|') && !eventType.includes('request') && !eventType.includes('player')) {
+            logger.debug(`Battle Tester: Unknown event type: ${eventType} - Full line: ${line}`);
+          }
+        }
+        
         switch (eventType) {
           case 'turn':
             // When a new turn starts, add all events from previous turn to the main array
@@ -809,6 +816,11 @@ class PokemonShowdownService {
               const pokemonName = this.extractPokemonName(parts[2]);
               const hpInfo = parts[3];
               
+              // Log all damage events for debugging
+              if (parts.length >= 5) {
+                logger.info(`Battle Tester: Damage event - Pokemon: ${pokemonName}, HP: ${hpInfo}, Source: ${parts[4] || 'none'}`);
+              }
+              
               if (hpInfo === '0 fnt') {
                 // Pokemon fainted
                 if (pokemonHP[pokemonName]) {
@@ -841,17 +853,31 @@ class PokemonShowdownService {
                 logger.info(`Battle Tester: ${pokemonName} HP change: ${previousHP} -> ${current} (damage: ${damage})`);
                 
                 // Check if this is status damage or confusion damage
-                if (parts.length >= 5 && damage > 0) {
-                  const source = parts[4];
+                // Some damage events might have only 4 parts (no source), so check both cases
+                if (damage > 0) {
+                  const source = parts.length >= 5 ? parts[4] : '';
                   
                   // Log the source for debugging recoil
                   if (source && source.toLowerCase().includes('recoil')) {
                     logger.info(`Battle Tester: Recoil damage detected - source: "${source}"`);
                   }
                   
+                  // Also check if this might be recoil by looking at the last move
+                  let mightBeRecoil = false;
+                  if (!source && turnEvents.length > 0) {
+                    const lastMove = turnEvents[turnEvents.length - 1].move;
+                    // Common recoil moves
+                    const recoilMoves = ['Double-Edge', 'Submission', 'Take Down', 'Brave Bird', 'Flare Blitz', 'Head Smash', 'Wild Charge', 'Volt Tackle', 'Wood Hammer'];
+                    if (recoilMoves.some(move => lastMove.toLowerCase() === move.toLowerCase())) {
+                      mightBeRecoil = true;
+                      logger.info(`Battle Tester: Possible recoil from move: ${lastMove}`);
+                    }
+                  }
+                  
                   // Create a special turn entry for status/confusion damage
                   // Check for recoil first since it might not have [from]
-                  if (source && (source.includes('[from]') || source.includes('confusion') || source.toLowerCase().includes('recoil'))) {
+                  // Recoil might come as "[from] Recoil" or just "Recoil"
+                  if ((source && (source.includes('[from]') || source.includes('confusion') || source.toLowerCase().includes('recoil') || source.includes('Recoil'))) || mightBeRecoil) {
                     let damageType = 'unknown';
                     
                     if (source.includes('confusion')) {
@@ -864,10 +890,12 @@ class PokemonShowdownService {
                       damageType = 'sandstorm';
                     } else if (source.includes('hail')) {
                       damageType = 'hail';
-                    } else if (source.toLowerCase().includes('recoil')) {
+                    } else if (source.toLowerCase().includes('recoil') || source.includes('Recoil')) {
                       damageType = 'recoil';
                     } else if (source.includes('Life Orb')) {
                       damageType = 'Life Orb';
+                    } else if (mightBeRecoil) {
+                      damageType = 'recoil';
                     }
                     
                     // Log when we have unknown damage type
