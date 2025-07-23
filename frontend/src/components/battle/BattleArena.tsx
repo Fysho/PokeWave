@@ -252,22 +252,58 @@ export const PokemonBattleCard: React.FC<PokemonBattleCardProps> = ({
                         <Box>
                           <Text size="xs" fw={600} tt="capitalize" mb={4}>{type} Type</Text>
                           {effectiveness.weakTo.length > 0 && (
-                            <>
-                              <Text size="xs" c="red.4">Weak to (2x):</Text>
-                              <Text size="xs" mb={4}>{formatTypeList(effectiveness.weakTo)}</Text>
-                            </>
+                            <Box mb={4}>
+                              <Text size="xs">Weak to (2x):</Text>
+                              <Group gap={4}>
+                                {effectiveness.weakTo.map((weakType, idx) => (
+                                  <Text 
+                                    key={idx} 
+                                    size="xs" 
+                                    c={getTypeColor(weakType)}
+                                    tt="capitalize"
+                                    span
+                                  >
+                                    {weakType}{idx < effectiveness.weakTo.length - 1 ? ',' : ''}
+                                  </Text>
+                                ))}
+                              </Group>
+                            </Box>
                           )}
                           {effectiveness.resistantTo.length > 0 && (
-                            <>
-                              <Text size="xs" c="green.4">Resistant to (0.5x):</Text>
-                              <Text size="xs" mb={4}>{formatTypeList(effectiveness.resistantTo)}</Text>
-                            </>
+                            <Box mb={4}>
+                              <Text size="xs">Resistant to (0.5x):</Text>
+                              <Group gap={4}>
+                                {effectiveness.resistantTo.map((resistType, idx) => (
+                                  <Text 
+                                    key={idx} 
+                                    size="xs" 
+                                    c={getTypeColor(resistType)}
+                                    tt="capitalize"
+                                    span
+                                  >
+                                    {resistType}{idx < effectiveness.resistantTo.length - 1 ? ',' : ''}
+                                  </Text>
+                                ))}
+                              </Group>
+                            </Box>
                           )}
                           {effectiveness.immuneTo.length > 0 && (
-                            <>
-                              <Text size="xs" c="blue.4">Immune to (0x):</Text>
-                              <Text size="xs">{formatTypeList(effectiveness.immuneTo)}</Text>
-                            </>
+                            <Box>
+                              <Text size="xs">Immune to (0x):</Text>
+                              <Group gap={4}>
+                                {effectiveness.immuneTo.map((immuneType, idx) => (
+                                  <Text 
+                                    key={idx} 
+                                    size="xs" 
+                                    c={getTypeColor(immuneType)}
+                                    tt="capitalize"
+                                    span
+                                  >
+                                    {immuneType}{idx < effectiveness.immuneTo.length - 1 ? ',' : ''}
+                                  </Text>
+                                ))}
+                              </Group>
+                            </Box>
                           )}
                         </Box>
                       }

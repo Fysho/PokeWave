@@ -167,3 +167,8 @@ export function formatTypeList(types: string[]): string {
   if (types.length === 0) return 'None';
   return types.map(t => t.charAt(0).toUpperCase() + t.slice(1)).join(', ');
 }
+
+// Get type names as an array (for rendering with colors)
+export function getTypeArray(types: string[]): string[] {
+  return types;
+}
