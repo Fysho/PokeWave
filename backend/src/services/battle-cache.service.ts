@@ -97,13 +97,13 @@ class BattleCacheService {
     try {
       logger.info('Generating new battle for cache...');
       
-      // Generate random Pokemon IDs (Gen 1-3 for variety, similar to daily challenges)
-      const pokemon1Id = Math.floor(Math.random() * 386) + 1;
-      let pokemon2Id = Math.floor(Math.random() * 386) + 1;
+      // Generate random Pokemon IDs (Gen 1-4, up to Pokemon #493)
+      const pokemon1Id = Math.floor(Math.random() * 493) + 1;
+      let pokemon2Id = Math.floor(Math.random() * 493) + 1;
       
       // Ensure they're different
       while (pokemon2Id === pokemon1Id) {
-        pokemon2Id = Math.floor(Math.random() * 386) + 1;
+        pokemon2Id = Math.floor(Math.random() * 493) + 1;
       }
       
       // Generate random levels

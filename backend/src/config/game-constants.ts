@@ -33,7 +33,7 @@ export const BATTLE_CONFIG = {
   SIMULATIONS_PER_BATTLE: 100,
   
   // Battle cache settings
-  CACHE_SIZE: 5,
+  CACHE_SIZE: 100,
   CACHE_TTL: 86400, // 24 hours in seconds
   
   // Default generation for battles

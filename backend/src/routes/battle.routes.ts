@@ -67,4 +67,27 @@ router.post('/simulate-single', simulateSingleBattle);
 // Get battle cache statistics
 router.get('/cache-stats', getBattleCacheStats);
 
+// Refresh battle cache (admin/development route)
+router.post('/cache-refresh', async (req, res, next) => {
+  try {
+    const { battleCacheService } = require('../services/battle-cache.service');
+    
+    // Clear existing cache
+    await battleCacheService.clearCache();
+    
+    // Reinitialize with new settings
+    await battleCacheService.initialize();
+    
+    const stats = await battleCacheService.getCacheStats();
+    
+    res.json({
+      message: 'Battle cache refreshed successfully',
+      cacheSize: stats.size,
+      targetSize: 100
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
 export default router;
