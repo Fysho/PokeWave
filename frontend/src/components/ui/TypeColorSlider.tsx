@@ -108,62 +108,26 @@ export const TypeColorSlider: React.FC<TypeColorSliderProps> = ({
         }}
       />
       
-      {/* Tolerance Range Indicators - Show based on current value when not showing results */}
-      {!showCorrectIndicator && (
-        <>
-          {/* Left range indicator */}
-          {percentage < 10 ? (
-            // If guess is below 10%, show bar at 0% (left edge)
-            <Box
-              style={{
-                position: 'absolute',
-                top: '-8px',
-                left: '0%',
-                width: '2px',
-                height: '28px',
-                backgroundColor: 'rgba(0, 0, 0, 0.3)',
-                transform: 'translateX(-50%)',
-                pointerEvents: 'none',
-              }}
-            />
-          ) : percentage > 90 ? (
-            // If guess is above 90%, show bar at 80%
-            <Box
-              style={{
-                position: 'absolute',
-                top: '-8px',
-                left: '80%',
-                width: '2px',
-                height: '28px',
-                backgroundColor: 'rgba(0, 0, 0, 0.3)',
-                transform: 'translateX(-50%)',
-                pointerEvents: 'none',
-              }}
-            />
-          ) : (
-            // Normal case: show bar at -10%
-            <Box
-              style={{
-                position: 'absolute',
-                top: '-8px',
-                left: `${percentage - 10}%`,
-                width: '2px',
-                height: '28px',
-                backgroundColor: 'rgba(0, 0, 0, 0.3)',
-                transform: 'translateX(-50%)',
-                pointerEvents: 'none',
-              }}
-            />
-          )}
+      {/* Tolerance Range Indicators - Always based on user's guess value */}
+      <>
+        {/* Left range indicator */}
+        {(() => {
+          let leftPosition: number;
+          if (percentage < 10) {
+            leftPosition = 0; // Would be at 0%
+          } else if (percentage > 90) {
+            leftPosition = 80; // Would be at 80%
+          } else {
+            leftPosition = percentage - 10; // Normal case
+          }
           
-          {/* Right range indicator */}
-          {percentage < 10 ? (
-            // If guess is below 10%, show bar at 20%
+          // Only show if not at 0%
+          return leftPosition > 0 ? (
             <Box
               style={{
                 position: 'absolute',
                 top: '-8px',
-                left: '20%',
+                left: `${leftPosition}%`,
                 width: '2px',
                 height: '28px',
                 backgroundColor: 'rgba(0, 0, 0, 0.3)',
@@ -171,13 +135,27 @@ export const TypeColorSlider: React.FC<TypeColorSliderProps> = ({
                 pointerEvents: 'none',
               }}
             />
-          ) : percentage > 90 ? (
-            // If guess is above 90%, show bar at 100% (right edge)
+          ) : null;
+        })()}
+        
+        {/* Right range indicator */}
+        {(() => {
+          let rightPosition: number;
+          if (percentage < 10) {
+            rightPosition = 20; // Would be at 20%
+          } else if (percentage > 90) {
+            rightPosition = 100; // Would be at 100%
+          } else {
+            rightPosition = percentage + 10; // Normal case
+          }
+          
+          // Only show if not at 100%
+          return rightPosition < 100 ? (
             <Box
               style={{
                 position: 'absolute',
                 top: '-8px',
-                left: '100%',
+                left: `${rightPosition}%`,
                 width: '2px',
                 height: '28px',
                 backgroundColor: 'rgba(0, 0, 0, 0.3)',
@@ -185,74 +163,26 @@ export const TypeColorSlider: React.FC<TypeColorSliderProps> = ({
                 pointerEvents: 'none',
               }}
             />
-          ) : (
-            // Normal case: show bar at +10%
-            <Box
-              style={{
-                position: 'absolute',
-                top: '-8px',
-                left: `${percentage + 10}%`,
-                width: '2px',
-                height: '28px',
-                backgroundColor: 'rgba(0, 0, 0, 0.3)',
-                transform: 'translateX(-50%)',
-                pointerEvents: 'none',
-              }}
-            />
-          )}
-        </>
-      )}
+          ) : null;
+        })()}
+      </>
       
       {/* Correct Answer Indicator - Show after submission */}
       {showCorrectIndicator && correctValue !== undefined && (
-        <>
-          <Box
-            style={{
-              position: 'absolute',
-              top: '-14px',
-              left: `${correctPercentage}%`,
-              transform: 'translateX(-50%)',
-              width: 0,
-              height: 0,
-              borderLeft: '8px solid transparent',
-              borderRight: '8px solid transparent',
-              borderTop: `12px solid ${isCorrect ? '#27ae60' : '#e74c3c'}`,
-              pointerEvents: 'none',
-            }}
-          />
-          
-          {/* Left range indicator (-10%) */}
-          {correctPercentage - 10 > 0 && (
-            <Box
-              style={{
-                position: 'absolute',
-                top: '-8px',
-                left: `${correctPercentage - 10}%`,
-                width: '2px',
-                height: '28px',
-                backgroundColor: 'rgba(0, 0, 0, 0.3)',
-                transform: 'translateX(-50%)',
-                pointerEvents: 'none',
-              }}
-            />
-          )}
-          
-          {/* Right range indicator (+10%) */}
-          {correctPercentage + 10 < 100 && (
-            <Box
-              style={{
-                position: 'absolute',
-                top: '-8px',
-                left: `${correctPercentage + 10}%`,
-                width: '2px',
-                height: '28px',
-                backgroundColor: 'rgba(0, 0, 0, 0.3)',
-                transform: 'translateX(-50%)',
-                pointerEvents: 'none',
-              }}
-            />
-          )}
-        </>
+        <Box
+          style={{
+            position: 'absolute',
+            top: '-14px',
+            left: `${correctPercentage}%`,
+            transform: 'translateX(-50%)',
+            width: 0,
+            height: 0,
+            borderLeft: '8px solid transparent',
+            borderRight: '8px solid transparent',
+            borderTop: `12px solid ${isCorrect ? '#27ae60' : '#e74c3c'}`,
+            pointerEvents: 'none',
+          }}
+        />
       )}
     </Box>
   );
