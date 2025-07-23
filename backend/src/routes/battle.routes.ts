@@ -9,6 +9,7 @@ import {
   getBattleStats
 } from '../controllers/battle.controller';
 import { optionalAuthMiddleware } from '../middleware/auth.middleware';
+import { ApiError } from '../middleware/error.middleware';
 import logger from '../utils/logger';
 
 const router = Router();
@@ -72,6 +73,48 @@ router.post('/guess', optionalAuthMiddleware, submitGuess);
 
 // Simulate a single battle with turn-by-turn details
 router.post('/simulate-single', simulateSingleBattle);
+
+// Simulate a test battle with specific Pokemon IDs and settings
+router.post('/simulate-test', async (req, res, next) => {
+  try {
+    const { pokemon1Id, pokemon2Id, pokemon1InstanceId, pokemon2InstanceId, options = {} } = req.body;
+    
+    // Validate input
+    if (!pokemon1Id || !pokemon2Id) {
+      res.status(400).json({ error: 'Both pokemon1Id and pokemon2Id are required' });
+      return;
+    }
+    
+    logger.info(`Simulating test battle: Pokemon ${pokemon1Id} vs ${pokemon2Id} with options:`, options);
+    
+    // Import required services
+    const { showdownService } = require('../services/showdown.service');
+    const { pokemonInstanceStore } = require('../services/pokemon-instance-store.service');
+    
+    // Get the stored Pokemon instances
+    const instances = pokemonInstanceStore.getInstances();
+    if (!instances || !instances.pokemon1 || !instances.pokemon2) {
+      throw new ApiError(500, 'Pokemon instances not found. Please generate new Pokemon first.');
+    }
+    
+    // Simulate the battle
+    const result = await showdownService.simulateBattle(100); // 100 battles
+    
+    logger.info(`Test battle completed: Pokemon 1 wins: ${result.pokemon1Wins}, Pokemon 2 wins: ${result.pokemon2Wins}`);
+    
+    res.json({
+      pokemon1Wins: result.pokemon1Wins,
+      pokemon2Wins: result.pokemon2Wins,
+      draws: result.draws,
+      totalBattles: result.totalBattles,
+      winRate: result.winRate,
+      executionTime: result.executionTime
+    });
+  } catch (error) {
+    logger.error('Error in simulate-test:', error);
+    next(error);
+  }
+});
 
 // Simulate multiple random battles for testing
 router.post('/simulate-random', async (req, res, next) => {

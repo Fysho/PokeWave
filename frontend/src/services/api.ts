@@ -159,6 +159,43 @@ export class ApiService {
     }
   }
 
+  // Simulate test battle with stored instances
+  static async simulateTestBattle(pokemon1Id: number, pokemon2Id: number, options?: {
+    pokemon1InstanceId?: string;
+    pokemon2InstanceId?: string;
+    generation?: number;
+    pokemon1Level?: number;
+    pokemon2Level?: number;
+    withItems?: boolean;
+    movesetType?: 'random' | 'competitive';
+    aiDifficulty?: 'random' | 'elite';
+  }): Promise<SimpleBattleResult> {
+    try {
+      console.log(`[Frontend] Requesting test battle simulation: Pokemon ${pokemon1Id} vs ${pokemon2Id}`);
+      
+      const response = await api.post<SimpleBattleResult>('/battle/simulate-test', {
+        pokemon1Id,
+        pokemon2Id,
+        pokemon1InstanceId: options?.pokemon1InstanceId,
+        pokemon2InstanceId: options?.pokemon2InstanceId,
+        options: {
+          generation: options?.generation || 1,
+          pokemon1Level: options?.pokemon1Level || 50,
+          pokemon2Level: options?.pokemon2Level || 50,
+          withItems: options?.withItems || false,
+          movesetType: options?.movesetType || 'random',
+          aiDifficulty: options?.aiDifficulty || 'random'
+        }
+      }, {
+        timeout: 15000 // 15 seconds timeout
+      });
+      
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  }
+
   // Simulate battle between two Pokemon
   static async simulateBattle(pokemon1Id: number, pokemon2Id: number, options?: {
     levelMode?: 'random' | 'set';
