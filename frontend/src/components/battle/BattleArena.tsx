@@ -7,7 +7,7 @@ import { useSettingsStore } from '../../store/settingsStore';
 import { useEndlessStore } from '../../store/endlessStore';
 import { BattleLoading } from '../ui/loading';
 import { FadeIn, SlideIn, BounceIn } from '../ui/transitions';
-import StreakCelebration from '../ui/streak-celebration';
+// import StreakCelebration from '../ui/streak-celebration'; // Disabled to prevent flying text
 import { getTypeColor, getCategoryIcon } from '../../utils/typeColors';
 import { getTypeEffectiveness, formatTypeList } from '../../utils/typeEffectiveness';
 import { 
@@ -685,8 +685,8 @@ const BattleArena: React.FC<BattleArenaProps> = ({ hideStats = false }) => {
   });
   const [showResults, setShowResults] = useState(false);
   const [guessResult, setGuessResult] = useState<any>(null);
-  const [showStreakCelebration, setShowStreakCelebration] = useState(false);
-  const [lastStreakShown, setLastStreakShown] = useState(0);
+  // const [showStreakCelebration, setShowStreakCelebration] = useState(false); // Disabled
+  // const [lastStreakShown, setLastStreakShown] = useState(0); // Disabled
 
   // Removed automatic battle generation on mount
   // Now users must click "New Battle" button to start
@@ -697,14 +697,15 @@ const BattleArena: React.FC<BattleArenaProps> = ({ hideStats = false }) => {
     setGuessResult(null);
   }, [currentBattle]);
 
-  useEffect(() => {
-    if (streak > lastStreakShown && streak >= 2) {
-      setShowStreakCelebration(true);
-      setLastStreakShown(streak);
-    } else if (streak === 0) {
-      setLastStreakShown(0);
-    }
-  }, [streak, lastStreakShown]);
+  // Streak celebration disabled to prevent flying text
+  // useEffect(() => {
+  //   if (streak > lastStreakShown && streak >= 2) {
+  //     setShowStreakCelebration(true);
+  //     setLastStreakShown(streak);
+  //   } else if (streak === 0) {
+  //     setLastStreakShown(0);
+  //   }
+  // }, [streak, lastStreakShown]);
 
   // Update range width when endless score changes
   useEffect(() => {
@@ -1095,12 +1096,12 @@ const BattleArena: React.FC<BattleArenaProps> = ({ hideStats = false }) => {
         </FadeIn>
       </Box>
 
-      {/* Streak Celebration */}
-      <StreakCelebration
+      {/* Streak Celebration - Disabled to prevent flying text */}
+      {/* <StreakCelebration
         streak={streak}
         isVisible={showStreakCelebration}
         onAnimationComplete={() => setShowStreakCelebration(false)}
-      />
+      /> */}
 
       {/* Stats Bar */}
       {!hideStats && (
