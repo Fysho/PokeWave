@@ -22,12 +22,13 @@ import {
   IconSearch,
   IconInfinity
 } from '@tabler/icons-react';
-import { Card, Button, Stack, Title, Text, Grid, Group, Box, Center, Badge, Modal, ScrollArea, ActionIcon, Image, TextInput, Table, Avatar, Loader } from '@mantine/core';
+import { Card, Button, Stack, Title, Text, Grid, Group, Box, Center, Badge, Modal, ScrollArea, ActionIcon, Image, TextInput, Table, Avatar, Loader, useMantineColorScheme } from '@mantine/core';
 import { FadeIn } from '../ui/transitions';
 import { pokemonNames, getPokemonName } from '../../data/pokemonNames';
 import LeaderboardService from '../../services/leaderboard';
 
 const GameDashboard: React.FC = () => {
+  const { colorScheme } = useMantineColorScheme();
   const [activeTab, setActiveTab] = useState<string>('battle');
   const [leaderboardData, setLeaderboardData] = useState<any[]>([]);
   const [isLoadingLeaderboard, setIsLoadingLeaderboard] = useState(false);
@@ -162,7 +163,16 @@ const GameDashboard: React.FC = () => {
                         const medalColor = rank === 1 ? 'gold' : rank === 2 ? 'silver' : rank === 3 ? '#CD7F32' : undefined;
                         
                         return (
-                          <Table.Tr key={entry.userId} style={{ backgroundColor: isCurrentUser ? 'var(--mantine-color-blue-0)' : undefined }}>
+                          <Table.Tr 
+                            key={entry.userId} 
+                            style={{ 
+                              backgroundColor: isCurrentUser 
+                                ? colorScheme === 'dark' 
+                                  ? 'rgba(34, 139, 230, 0.15)' 
+                                  : 'var(--mantine-color-blue-0)' 
+                                : undefined 
+                            }}
+                          >
                             <Table.Td>
                               <Group gap="xs">
                                 {rank <= 3 ? (
