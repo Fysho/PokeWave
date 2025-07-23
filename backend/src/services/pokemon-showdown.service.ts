@@ -233,20 +233,25 @@ class PokemonShowdownService {
           break;
         }
         
-        // Check for faints - only count as draw if BOTH faint in the same chunk
-        if (chunk.includes('|faint|')) {
+        // Only check for faints after the battle has started (after turn 1)
+        if (turnCount > 0 && chunk.includes('|faint|')) {
           const lines = chunk.split('\n');
           let p1FaintedThisChunk = false;
           let p2FaintedThisChunk = false;
           
           for (const line of lines) {
-            if (line.includes('|faint|')) {
-              if (line.includes('p1a:')) {
-                p1FaintedThisChunk = true;
-                logger.info(`🎮 Battle Tester: ${pokemon1.name} fainted!`);
-              } else if (line.includes('p2a:')) {
-                p2FaintedThisChunk = true;
-                logger.info(`🎮 Battle Tester: ${pokemon2.name} fainted!`);
+            if (line.startsWith('|faint|')) {
+              // Format is |faint|p1a: PokemonName
+              const parts = line.split('|');
+              if (parts.length >= 3) {
+                const faintedPokemon = parts[2];
+                if (faintedPokemon.startsWith('p1a:')) {
+                  p1FaintedThisChunk = true;
+                  logger.info(`🎮 Battle Tester: ${pokemon1.name} fainted!`);
+                } else if (faintedPokemon.startsWith('p2a:')) {
+                  p2FaintedThisChunk = true;
+                  logger.info(`🎮 Battle Tester: ${pokemon2.name} fainted!`);
+                }
               }
             }
           }
@@ -494,7 +499,11 @@ class PokemonShowdownService {
 
       //logger.info(`turn ${turnCount}`);
       const chunk = await stream.read();
-      //logger.info(`Chunk: ${chunk}`);
+      
+      // Debug logging for first few chunks
+      if (turnCount < 3) {
+        logger.debug(`Chunk ${turnCount}: ${chunk?.substring(0, 200)}...`);
+      }
 
       if (!chunk) break;
 
@@ -510,24 +519,32 @@ class PokemonShowdownService {
         break;
       }
       
-      // Check for faints - only count as draw if BOTH faint in the same chunk
-      if (chunk.includes('|faint|')) {
+      // Only check for faints after the battle has started (after turn 1)
+      if (turnCount > 0 && chunk.includes('|faint|')) {
         const lines = chunk.split('\n');
         let p1FaintedThisChunk = false;
         let p2FaintedThisChunk = false;
         
         for (const line of lines) {
-          if (line.includes('|faint|')) {
-            if (line.includes('p1a:')) {
-              p1FaintedThisChunk = true;
-            } else if (line.includes('p2a:')) {
-              p2FaintedThisChunk = true;
+          if (line.startsWith('|faint|')) {
+            // Format is |faint|p1a: PokemonName
+            const parts = line.split('|');
+            if (parts.length >= 3) {
+              const faintedPokemon = parts[2];
+              if (faintedPokemon.startsWith('p1a:')) {
+                p1FaintedThisChunk = true;
+                logger.debug(`Battle: P1 fainted - ${faintedPokemon}`);
+              } else if (faintedPokemon.startsWith('p2a:')) {
+                p2FaintedThisChunk = true;
+                logger.debug(`Battle: P2 fainted - ${faintedPokemon}`);
+              }
             }
           }
         }
         
         // Only count as draw if both fainted in the same chunk (simultaneous)
         if (p1FaintedThisChunk && p2FaintedThisChunk) {
+          logger.warn(`Battle: DRAW detected - both Pokemon fainted simultaneously at turn ${turnCount}`);
           winner = 0;
           break;
         }
