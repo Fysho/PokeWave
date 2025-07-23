@@ -2,7 +2,6 @@ import React from 'react';
 import { Card, Badge, Group, Text, Box, Stack, Title, useMantineTheme, useMantineColorScheme, Tooltip, ScrollArea } from '@mantine/core';
 import { getTypeColor } from '../../utils/typeColors';
 import { getTypeEffectiveness, formatTypeList } from '../../utils/typeEffectiveness';
-import { IconCrown } from '@tabler/icons-react';
 import { PokemonBattleCard } from './BattleArena';
 
 interface CompactBattleCardProps {
@@ -53,24 +52,17 @@ export const CompactBattleCard: React.FC<CompactBattleCardProps> = ({
     <Card 
       h="100%"
       p="sm"
-      className={`
-        relative transition-all duration-300
-        ${showResults && totalBattles && pokemon.wins > totalBattles / 2 ? 'ring-2 ring-green-500' : ''}
-      `}
+      className="relative transition-all duration-300"
     >
       <Stack gap="xs" h="100%">
-        {/* Header with shiny badge and crown */}
+        {/* Header with shiny badge */}
         <Group justify="space-between" wrap="nowrap" h={20}>
           {pokemon.shiny ? (
             <Badge size="xs" variant="dot" color="yellow">✨</Badge>
           ) : (
             <Box w={20} />
           )}
-          {showResults && totalBattles && pokemon.wins > totalBattles / 2 ? (
-            <IconCrown size={16} color="var(--mantine-color-green-6)" />
-          ) : (
-            <Box w={16} />
-          )}
+          <Box w={16} />
         </Group>
         
         <Title order={5} size="h6" fw={600} tt="capitalize" ta="center" lineClamp={1}>

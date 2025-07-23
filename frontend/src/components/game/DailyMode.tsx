@@ -410,6 +410,7 @@ const DailyMode: React.FC = () => {
                         disabled={submitted}
                         correctValue={submitted ? Math.round(battle.winRate * 100) : undefined}
                         showCorrectIndicator={submitted}
+                        isCorrect={submitted ? Math.abs(guesses[index] - Math.round(battle.winRate * 100)) <= 10 : false}
                       />
                     </Box>
                   </Stack>

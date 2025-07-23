@@ -13,6 +13,7 @@ interface TypeColorSliderProps {
   disabled?: boolean;
   correctValue?: number;
   showCorrectIndicator?: boolean;
+  isCorrect?: boolean;
 }
 
 export const TypeColorSlider: React.FC<TypeColorSliderProps> = ({
@@ -26,6 +27,7 @@ export const TypeColorSlider: React.FC<TypeColorSliderProps> = ({
   disabled = false,
   correctValue,
   showCorrectIndicator = false,
+  isCorrect = false,
 }) => {
   const theme = useMantineTheme();
   
@@ -111,14 +113,14 @@ export const TypeColorSlider: React.FC<TypeColorSliderProps> = ({
         <Box
           style={{
             position: 'absolute',
-            top: '-15px',
+            top: '-14px',
             left: `${correctPercentage}%`,
             transform: 'translateX(-50%)',
             width: 0,
             height: 0,
             borderLeft: '8px solid transparent',
             borderRight: '8px solid transparent',
-            borderTop: `12px solid ${Math.abs(value - correctValue) <= 5 ? '#27ae60' : '#e74c3c'}`,
+            borderTop: `12px solid ${isCorrect ? '#27ae60' : '#e74c3c'}`,
             pointerEvents: 'none',
           }}
         />

@@ -997,7 +997,7 @@ const BattleArena: React.FC<BattleArenaProps> = ({ hideStats = false }) => {
                             )}
                           </Box>
                         ) : (
-                          <Box style={{ padding: '12px 0' }}>
+                          <Box style={{ padding: '15px 0 12px 0' }}>
                             <TypeColorSlider
                               value={guessPercentage}
                               onChange={(value) => handleSliderChange([value])}
@@ -1009,6 +1009,7 @@ const BattleArena: React.FC<BattleArenaProps> = ({ hideStats = false }) => {
                               disabled={isLoading || showResults}
                               correctValue={showResults && guessResult ? guessResult.actualWinRate : undefined}
                               showCorrectIndicator={showResults}
+                              isCorrect={showResults && guessResult ? guessResult.isCorrect : false}
                             />
                           </Box>
                         )}
