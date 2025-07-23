@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { simulateBattle, submitGuess, simulateSingleBattle, getBattleCacheStats } from '../controllers/battle.controller';
+import { optionalAuthMiddleware } from '../middleware/auth.middleware';
 
 const router = Router();
 
@@ -57,8 +58,8 @@ router.post('/simulate-with-instances', async (req, res, next) => {
   }
 });
 
-// Submit a guess for battle outcome
-router.post('/guess', submitGuess);
+// Submit a guess for battle outcome (with optional auth for Pokedex unlocks)
+router.post('/guess', optionalAuthMiddleware, submitGuess);
 
 // Simulate a single battle with turn-by-turn details
 router.post('/simulate-single', simulateSingleBattle);

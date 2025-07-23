@@ -5,7 +5,15 @@ import {showdownService} from "../services/showdown.service";
 import { battleCacheService } from '../services/battle-cache.service';
 import { pokemonInstanceStore } from '../services/pokemon-instance-store.service';
 import { battleStatsService } from '../services/battle-stats.service';
+import { userService } from '../services/user.service';
 import logger from "../utils/logger";
+
+interface AuthRequest extends Request {
+  user?: {
+    id: string;
+    username: string;
+  };
+}
 
 export const simulateBattle = async (
   req: Request,
@@ -55,7 +63,7 @@ export const simulateBattle = async (
 };
 
 export const submitGuess = async (
-  req: Request,
+  req: AuthRequest,
   res: Response,
   next: NextFunction
 ): Promise<void> => {
@@ -104,6 +112,29 @@ export const submitGuess = async (
 
     // Record the guess attempt in battle stats
     const battleStats = await battleStatsService.recordGuessAttempt(battleId, isCorrect);
+
+    // If user is authenticated and guess is correct, unlock Pokemon in their Pokedex
+    if (req.user && isCorrect) {
+      try {
+        // Get the cached battle to retrieve Pokemon info
+        const cachedBattle = await battleCacheService.getCachedBattle(battleId);
+        if (cachedBattle && cachedBattle.pokemon1 && cachedBattle.pokemon2) {
+          const pokemon1Id = cachedBattle.pokemon1.id;
+          const pokemon2Id = cachedBattle.pokemon2.id;
+          const pokemon1Shiny = cachedBattle.pokemon1.shiny || false;
+          const pokemon2Shiny = cachedBattle.pokemon2.shiny || false;
+
+          // Unlock both Pokemon
+          await userService.unlockPokemon(req.user.id, pokemon1Id, pokemon1Shiny);
+          await userService.unlockPokemon(req.user.id, pokemon2Id, pokemon2Shiny);
+
+          logger.info(`Pokemon unlocked for user ${req.user.username}: ${pokemon1Id} (shiny: ${pokemon1Shiny}), ${pokemon2Id} (shiny: ${pokemon2Shiny})`);
+        }
+      } catch (error) {
+        // Don't fail the request if Pokemon unlock fails
+        logger.error('Failed to unlock Pokemon for user:', error);
+      }
+    }
 
     // Log the guess
     logger.info('Guess submitted', {
