@@ -10,20 +10,16 @@ import logger from '../utils/logger';
 // Service factory that returns the appropriate implementation
 export function getUserService(): IUserService {
   if (isDatabaseEnabled()) {
-    logger.info('Using database-backed user service');
     return userServiceDB as IUserService;
   } else {
-    logger.info('Using in-memory user service');
     return userService as IUserService;
   }
 }
 
 export function getLeaderboardService(): ILeaderboardService {
   if (isDatabaseEnabled()) {
-    logger.info('Using database-backed leaderboard service');
     return leaderboardServiceDB as ILeaderboardService;
   } else {
-    logger.info('Using in-memory leaderboard service');
     return leaderboardService as ILeaderboardService;
   }
 }

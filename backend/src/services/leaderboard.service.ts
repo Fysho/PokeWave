@@ -1,8 +1,17 @@
 import { v4 as uuidv4 } from 'uuid';
 import logger from '../utils/logger';
 import { getUserService } from './service-factory';
+import { IUserService } from './interfaces/user.service.interface';
 
-const userService = getUserService();
+// Lazy initialization to avoid circular dependency
+let userService: IUserService;
+
+function getUserServiceLazy(): IUserService {
+  if (!userService) {
+    userService = getUserService();
+  }
+  return userService;
+}
 
 interface LeaderboardEntry {
   id: string;
@@ -29,7 +38,8 @@ class LeaderboardService {
   private dailyScores: Map<string, LeaderboardEntry[]> = new Map(); // For future daily mode
 
   async submitEndlessScore(userId: string, score: number, username?: string): Promise<LeaderboardEntry> {
-    let user = await userService.findById(userId);
+    const userSvc = getUserServiceLazy();
+    let user = await userSvc.findById(userId);
     
     if (!user) {
       logger.info(`User ${userId} not found in memory, attempting to recreate`);
@@ -37,8 +47,8 @@ class LeaderboardService {
       if (username) {
         // If user doesn't exist in memory but has a valid JWT, recreate from token data
         // This handles server restarts where in-memory storage is lost
-        if (userService.ensureUserExists) {
-          user = await userService.ensureUserExists({
+        if (userSvc.ensureUserExists) {
+          user = await userSvc.ensureUserExists({
             id: userId,
             username: username
           });
