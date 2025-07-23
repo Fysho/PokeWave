@@ -59,7 +59,7 @@ export const PokemonBattleCard: React.FC<PokemonBattleCardProps> = ({
     if (debugMode && pokemon?.id) {
       const fetchAvailableMoves = async () => {
         try {
-          const response = await api.get(`/pokemon/${pokemon.id}/available-moves?generation=${pokemon.generation || 9}&level=${pokemon.level || 50}`);
+          const response = await api.get(`/pokemon/${pokemon.id}/available-moves?generation=${pokemon.generation || 9}&level=${pokemon.level || 50}&debugMode=true`);
           setAvailableMoves(response.data.moves || []);
         } catch (error) {
           console.error('Failed to fetch available moves:', error);
@@ -482,10 +482,39 @@ export const PokemonBattleCard: React.FC<PokemonBattleCardProps> = ({
                                 backgroundColor: colorScheme === 'dark' ? theme.colors.dark[6] : theme.colors.gray[0],
                                 borderRadius: '4px',
                                 border: colorScheme === 'dark' ? `1px solid ${theme.colors.gray[8]}` : `1px solid ${theme.colors.gray[3]}`,
-                                opacity: 0.3,
-                                minHeight: '42px'
+                                opacity: debugMode ? 0.6 : 0.3,
+                                minHeight: '42px',
+                                cursor: debugMode ? 'pointer' : 'default',
+                                transition: 'all 0.2s ease',
+                                ...(debugMode && {
+                                  outline: '2px dashed transparent',
+                                  outlineOffset: '2px'
+                                })
                               }}
-                            />
+                              onClick={() => {
+                                if (debugMode) {
+                                  setSelectedMoveIndex(index);
+                                }
+                              }}
+                              onMouseEnter={(e: React.MouseEvent<HTMLDivElement>) => {
+                                if (debugMode) {
+                                  e.currentTarget.style.opacity = '0.8';
+                                  e.currentTarget.style.outline = '2px dashed var(--mantine-color-yellow-6)';
+                                }
+                              }}
+                              onMouseLeave={(e: React.MouseEvent<HTMLDivElement>) => {
+                                if (debugMode) {
+                                  e.currentTarget.style.opacity = '0.6';
+                                  e.currentTarget.style.outline = '2px dashed transparent';
+                                }
+                              }}
+                            >
+                              {debugMode && (
+                                <Text size="xs" c="dimmed" fs="italic">
+                                  + Add Move
+                                </Text>
+                              )}
+                            </Box>
                           </Grid.Col>
                         );
                       }
@@ -595,10 +624,39 @@ export const PokemonBattleCard: React.FC<PokemonBattleCardProps> = ({
                                 backgroundColor: colorScheme === 'dark' ? theme.colors.dark[6] : theme.colors.gray[0],
                                 borderRadius: '4px',
                                 border: colorScheme === 'dark' ? `1px solid ${theme.colors.gray[8]}` : `1px solid ${theme.colors.gray[3]}`,
-                                opacity: 0.3,
-                                minHeight: '42px'
+                                opacity: debugMode ? 0.6 : 0.3,
+                                minHeight: '42px',
+                                cursor: debugMode ? 'pointer' : 'default',
+                                transition: 'all 0.2s ease',
+                                ...(debugMode && {
+                                  outline: '2px dashed transparent',
+                                  outlineOffset: '2px'
+                                })
                               }}
-                            />
+                              onClick={() => {
+                                if (debugMode) {
+                                  setSelectedMoveIndex(index);
+                                }
+                              }}
+                              onMouseEnter={(e: React.MouseEvent<HTMLDivElement>) => {
+                                if (debugMode) {
+                                  e.currentTarget.style.opacity = '0.8';
+                                  e.currentTarget.style.outline = '2px dashed var(--mantine-color-yellow-6)';
+                                }
+                              }}
+                              onMouseLeave={(e: React.MouseEvent<HTMLDivElement>) => {
+                                if (debugMode) {
+                                  e.currentTarget.style.opacity = '0.6';
+                                  e.currentTarget.style.outline = '2px dashed transparent';
+                                }
+                              }}
+                            >
+                              {debugMode && (
+                                <Text size="xs" c="dimmed" fs="italic">
+                                  + Add Move
+                                </Text>
+                              )}
+                            </Box>
                           </Grid.Col>
                         );
                       }
@@ -612,20 +670,51 @@ export const PokemonBattleCard: React.FC<PokemonBattleCardProps> = ({
                               backgroundColor: colorScheme === 'dark' ? theme.colors.dark[6] : theme.colors.gray[0], 
                               borderRadius: '4px', 
                               border: colorScheme === 'dark' ? `1px solid ${theme.colors.gray[8]}` : `1px solid ${theme.colors.gray[3]}`,
-                              cursor: 'pointer',
+                              cursor: debugMode ? 'pointer' : 'default',
                               transition: 'all 0.2s ease',
-                              minHeight: '42px'
+                              minHeight: '42px',
+                              position: 'relative',
+                              ...(debugMode && {
+                                outline: '2px dashed transparent',
+                                outlineOffset: '2px'
+                              })
+                            }}
+                            onClick={() => {
+                              if (debugMode) {
+                                setSelectedMoveIndex(index);
+                              }
                             }}
                             onMouseEnter={(e: React.MouseEvent<HTMLDivElement>) => {
                               e.currentTarget.style.transform = 'scale(1.02)';
                               e.currentTarget.style.boxShadow = 'var(--mantine-shadow-sm)';
+                              if (debugMode) {
+                                e.currentTarget.style.outline = '2px dashed var(--mantine-color-yellow-6)';
+                              }
                             }}
                             onMouseLeave={(e: React.MouseEvent<HTMLDivElement>) => {
                               e.currentTarget.style.transform = 'scale(1)';
                               e.currentTarget.style.boxShadow = 'none';
+                              if (debugMode) {
+                                e.currentTarget.style.outline = '2px dashed transparent';
+                              }
                             }}
                           >
                             <Text size="sm" fw={600} tt="capitalize">{move}</Text>
+                            {debugMode && (
+                              <Badge
+                                size="xs"
+                                color="yellow"
+                                variant="filled"
+                                style={{
+                                  position: 'absolute',
+                                  top: -8,
+                                  right: -8,
+                                  fontSize: '10px'
+                                }}
+                              >
+                                EDIT
+                              </Badge>
+                            )}
                           </Box>
                         </Grid.Col>
                       );

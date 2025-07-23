@@ -263,10 +263,10 @@ class PokemonService {
     }
   }
 
-  async getAvailableMovesForPokemon(pokemonId: number, generation: number, level: number): Promise<any[]> {
+  async getAvailableMovesForPokemon(pokemonId: number, generation: number, level: number, debugMode: boolean = false): Promise<any[]> {
     try {
       // Use Pokemon Showdown service to get all available moves for this Pokemon
-      const availableMoves = await pokemonShowdownService.getAvailableMovesForPokemon(pokemonId, generation, level);
+      const availableMoves = await pokemonShowdownService.getAvailableMovesForPokemon(pokemonId, generation, level, debugMode);
       return availableMoves;
     } catch (error) {
       logger.error('Failed to get available moves:', error);
@@ -279,18 +279,46 @@ class PokemonService {
       // Check if the Pokemon is one of the stored instances
       if (pokemonInstanceStore.pokemonInstance1 && pokemonInstanceStore.pokemonInstance1.id === pokemonId) {
         // Update Pokemon 1
-        pokemonInstanceStore.pokemonInstance1.moves[moveIndex] = newMove.name;
-        if (pokemonInstanceStore.pokemonInstance1.moveDetails) {
-          pokemonInstanceStore.pokemonInstance1.moveDetails[moveIndex] = newMove;
+        if (newMove.id === 'none' || newMove.name === '(No Move)') {
+          // Remove the move by setting to empty string
+          pokemonInstanceStore.pokemonInstance1.moves[moveIndex] = '';
+          // For moveDetails, we need to filter out the removed move and rebuild the array
+          if (pokemonInstanceStore.pokemonInstance1.moveDetails) {
+            const newMoveDetails = [...pokemonInstanceStore.pokemonInstance1.moveDetails];
+            // Remove the move at the specified index
+            newMoveDetails.splice(moveIndex, 1);
+            // Rebuild the array maintaining the correct length
+            pokemonInstanceStore.pokemonInstance1.moveDetails = newMoveDetails;
+          }
+          logger.info(`Removed move ${moveIndex} for Pokemon 1 (${pokemonId})`);
+        } else {
+          pokemonInstanceStore.pokemonInstance1.moves[moveIndex] = newMove.name;
+          if (pokemonInstanceStore.pokemonInstance1.moveDetails) {
+            pokemonInstanceStore.pokemonInstance1.moveDetails[moveIndex] = newMove;
+          }
+          logger.info(`Updated move ${moveIndex} for Pokemon 1 (${pokemonId}) to ${newMove.name}`);
         }
-        logger.info(`Updated move ${moveIndex} for Pokemon 1 (${pokemonId}) to ${newMove.name}`);
       } else if (pokemonInstanceStore.pokemonInstance2 && pokemonInstanceStore.pokemonInstance2.id === pokemonId) {
         // Update Pokemon 2
-        pokemonInstanceStore.pokemonInstance2.moves[moveIndex] = newMove.name;
-        if (pokemonInstanceStore.pokemonInstance2.moveDetails) {
-          pokemonInstanceStore.pokemonInstance2.moveDetails[moveIndex] = newMove;
+        if (newMove.id === 'none' || newMove.name === '(No Move)') {
+          // Remove the move by setting to empty string
+          pokemonInstanceStore.pokemonInstance2.moves[moveIndex] = '';
+          // For moveDetails, we need to filter out the removed move and rebuild the array
+          if (pokemonInstanceStore.pokemonInstance2.moveDetails) {
+            const newMoveDetails = [...pokemonInstanceStore.pokemonInstance2.moveDetails];
+            // Remove the move at the specified index
+            newMoveDetails.splice(moveIndex, 1);
+            // Rebuild the array maintaining the correct length
+            pokemonInstanceStore.pokemonInstance2.moveDetails = newMoveDetails;
+          }
+          logger.info(`Removed move ${moveIndex} for Pokemon 2 (${pokemonId})`);
+        } else {
+          pokemonInstanceStore.pokemonInstance2.moves[moveIndex] = newMove.name;
+          if (pokemonInstanceStore.pokemonInstance2.moveDetails) {
+            pokemonInstanceStore.pokemonInstance2.moveDetails[moveIndex] = newMove;
+          }
+          logger.info(`Updated move ${moveIndex} for Pokemon 2 (${pokemonId}) to ${newMove.name}`);
         }
-        logger.info(`Updated move ${moveIndex} for Pokemon 2 (${pokemonId}) to ${newMove.name}`);
       } else {
         logger.warn(`Pokemon instance ${pokemonId} not found in store`);
       }

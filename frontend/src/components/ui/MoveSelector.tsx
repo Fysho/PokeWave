@@ -13,7 +13,6 @@ import {
   useMantineColorScheme
 } from '@mantine/core';
 import { IconSearch, IconX } from '@tabler/icons-react';
-import { getTypeColor, getCategoryIcon } from '../../utils/typeColors';
 
 interface Move {
   id: string;
@@ -97,93 +96,88 @@ const MoveSelector: React.FC<MoveSelectorProps> = ({
 
         <ScrollArea h={400}>
           <Stack gap="xs">
+            {/* Remove Move option - always show at top when no search term or when searching "remove" */}
+            {(searchTerm === '' || 'remove move'.includes(searchTerm.toLowerCase())) && (
+              <Box
+                p="sm"
+                style={{
+                  backgroundColor: colorScheme === 'dark' 
+                    ? theme.colors.dark[5] 
+                    : theme.colors.gray[2],
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  border: `2px solid ${colorScheme === 'dark' ? theme.colors.dark[4] : theme.colors.gray[3]}`,
+                }}
+                onClick={() => handleSelectMove({ 
+                  id: 'none', 
+                  name: '(No Move)', 
+                  type: 'normal', 
+                  category: 'status' as const, 
+                  power: null, 
+                  accuracy: null, 
+                  pp: 0 
+                })}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = colorScheme === 'dark' 
+                    ? theme.colors.dark[4] 
+                    : theme.colors.gray[3];
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = colorScheme === 'dark' 
+                    ? theme.colors.dark[5] 
+                    : theme.colors.gray[2];
+                }}
+              >
+                <Group justify="space-between" align="center">
+                  <Text size="sm" c="dimmed" fs="italic">
+                    Remove Move
+                  </Text>
+                  <Badge size="xs" color="red" variant="light">
+                    Clear Slot
+                  </Badge>
+                </Group>
+              </Box>
+            )}
+            
             {filteredMoves.map((move) => {
-              const typeColor = getTypeColor(move.type);
-              const bgOpacity = colorScheme === 'dark' ? '20' : '15';
-              const borderOpacity = colorScheme === 'dark' ? '80' : '60';
               const isCurrentMove = move.name === currentMove;
 
               return (
                 <Box
                   key={move.id}
-                  p="md"
+                  p="sm"
                   style={{
                     backgroundColor: isCurrentMove 
-                      ? `${typeColor}30`
-                      : `${typeColor}${bgOpacity}`,
-                    borderRadius: '8px',
-                    border: `2px solid ${isCurrentMove ? typeColor : `${typeColor}${borderOpacity}`}`,
+                      ? (colorScheme === 'dark' ? theme.colors.dark[5] : theme.colors.gray[2])
+                      : 'transparent',
+                    borderRadius: '4px',
                     cursor: 'pointer',
                     transition: 'all 0.2s ease',
                   }}
                   onClick={() => handleSelectMove(move)}
                   onMouseEnter={(e) => {
                     if (!isCurrentMove) {
-                      e.currentTarget.style.backgroundColor = `${typeColor}30`;
-                      e.currentTarget.style.borderColor = typeColor;
+                      e.currentTarget.style.backgroundColor = colorScheme === 'dark' 
+                        ? theme.colors.dark[6] 
+                        : theme.colors.gray[1];
                     }
                   }}
                   onMouseLeave={(e) => {
                     if (!isCurrentMove) {
-                      e.currentTarget.style.backgroundColor = `${typeColor}${bgOpacity}`;
-                      e.currentTarget.style.borderColor = `${typeColor}${borderOpacity}`;
+                      e.currentTarget.style.backgroundColor = 'transparent';
                     }
                   }}
                 >
-                  <Group justify="space-between" align="flex-start">
-                    <Box style={{ flex: 1 }}>
-                      <Group gap="sm" mb={4}>
-                        <Text fw={600} size="md" tt="capitalize">
-                          {move.name}
-                        </Text>
-                        {isCurrentMove && (
-                          <Badge size="sm" color="blue" variant="filled">
-                            Current
-                          </Badge>
-                        )}
-                      </Group>
-                      
-                      <Group gap="xs" mb={8}>
-                        <Badge
-                          size="sm"
-                          variant="filled"
-                          color={getTypeColor(move.type)}
-                          tt="capitalize"
-                        >
-                          {move.type}
-                        </Badge>
-                        <Badge
-                          size="sm"
-                          variant="light"
-                          color="gray"
-                          leftSection={getCategoryIcon(move.category)}
-                        >
-                          {move.category}
-                        </Badge>
-                      </Group>
-
-                      <Group gap="lg">
-                        {move.power !== null && (
-                          <Text size="sm">
-                            <Text span fw={500}>Power:</Text> {move.power}
-                          </Text>
-                        )}
-                        {move.accuracy !== null && (
-                          <Text size="sm">
-                            <Text span fw={500}>Accuracy:</Text> {move.accuracy}%
-                          </Text>
-                        )}
-                        <Text size="sm">
-                          <Text span fw={500}>PP:</Text> {move.pp}
-                        </Text>
-                      </Group>
-
-                      {move.description && (
-                        <Text size="xs" c="dimmed" mt={8}>
-                          {move.description}
-                        </Text>
-                      )}
-                    </Box>
+                  <Group justify="space-between" align="center">
+                    <Text size="sm" fw={isCurrentMove ? 600 : 400}>
+                      {move.name}
+                    </Text>
+                    {isCurrentMove && (
+                      <Badge size="xs" color="blue" variant="light">
+                        Current
+                      </Badge>
+                    )}
                   </Group>
                 </Box>
               );

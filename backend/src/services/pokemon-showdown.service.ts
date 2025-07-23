@@ -1509,11 +1509,51 @@ class PokemonShowdownService {
     }
   }
 
-  async getAvailableMovesForPokemon(pokemonId: number, generation: number, level: number): Promise<any[]> {
+  async getAvailableMovesForPokemon(pokemonId: number, generation: number, level: number, debugMode: boolean = false): Promise<any[]> {
     try {
       const dex = Dex.forGen(generation);
       
-      // Get Pokemon species
+      // In debug mode, return ALL moves available in the generation
+      if (debugMode) {
+        const allMoves = dex.moves.all();
+        const moveMap = new Map<string, any>();
+        
+        // Use a Map to ensure unique move IDs
+        allMoves
+          .filter(move => {
+            // Filter out non-damaging moves with no effect
+            if (!move.exists) return false;
+            // Filter out Z-moves, Max moves, and G-Max moves
+            if (move.isZ || move.isMax || move.name.startsWith('G-Max')) return false;
+            // Make sure the move exists in the current generation
+            if (move.gen && move.gen > generation) return false;
+            return true;
+          })
+          .forEach(move => {
+            // Only add if we haven't seen this ID before (prevents duplicates like Hidden Power variants)
+            if (!moveMap.has(move.id)) {
+              moveMap.set(move.id, {
+                id: move.id,
+                name: this.formatMoveName(move.name),
+                type: move.type.toLowerCase(),
+                category: move.category.toLowerCase() as 'physical' | 'special' | 'status',
+                power: move.basePower || null,
+                accuracy: move.accuracy === true ? null : move.accuracy,
+                pp: move.pp || 10,
+                description: move.desc || move.shortDesc || ''
+              });
+            }
+          });
+        
+        // Convert map values to array and sort
+        const availableMoves = Array.from(moveMap.values());
+        availableMoves.sort((a, b) => a.name.localeCompare(b.name));
+        
+        logger.info(`Returning ${availableMoves.length} total moves for debug mode in gen ${generation}`);
+        return availableMoves;
+      }
+      
+      // Regular mode - only moves the Pokemon can learn
       const species = this.getSpeciesById(dex, pokemonId);
       if (!species) {
         throw new ApiError(400, `Pokemon with ID ${pokemonId} not found`);

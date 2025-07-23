@@ -151,12 +151,13 @@ export const getAvailableMovesForPokemon = async (
     const id = parseInt(req.params.id);
     const generation = req.query.generation ? parseInt(req.query.generation as string) : 9;
     const level = req.query.level ? parseInt(req.query.level as string) : 50;
+    const debugMode = req.query.debugMode === 'true';
     
     if (isNaN(id) || id < 1 || id > 1025) {
       throw new ApiError(400, 'Invalid Pokemon ID');
     }
 
-    const availableMoves = await pokemonService.getAvailableMovesForPokemon(id, generation, level);
+    const availableMoves = await pokemonService.getAvailableMovesForPokemon(id, generation, level, debugMode);
     res.json({ moves: availableMoves });
   } catch (error) {
     next(error);

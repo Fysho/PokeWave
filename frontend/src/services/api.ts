@@ -412,3 +412,4 @@ export class ApiService {
 }
 
 export default ApiService;
+export { api };
