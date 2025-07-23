@@ -1,7 +1,9 @@
 import { Request, Response, NextFunction } from 'express';
 import { ApiError } from '../middleware/error.middleware';
-import { userService } from '../services/user.service';
+import { getUserService } from '../services/service-factory';
 import logger from '../utils/logger';
+
+const userService = getUserService();
 
 interface AuthRequest extends Request {
   user?: {

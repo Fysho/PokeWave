@@ -1,7 +1,9 @@
 import { Request, Response, NextFunction } from 'express';
 import { ApiError } from '../middleware/error.middleware';
-import { leaderboardService } from '../services/leaderboard.service';
+import { getLeaderboardService } from '../services/service-factory';
 import logger from '../utils/logger';
+
+const leaderboardService = getLeaderboardService();
 
 interface AuthRequest extends Request {
   user?: {

@@ -11,20 +11,41 @@ services:
     command: redis-server --appendonly yes
     restart: unless-stopped
 
-  # PostgreSQL for future use
+  # PostgreSQL database
   postgres:
-    image: postgres:15-alpine
-    container_name: pokewave-db
+    image: postgres:16-alpine
+    container_name: pokewave-postgres
     environment:
       POSTGRES_USER: pokewave
       POSTGRES_PASSWORD: pokewave_password
-      POSTGRES_DB: pokewave
+      POSTGRES_DB: pokewave_db
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pokewave -d pokewave_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # pgAdmin for database management (optional)
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: pokewave-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@pokewave.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    depends_on:
+      - postgres
+    restart: unless-stopped
 
 volumes:
   redis_data:
   postgres_data:
+  pgadmin_data:

@@ -1,0 +1,102 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User model - stores authentication and profile data
+model User {
+  id                String    @id @default(uuid())
+  username          String    @unique
+  password          String
+  avatarPokemonId   Int       @default(25) // Default to Pikachu
+  avatarSprite      String    @default("https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/25.png")
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  // Relations
+  pokedex           Pokedex?
+  gameStats         GameStats?
+  endlessScores     EndlessScore[]
+  dailyChallengeScores DailyChallengeScore[]
+
+  @@index([username])
+}
+
+// Pokedex model - tracks unlocked Pokemon for each user
+model Pokedex {
+  id                   String   @id @default(uuid())
+  userId               String   @unique
+  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // Arrays to store unlocked Pokemon IDs
+  unlockedPokemon      Int[]    @default([])
+  unlockedShinyPokemon Int[]    @default([])
+  
+  // JSON fields for counts (stored as {pokemonId: count})
+  pokemonCounts        Json     @default("{}")
+  shinyPokemonCounts   Json     @default("{}")
+  
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  @@index([userId])
+}
+
+// GameStats model - tracks overall game statistics
+model GameStats {
+  id                   String   @id @default(uuid())
+  userId               String   @unique
+  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  totalBattles         Int      @default(0)
+  totalCorrectGuesses  Int      @default(0)
+  highestStreak        Int      @default(0)
+  endlessHighScore     Int      @default(0)
+  
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  @@index([userId])
+}
+
+// EndlessScore model - stores individual endless mode runs
+model EndlessScore {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  score       Int
+  timestamp   DateTime @default(now())
+
+  @@index([userId])
+  @@index([score(sort: Desc)])
+}
+
+// DailyChallengeScore model - stores daily challenge attempts
+model DailyChallengeScore {
+  id            String   @id @default(uuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  challengeDate DateTime @db.Date
+  score         Int      // Lower is better for daily challenges
+  attempts      Int      @default(1)
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([userId, challengeDate])
+  @@index([userId])
+  @@index([challengeDate])
+  @@index([score])
+}

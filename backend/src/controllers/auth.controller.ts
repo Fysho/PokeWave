@@ -2,8 +2,10 @@ import { Request, Response, NextFunction } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { ApiError } from '../middleware/error.middleware';
-import { userService } from '../services/user.service';
+import { getUserService } from '../services/service-factory';
 import logger from '../utils/logger';
+
+const userService = getUserService();
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-this-in-production';
 const JWT_EXPIRES_IN = '7d';

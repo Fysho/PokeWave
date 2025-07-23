@@ -5,7 +5,9 @@ import {showdownService} from "../services/showdown.service";
 import { battleCacheService } from '../services/battle-cache.service';
 import { pokemonInstanceStore } from '../services/pokemon-instance-store.service';
 import { battleStatsService } from '../services/battle-stats.service';
-import { userService } from '../services/user.service';
+import { getUserService } from '../services/service-factory';
+
+const userService = getUserService();
 import logger from "../utils/logger";
 
 interface AuthRequest extends Request {

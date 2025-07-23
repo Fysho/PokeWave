@@ -10,6 +10,7 @@ import { pokemonItemStoreService } from './services/pokemon-item-store.service';
 import { pokemonAbilityStoreService } from './services/pokemon-ability-store.service';
 import { dailyChallengeService } from './services/daily-challenge.service';
 import { battleCacheService } from './services/battle-cache.service';
+import { initializeServices, shutdownServices } from './services/service-factory';
 
 // Load environment variables
 dotenv.config();
@@ -44,6 +45,14 @@ app.use(errorMiddleware);
 const PORT = process.env.PORT || 4000;
 const server = app.listen(PORT, async () => {
   logger.info(`Server running on port ${PORT}`);
+  
+  // Initialize services (database connection if enabled)
+  try {
+    await initializeServices();
+  } catch (error) {
+    logger.error('Failed to initialize services:', error);
+    // Continue anyway - will use in-memory storage
+  }
   
   // Initialize Pokemon stores
   logger.info('Initializing Pokemon data stores...');
@@ -84,10 +93,26 @@ const server = app.listen(PORT, async () => {
 });
 
 // Graceful shutdown
-process.on('SIGTERM', () => {
+process.on('SIGTERM', async () => {
   logger.info('SIGTERM signal received: closing HTTP server');
+  
+  // Shutdown services (database connection if enabled)
+  await shutdownServices();
+  
   server.close(() => {
     logger.info('HTTP server closed');
+  });
+});
+
+process.on('SIGINT', async () => {
+  logger.info('SIGINT signal received: closing HTTP server');
+  
+  // Shutdown services (database connection if enabled)
+  await shutdownServices();
+  
+  server.close(() => {
+    logger.info('HTTP server closed');
+    process.exit(0);
   });
 });
 

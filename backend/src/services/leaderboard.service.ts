@@ -1,6 +1,8 @@
 import { v4 as uuidv4 } from 'uuid';
 import logger from '../utils/logger';
-import { userService } from './user.service';
+import { getUserService } from './service-factory';
+
+const userService = getUserService();
 
 interface LeaderboardEntry {
   id: string;
