@@ -117,13 +117,26 @@ const LeftSidePanel: React.FC<LeftSidePanelProps> = ({
                     padding: '8px 12px',
                     borderRadius: '8px',
                     backgroundColor: activeSection === 'settings' ? 
-                      (colorScheme === 'dark' ? theme.colors.blue[9] : theme.colors.blue[0]) : 
+                      (colorScheme === 'dark' ? 'rgba(51, 154, 240, 0.15)' : theme.colors.blue[0]) : 
                       'transparent',
                     transition: 'background-color 0.2s'
                   }}
                 >
-                  <IconSettings size={20} color={activeSection === 'settings' ? theme.colors.blue[6] : theme.colors.gray[6]} />
-                  <Text size="sm" fw={activeSection === 'settings' ? 600 : 400} c={activeSection === 'settings' ? 'blue.6' : undefined}>
+                  <IconSettings 
+                    size={20} 
+                    color={activeSection === 'settings' ? 
+                      (colorScheme === 'dark' ? theme.colors.blue[4] : theme.colors.blue[6]) : 
+                      theme.colors.gray[6]
+                    } 
+                  />
+                  <Text 
+                    size="sm" 
+                    fw={activeSection === 'settings' ? 600 : 400} 
+                    c={activeSection === 'settings' ? 
+                      (colorScheme === 'dark' ? 'blue.4' : 'blue.6') : 
+                      undefined
+                    }
+                  >
                     Battle Settings
                   </Text>
                 </Group>
@@ -134,13 +147,26 @@ const LeftSidePanel: React.FC<LeftSidePanelProps> = ({
                     padding: '8px 12px',
                     borderRadius: '8px',
                     backgroundColor: activeSection === 'tester' ? 
-                      (colorScheme === 'dark' ? theme.colors.grape[9] : theme.colors.grape[0]) : 
+                      (colorScheme === 'dark' ? 'rgba(190, 100, 255, 0.15)' : theme.colors.grape[0]) : 
                       'transparent',
                     transition: 'background-color 0.2s'
                   }}
                 >
-                  <IconSwords size={20} color={activeSection === 'tester' ? theme.colors.grape[6] : theme.colors.gray[6]} />
-                  <Text size="sm" fw={activeSection === 'tester' ? 600 : 400} c={activeSection === 'tester' ? 'grape.6' : undefined}>
+                  <IconSwords 
+                    size={20} 
+                    color={activeSection === 'tester' ? 
+                      (colorScheme === 'dark' ? theme.colors.grape[4] : theme.colors.grape[6]) : 
+                      theme.colors.gray[6]
+                    } 
+                  />
+                  <Text 
+                    size="sm" 
+                    fw={activeSection === 'tester' ? 600 : 400} 
+                    c={activeSection === 'tester' ? 
+                      (colorScheme === 'dark' ? 'grape.4' : 'grape.6') : 
+                      undefined
+                    }
+                  >
                     Battle Tester
                   </Text>
                 </Group>
