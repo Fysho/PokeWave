@@ -844,8 +844,14 @@ class PokemonShowdownService {
                 if (parts.length >= 5 && damage > 0) {
                   const source = parts[4];
                   
+                  // Log the source for debugging recoil
+                  if (source && source.toLowerCase().includes('recoil')) {
+                    logger.info(`Battle Tester: Recoil damage detected - source: "${source}"`);
+                  }
+                  
                   // Create a special turn entry for status/confusion damage
-                  if (source && (source.includes('[from]') || source.includes('confusion'))) {
+                  // Check for recoil first since it might not have [from]
+                  if (source && (source.includes('[from]') || source.includes('confusion') || source.toLowerCase().includes('recoil'))) {
                     let damageType = 'unknown';
                     
                     if (source.includes('confusion')) {
@@ -858,10 +864,15 @@ class PokemonShowdownService {
                       damageType = 'sandstorm';
                     } else if (source.includes('hail')) {
                       damageType = 'hail';
-                    } else if (source.includes('recoil')) {
+                    } else if (source.toLowerCase().includes('recoil')) {
                       damageType = 'recoil';
                     } else if (source.includes('Life Orb')) {
                       damageType = 'Life Orb';
+                    }
+                    
+                    // Log when we have unknown damage type
+                    if (damageType === 'unknown') {
+                      logger.warn(`Battle Tester: Unknown damage type - source: "${source}"`);
                     }
                     
                     turnEvents.push({
