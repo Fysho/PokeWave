@@ -228,6 +228,20 @@ class BattleCacheService {
       battles: battleIds
     };
   }
+
+  /**
+   * Get a specific cached battle by ID
+   */
+  async getCachedBattle(battleId: string): Promise<CachedBattle | null> {
+    try {
+      const cacheKey = `${this.CACHE_PREFIX}${battleId}`;
+      const cachedBattle = await cacheService.get<CachedBattle>(cacheKey);
+      return cachedBattle;
+    } catch (error) {
+      logger.error(`Failed to get cached battle ${battleId}:`, error);
+      return null;
+    }
+  }
 }
 
 export const battleCacheService = new BattleCacheService();
