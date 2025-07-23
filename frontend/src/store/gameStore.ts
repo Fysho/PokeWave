@@ -197,7 +197,12 @@ export const useGameStore = create<GameStore>()(
           
           try {
             // Get random Pokemon instances (not from cache)
-            const battleData = await ApiService.getRandomPokemonWithInstances(battleSettings);
+            const battleData = await ApiService.getRandomPokemonWithInstances({
+              generation: battleSettings?.generation,
+              levelMode: battleSettings?.levelMode === 'set' ? 'fixed' : 'random',
+              level: battleSettings?.levelMode === 'set' ? battleSettings?.setLevel : undefined,
+              itemMode: battleSettings?.withItems ? 'random' : 'none'
+            });
             
             // Simulate test battle
             const battleResult = await ApiService.simulateTestBattle(
