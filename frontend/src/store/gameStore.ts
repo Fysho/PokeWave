@@ -44,6 +44,14 @@ interface GameStore extends GameState {
     movesetType?: 'random' | 'competitive';
     aiDifficulty?: 'random' | 'elite';
   }) => Promise<void>;
+  generateTestBattle: (battleSettings?: {
+    levelMode?: 'random' | 'set';
+    setLevel?: number;
+    generation?: number;
+    withItems?: boolean;
+    movesetType?: 'random' | 'competitive';
+    aiDifficulty?: 'random' | 'elite';
+  }) => Promise<void>;
   submitGuess: (guessPercentage: number, guessRange?: [number, number]) => Promise<any>;
   resetGame: () => void;
   clearError: () => void;
@@ -170,6 +178,78 @@ export const useGameStore = create<GameStore>()(
             set({ 
               isLoading: false,
               error: apiError.message || 'Failed to generate battle' 
+            });
+          }
+        },
+
+        generateTestBattle: async (battleSettings?: {
+          levelMode?: 'random' | 'set';
+          setLevel?: number;
+          generation?: number;
+          withItems?: boolean;
+          movesetType?: 'random' | 'competitive';
+          aiDifficulty?: 'random' | 'elite';
+        }) => {
+          console.log(`[GameStore] generateTestBattle called at ${new Date().toISOString()}`);
+          console.log('[GameStore] Using settings:', battleSettings);
+          
+          set({ isLoading: true, error: null });
+          
+          try {
+            // Get random Pokemon instances (not from cache)
+            const battleData = await ApiService.getRandomPokemonWithInstances(battleSettings);
+            
+            // Simulate battle
+            const battleResult = await ApiService.simulateBattle(
+              battleData.pokemon1.id,
+              battleData.pokemon2.id,
+              {
+                levelMode: battleSettings?.levelMode,
+                setLevel: battleSettings?.setLevel,
+                generation: battleSettings?.generation,
+                withItems: battleSettings?.withItems,
+                movesetType: battleSettings?.movesetType,
+                aiDifficulty: battleSettings?.aiDifficulty,
+                pokemon1Level: battleData.pokemon1.level,
+                pokemon2Level: battleData.pokemon2.level,
+                pokemon1InstanceId: battleData.pokemon1.instanceId,
+                pokemon2InstanceId: battleData.pokemon2.instanceId
+              }
+            );
+            
+            // Construct the full battle result
+            const enhancedBattleResult: BattleResult = {
+              battleId: battleData.battleId || crypto.randomUUID(),
+              battleInstanceId: battleData.battleInstanceId || crypto.randomUUID(),
+              totalBattles: battleResult.totalBattles,
+              winRate: battleResult.winRate,
+              executionTime: battleResult.executionTime,
+              pokemon1: {
+                ...battleData.pokemon1,
+                wins: battleResult.pokemon1Wins
+              },
+              pokemon2: {
+                ...battleData.pokemon2,
+                wins: battleResult.pokemon2Wins
+              }
+            };
+            
+            // Create Pokemon instances
+            const pokemon1 = Pokemon.fromApiResponse(enhancedBattleResult.pokemon1, enhancedBattleResult.totalBattles);
+            const pokemon2 = Pokemon.fromApiResponse(enhancedBattleResult.pokemon2, enhancedBattleResult.totalBattles);
+            
+            set({ 
+              currentBattle: enhancedBattleResult,
+              currentPokemon1: pokemon1,
+              currentPokemon2: pokemon2,
+              isLoading: false,
+              error: null 
+            });
+          } catch (error) {
+            const apiError = error as ApiError;
+            set({ 
+              isLoading: false,
+              error: apiError.message || 'Failed to generate test battle' 
             });
           }
         },

@@ -135,7 +135,7 @@ const BattleSettingsContent: React.FC<{
   settings: any;
   onSettingsChange: (settings: any) => void;
 }> = ({ isExpanded, settings, onSettingsChange }) => {
-  const { generateNewBattle } = useGameStore();
+  const { generateTestBattle } = useGameStore();
   const [battleCount, setBattleCount] = useState(100);
   const [isGenerating, setIsGenerating] = useState(false);
   
@@ -180,16 +180,16 @@ const BattleSettingsContent: React.FC<{
       <Box p="md" style={{ overflowY: 'auto', height: '100%' }}>
         {/* Content copied from BattleSettings */}
         <Stack gap="lg">
-          {/* Generate New Battle Button */}
+          {/* Generate Test Battle Button */}
           <Button
             fullWidth
             size="md"
             variant="gradient"
             gradient={{ from: 'blue', to: 'grape', deg: 135 }}
             leftSection={<IconSwords size={20} />}
-            onClick={() => generateNewBattle(settings)}
+            onClick={() => generateTestBattle(settings)}
           >
-            Generate New Battle
+            Generate Test Battle
           </Button>
           
           {/* Battle Count for Test Generation */}
