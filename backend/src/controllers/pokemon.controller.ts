@@ -141,3 +141,54 @@ export const getPokemonById = async (
     next(error);
   }
 };
+
+export const getAvailableMovesForPokemon = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const id = parseInt(req.params.id);
+    const generation = req.query.generation ? parseInt(req.query.generation as string) : 9;
+    const level = req.query.level ? parseInt(req.query.level as string) : 50;
+    
+    if (isNaN(id) || id < 1 || id > 1025) {
+      throw new ApiError(400, 'Invalid Pokemon ID');
+    }
+
+    const availableMoves = await pokemonService.getAvailableMovesForPokemon(id, generation, level);
+    res.json({ moves: availableMoves });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const updatePokemonInstanceMove = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const id = parseInt(req.params.id);
+    const { moveIndex, newMove } = req.body;
+    
+    if (isNaN(id) || id < 1 || id > 1025) {
+      throw new ApiError(400, 'Invalid Pokemon ID');
+    }
+
+    if (typeof moveIndex !== 'number' || moveIndex < 0 || moveIndex > 3) {
+      throw new ApiError(400, 'Invalid move index');
+    }
+
+    if (!newMove || !newMove.name || !newMove.id) {
+      throw new ApiError(400, 'Invalid move data');
+    }
+
+    // Update the Pokemon instance in the store
+    await pokemonService.updatePokemonInstanceMove(id, moveIndex, newMove);
+    
+    res.json({ success: true, message: 'Move updated successfully' });
+  } catch (error) {
+    next(error);
+  }
+};

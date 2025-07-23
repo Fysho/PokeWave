@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getRandomPokemon, getRandomPokemonWithInstances, getPokedex, getPokemonById } from '../controllers/pokemon.controller';
+import { getRandomPokemon, getRandomPokemonWithInstances, getPokedex, getPokemonById, getAvailableMovesForPokemon, updatePokemonInstanceMove } from '../controllers/pokemon.controller';
 
 const router = Router();
 
@@ -21,5 +21,11 @@ router.get('/instance-store/status', (req, res) => {
 
 // Get specific Pokemon by ID
 router.get('/:id', getPokemonById);
+
+// Get available moves for a Pokemon
+router.get('/:id/available-moves', getAvailableMovesForPokemon);
+
+// Update Pokemon instance move
+router.post('/:id/update-move', updatePokemonInstanceMove);
 
 export default router;

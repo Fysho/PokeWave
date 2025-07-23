@@ -1508,6 +1508,57 @@ class PokemonShowdownService {
       throw error instanceof ApiError ? error : new ApiError(500, 'Failed to create Pokemon instance');
     }
   }
+
+  async getAvailableMovesForPokemon(pokemonId: number, generation: number, level: number): Promise<any[]> {
+    try {
+      const dex = Dex.forGen(generation);
+      
+      // Get Pokemon species
+      const species = this.getSpeciesById(dex, pokemonId);
+      if (!species) {
+        throw new ApiError(400, `Pokemon with ID ${pokemonId} not found`);
+      }
+
+      // Get all level-up moves for this Pokemon
+      const levelupMoves = await this.getLevelupMoves(species, dex);
+      
+      // Filter moves that the Pokemon can know at the given level
+      const availableMoves = levelupMoves
+        .filter(moveData => moveData.level <= level)
+        .map(moveData => {
+          const move = dex.moves.get(moveData.moveId);
+          return {
+            id: moveData.moveId,
+            name: this.formatMoveName(move.name),
+            type: move.type.toLowerCase(),
+            category: move.category.toLowerCase() as 'physical' | 'special' | 'status',
+            power: move.basePower || null,
+            accuracy: move.accuracy === true ? null : move.accuracy,
+            pp: move.pp || 10,
+            description: move.desc || move.shortDesc || ''
+          };
+        });
+
+      // Sort by level learned (most recent first) and then by name
+      availableMoves.sort((a, b) => {
+        const aMove = levelupMoves.find(m => m.moveId === a.id);
+        const bMove = levelupMoves.find(m => m.moveId === b.id);
+        const levelDiff = (bMove?.level || 0) - (aMove?.level || 0);
+        if (levelDiff !== 0) return levelDiff;
+        return a.name.localeCompare(b.name);
+      });
+
+      return availableMoves;
+    } catch (error) {
+      logger.error('Failed to get available moves for Pokemon:', {
+        pokemonId,
+        generation,
+        level,
+        error: error instanceof Error ? error.message : error
+      });
+      throw error instanceof ApiError ? error : new ApiError(500, 'Failed to get available moves');
+    }
+  }
 }
 
 export const pokemonShowdownService = new PokemonShowdownService();

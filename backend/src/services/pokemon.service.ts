@@ -262,6 +262,43 @@ class PokemonService {
       throw new ApiError(500, 'Failed to create random Pokemon instances');
     }
   }
+
+  async getAvailableMovesForPokemon(pokemonId: number, generation: number, level: number): Promise<any[]> {
+    try {
+      // Use Pokemon Showdown service to get all available moves for this Pokemon
+      const availableMoves = await pokemonShowdownService.getAvailableMovesForPokemon(pokemonId, generation, level);
+      return availableMoves;
+    } catch (error) {
+      logger.error('Failed to get available moves:', error);
+      throw new ApiError(500, 'Failed to get available moves for Pokemon');
+    }
+  }
+
+  async updatePokemonInstanceMove(pokemonId: number, moveIndex: number, newMove: any): Promise<void> {
+    try {
+      // Check if the Pokemon is one of the stored instances
+      if (pokemonInstanceStore.pokemonInstance1 && pokemonInstanceStore.pokemonInstance1.id === pokemonId) {
+        // Update Pokemon 1
+        pokemonInstanceStore.pokemonInstance1.moves[moveIndex] = newMove.name;
+        if (pokemonInstanceStore.pokemonInstance1.moveDetails) {
+          pokemonInstanceStore.pokemonInstance1.moveDetails[moveIndex] = newMove;
+        }
+        logger.info(`Updated move ${moveIndex} for Pokemon 1 (${pokemonId}) to ${newMove.name}`);
+      } else if (pokemonInstanceStore.pokemonInstance2 && pokemonInstanceStore.pokemonInstance2.id === pokemonId) {
+        // Update Pokemon 2
+        pokemonInstanceStore.pokemonInstance2.moves[moveIndex] = newMove.name;
+        if (pokemonInstanceStore.pokemonInstance2.moveDetails) {
+          pokemonInstanceStore.pokemonInstance2.moveDetails[moveIndex] = newMove;
+        }
+        logger.info(`Updated move ${moveIndex} for Pokemon 2 (${pokemonId}) to ${newMove.name}`);
+      } else {
+        logger.warn(`Pokemon instance ${pokemonId} not found in store`);
+      }
+    } catch (error) {
+      logger.error('Failed to update Pokemon move:', error);
+      throw new ApiError(500, 'Failed to update Pokemon move');
+    }
+  }
 }
 
 export const pokemonService = new PokemonService();

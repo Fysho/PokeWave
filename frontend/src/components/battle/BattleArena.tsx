@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, Button, Badge, Slider, Group, Text, Grid, Box, Stack, Title, Center, Loader, useMantineTheme, useMantineColorScheme, Tooltip } from '@mantine/core';
 import { CenterDraggableRangeSlider } from '../ui/CenterDraggableRangeSlider';
 import { TypeColorSlider } from '../ui/TypeColorSlider';
+import MoveSelector from '../ui/MoveSelector';
 import { useGameStore } from '../../store/gameStore';
 import { useSettingsStore } from '../../store/settingsStore';
 import { useEndlessStore } from '../../store/endlessStore';
@@ -10,6 +11,7 @@ import { FadeIn, SlideIn, BounceIn } from '../ui/transitions';
 // import StreakCelebration from '../ui/streak-celebration'; // Disabled to prevent flying text
 import { getTypeColor, getCategoryIcon } from '../../utils/typeColors';
 import { getTypeEffectiveness, formatTypeList } from '../../utils/typeEffectiveness';
+import { api } from '../../services/api';
 import { 
   IconSwords, 
   IconTrophy, 
@@ -31,6 +33,8 @@ interface PokemonBattleCardProps {
   guessRange?: [number, number];
   totalBattles?: number;
   compact?: boolean;
+  debugMode?: boolean;
+  onMoveChange?: (pokemonId: number, moveIndex: number, newMove: any) => void;
 }
 
 export const PokemonBattleCard: React.FC<PokemonBattleCardProps> = ({
@@ -41,10 +45,32 @@ export const PokemonBattleCard: React.FC<PokemonBattleCardProps> = ({
   guessPercentage,
   guessRange,
   totalBattles,
-  compact = false
+  compact = false,
+  debugMode = false,
+  onMoveChange
 }) => {
   const theme = useMantineTheme();
   const { colorScheme } = useMantineColorScheme();
+  const [selectedMoveIndex, setSelectedMoveIndex] = useState<number | null>(null);
+  const [availableMoves, setAvailableMoves] = useState<any[]>([]);
+  
+  // Fetch available moves when in debug mode
+  useEffect(() => {
+    if (debugMode && pokemon?.id) {
+      const fetchAvailableMoves = async () => {
+        try {
+          const response = await api.get(`/pokemon/${pokemon.id}/available-moves?generation=${pokemon.generation || 9}&level=${pokemon.level || 50}`);
+          setAvailableMoves(response.data.moves || []);
+        } catch (error) {
+          console.error('Failed to fetch available moves:', error);
+          // Fallback to showing current moves
+          setAvailableMoves(pokemon.moveDetails || []);
+        }
+      };
+      
+      fetchAvailableMoves();
+    }
+  }, [debugMode, pokemon?.id, pokemon?.generation, pokemon?.level]);
   
   const badgeStyle = {
     minWidth: '120px',
@@ -499,24 +525,55 @@ export const PokemonBattleCard: React.FC<PokemonBattleCardProps> = ({
                                 backgroundColor: `${typeColor}${bgOpacity}`,
                                 borderRadius: '4px', 
                                 border: `1px solid ${typeColor}${borderOpacity}`,
-                                cursor: 'pointer',
+                                cursor: debugMode ? 'pointer' : 'default',
                                 transition: 'all 0.2s ease',
-                                minHeight: '42px'
+                                minHeight: '42px',
+                                position: 'relative',
+                                ...(debugMode && {
+                                  outline: '2px dashed transparent',
+                                  outlineOffset: '2px'
+                                })
+                              }}
+                              onClick={() => {
+                                if (debugMode) {
+                                  setSelectedMoveIndex(index);
+                                }
                               }}
                               onMouseEnter={(e: React.MouseEvent<HTMLDivElement>) => {
                                 e.currentTarget.style.transform = 'scale(1.02)';
                                 e.currentTarget.style.boxShadow = 'var(--mantine-shadow-sm)';
                                 e.currentTarget.style.backgroundColor = `${typeColor}30`; // 30% opacity on hover
+                                if (debugMode) {
+                                  e.currentTarget.style.outline = '2px dashed var(--mantine-color-yellow-6)';
+                                }
                               }}
                               onMouseLeave={(e: React.MouseEvent<HTMLDivElement>) => {
                                 e.currentTarget.style.transform = 'scale(1)';
                                 e.currentTarget.style.boxShadow = 'none';
                                 e.currentTarget.style.backgroundColor = `${typeColor}${bgOpacity}`;
+                                if (debugMode) {
+                                  e.currentTarget.style.outline = '2px dashed transparent';
+                                }
                               }}
                             >
                               <Text size="sm" fw={600} tt="capitalize" style={{ color: typeColor }}>
                                 {moveDetail.name}
                               </Text>
+                              {debugMode && (
+                                <Badge
+                                  size="xs"
+                                  color="yellow"
+                                  variant="filled"
+                                  style={{
+                                    position: 'absolute',
+                                    top: -8,
+                                    right: -8,
+                                    fontSize: '10px'
+                                  }}
+                                >
+                                  EDIT
+                                </Badge>
+                              )}
                             </Box>
                           </Tooltip>
                         </Grid.Col>
@@ -636,6 +693,24 @@ export const PokemonBattleCard: React.FC<PokemonBattleCardProps> = ({
           </Stack>
         </Card.Section>
       </Card>
+      
+      {/* Move Selector Modal */}
+      {debugMode && selectedMoveIndex !== null && pokemon.moveDetails && (
+        <MoveSelector
+          opened={selectedMoveIndex !== null}
+          onClose={() => setSelectedMoveIndex(null)}
+          currentMove={pokemon.moveDetails[selectedMoveIndex]?.name || ''}
+          pokemonName={pokemon.name}
+          pokemonId={pokemon.id}
+          onSelectMove={(move) => {
+            if (onMoveChange && selectedMoveIndex !== null) {
+              onMoveChange(pokemon.id, selectedMoveIndex, move);
+            }
+            setSelectedMoveIndex(null);
+          }}
+          availableMoves={availableMoves}
+        />
+      )}
     </SlideIn>
   );
 };
@@ -659,12 +734,31 @@ const BattleArena: React.FC<BattleArenaProps> = ({ hideStats = false }) => {
     generateNewBattle,
     submitGuess,
     clearError,
+    updatePokemonMove,
   } = useGameStore();
   
   const { battleSettings } = useSettingsStore();
   const { isEndlessActive, endlessScore } = useEndlessStore();
 
   const [guessPercentage, setGuessPercentage] = useState<number>(50);
+  
+  // Handler for move changes in debug mode
+  const handleMoveChange = async (pokemonId: number, moveIndex: number, newMove: any) => {
+    try {
+      // Update the move in the store
+      if (updatePokemonMove) {
+        await updatePokemonMove(pokemonId, moveIndex, newMove);
+      }
+      
+      // Also update the backend instance
+      await api.post(`/pokemon/${pokemonId}/update-move`, {
+        moveIndex,
+        newMove
+      });
+    } catch (error) {
+      console.error('Failed to update move:', error);
+    }
+  };
   
   // Calculate range width based on endless score (starts at 50%, shrinks by 1% per score, minimum 20%)
   const calculateRangeWidth = () => {
@@ -868,6 +962,8 @@ const BattleArena: React.FC<BattleArenaProps> = ({ hideStats = false }) => {
                             guessPercentage={!showResults && !isEndlessActive ? guessPercentage : undefined}
                             guessRange={!showResults && isEndlessActive ? guessRange : undefined}
                             totalBattles={currentBattle.totalBattles}
+                            debugMode={battleSettings?.debugMode || false}
+                            onMoveChange={handleMoveChange}
                           />
                         </FadeIn>
                       </Grid.Col>
@@ -915,6 +1011,8 @@ const BattleArena: React.FC<BattleArenaProps> = ({ hideStats = false }) => {
                             guessPercentage={!showResults && !isEndlessActive ? (100 - guessPercentage) : undefined}
                             guessRange={!showResults && isEndlessActive ? [100 - guessRange[1], 100 - guessRange[0]] : undefined}
                             totalBattles={currentBattle.totalBattles}
+                            debugMode={battleSettings?.debugMode || false}
+                            onMoveChange={handleMoveChange}
                           />
                         </FadeIn>
                       </Grid.Col>

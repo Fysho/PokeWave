@@ -51,6 +51,7 @@ interface GameStore extends GameState {
   setError: (error: string | null) => void;
   clearHistory: () => void;
   getBattleHistory: () => BattleHistoryEntry[];
+  updatePokemonMove: (pokemonId: number, moveIndex: number, newMove: any) => Promise<void>;
 }
 
 const initialState: GameState = {
@@ -336,6 +337,35 @@ export const useGameStore = create<GameStore>()(
 
         getBattleHistory: () => {
           return get().battleHistory;
+        },
+        
+        updatePokemonMove: async (pokemonId: number, moveIndex: number, newMove: any) => {
+          const { currentBattle } = get();
+          
+          if (!currentBattle) return;
+          
+          // Update the move in the current battle state
+          const updatedBattle = { ...currentBattle };
+          
+          if (currentBattle.pokemon1.id === pokemonId && currentBattle.pokemon1.moveDetails) {
+            updatedBattle.pokemon1 = {
+              ...currentBattle.pokemon1,
+              moves: [...currentBattle.pokemon1.moves],
+              moveDetails: [...currentBattle.pokemon1.moveDetails]
+            };
+            updatedBattle.pokemon1.moves[moveIndex] = newMove.name;
+            updatedBattle.pokemon1.moveDetails[moveIndex] = newMove;
+          } else if (currentBattle.pokemon2.id === pokemonId && currentBattle.pokemon2.moveDetails) {
+            updatedBattle.pokemon2 = {
+              ...currentBattle.pokemon2,
+              moves: [...currentBattle.pokemon2.moves],
+              moveDetails: [...currentBattle.pokemon2.moveDetails]
+            };
+            updatedBattle.pokemon2.moves[moveIndex] = newMove.name;
+            updatedBattle.pokemon2.moveDetails[moveIndex] = newMove;
+          }
+          
+          set({ currentBattle: updatedBattle });
         },
       }),
       {

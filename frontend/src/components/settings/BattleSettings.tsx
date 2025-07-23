@@ -22,7 +22,8 @@ import {
   IconDice,
   IconEqual,
   IconPokeball,
-  IconPackage
+  IconPackage,
+  IconBug
 } from '@tabler/icons-react';
 
 interface BattleSettingsProps {
@@ -33,6 +34,7 @@ interface BattleSettingsProps {
     setLevel: number;
     generation: number;
     withItems: boolean;
+    debugMode?: boolean;
   };
   onSettingsChange: (settings: any) => void;
 }
@@ -70,6 +72,13 @@ const BattleSettings: React.FC<BattleSettingsProps> = ({
     onSettingsChange({
       ...settings,
       withItems: checked
+    });
+  };
+
+  const handleDebugModeChange = (checked: boolean) => {
+    onSettingsChange({
+      ...settings,
+      debugMode: checked
     });
   };
 
@@ -240,6 +249,39 @@ const BattleSettings: React.FC<BattleSettingsProps> = ({
                     {settings.withItems 
                       ? 'Pokemon will hold competitive items like Choice Band, Leftovers, etc.' 
                       : 'Pokemon will not hold any items'
+                    }
+                  </Text>
+                </Stack>
+              </Card>
+
+              {/* Debug Mode Settings */}
+              <Card withBorder p="md">
+                <Stack gap="md">
+                  <Group gap="sm">
+                    <IconBug size={18} color="var(--mantine-color-yellow-6)" />
+                    <Text fw={600} size="sm">
+                      Debug Mode
+                    </Text>
+                  </Group>
+                  
+                  <Switch
+                    label={
+                      <Group gap="xs">
+                        <IconBug size={16} color={settings.debugMode ? 'var(--mantine-color-yellow-6)' : 'var(--mantine-color-gray-6)'} />
+                        <Text size="sm">
+                          Enable Debug Mode
+                        </Text>
+                      </Group>
+                    }
+                    checked={settings.debugMode || false}
+                    onChange={(event) => handleDebugModeChange(event.currentTarget.checked)}
+                    color="yellow"
+                  />
+                  
+                  <Text size="xs" c="dimmed" mt={-8}>
+                    {settings.debugMode 
+                      ? 'Click on moves to manually select and change them' 
+                      : 'Enable to manually edit Pokemon moves for testing'
                     }
                   </Text>
                 </Stack>
