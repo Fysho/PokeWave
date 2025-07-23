@@ -1206,6 +1206,40 @@ const BattleArena: React.FC<BattleArenaProps> = ({ hideStats = false }) => {
                     </Card>
                   </Box>
 
+                  {/* Battle Statistics - Show after guess */}
+                  {showResults && guessResult?.battleStats && (
+                    <Box maw={800} mx="auto" mt="md">
+                      <Card withBorder p="md" shadow="sm">
+                        <Group justify="space-between" align="center">
+                          <Stack gap="xs">
+                            <Text size="sm" fw={600} c="dimmed">Community Battle Stats</Text>
+                            <Group gap="xl">
+                              <Stack gap={4}>
+                                <Text size="xs" c="dimmed">Total Attempts</Text>
+                                <Text size="lg" fw={700}>{guessResult.battleStats.totalAttempts}</Text>
+                              </Stack>
+                              <Stack gap={4}>
+                                <Text size="xs" c="dimmed">Success Rate</Text>
+                                <Text size="lg" fw={700} c={guessResult.battleStats.successRate >= 50 ? 'green' : 'red'}>
+                                  {guessResult.battleStats.successRate}%
+                                </Text>
+                              </Stack>
+                              <Stack gap={4}>
+                                <Text size="xs" c="dimmed">Successful Guesses</Text>
+                                <Text size="lg" fw={700}>{guessResult.battleStats.successfulAttempts}</Text>
+                              </Stack>
+                            </Group>
+                          </Stack>
+                          {guessResult.isCorrect && (
+                            <Badge size="lg" variant="filled" color="green">
+                              You got it right! 🎉
+                            </Badge>
+                          )}
+                        </Group>
+                      </Card>
+                    </Box>
+                  )}
+
                   {/* Action Buttons */}
                   <Center>
                     <Stack gap="lg">

@@ -185,13 +185,16 @@ export const useGameStore = create<GameStore>()(
           set({ isLoading: true, error: null });
 
           try {
-            // Calculate the actual win rate from the battle results
+            // Get the actual win rate from the battle results
             const actualWinRate = currentBattle.winRate;
             
-            // Evaluate the guess locally - use range evaluation if range is provided
-            const guessResult = guessRange 
-              ? evaluateRangeGuess(guessRange, actualWinRate)
-              : evaluateGuess(guessPercentage, actualWinRate);
+            // Submit guess to backend for evaluation and stats tracking
+            const guessResult = await ApiService.submitGuess(
+              currentBattle.battleId,
+              guessPercentage,
+              actualWinRate,
+              guessRange
+            );
 
             const newTotalGuesses = totalGuesses + 1;
             const newCorrectGuesses = guessResult.isCorrect ? correctGuesses + 1 : correctGuesses;

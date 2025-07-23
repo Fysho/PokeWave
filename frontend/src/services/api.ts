@@ -200,9 +200,14 @@ export class ApiService {
   }
 
   // Submit guess for battle outcome
-  static async submitGuess(guessData: GuessSubmission): Promise<GuessResult> {
+  static async submitGuess(battleId: string, guessPercentage: number, actualWinRate: number, guessRange?: [number, number]): Promise<any> {
     try {
-      const response = await api.post<GuessResult>('/battle/guess', guessData);
+      const response = await api.post('/battle/guess', {
+        battleId,
+        guessPercentage,
+        actualWinRate,
+        guessRange
+      });
       return response.data;
     } catch (error) {
       throw error;

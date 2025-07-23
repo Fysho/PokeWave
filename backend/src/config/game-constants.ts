@@ -25,7 +25,7 @@ export const SHINY_ODDS = {
 };
 
 // Default shiny chance to use in the game
-export const DEFAULT_SHINY_CHANCE = SHINY_ODDS.STANDARD;
+export const DEFAULT_SHINY_CHANCE = SHINY_ODDS.DEBUG;
 
 // Battle Configuration
 export const BATTLE_CONFIG = {
