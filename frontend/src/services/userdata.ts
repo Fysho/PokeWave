@@ -3,8 +3,8 @@ import { api } from './api';
 interface PokedexData {
   unlockedPokemon: number[];
   unlockedShinyPokemon: number[];
-  pokemonCounts: [number, number][];
-  shinyPokemonCounts: [number, number][];
+  pokemonCounts?: [number, number][];
+  shinyPokemonCounts?: [number, number][];
 }
 
 interface GameStats {
@@ -81,10 +81,10 @@ class UserDataService {
   // Helper to convert API format to Pokedex store format
   static convertApiToPokedexFormat(data: PokedexData) {
     return {
-      unlockedPokemon: new Set(data.unlockedPokemon),
-      unlockedShinyPokemon: new Set(data.unlockedShinyPokemon),
-      pokemonCounts: new Map(data.pokemonCounts),
-      shinyPokemonCounts: new Map(data.shinyPokemonCounts)
+      unlockedPokemon: new Set(data.unlockedPokemon || []),
+      unlockedShinyPokemon: new Set(data.unlockedShinyPokemon || []),
+      pokemonCounts: new Map(data.pokemonCounts || []),
+      shinyPokemonCounts: new Map(data.shinyPokemonCounts || [])
     };
   }
 }
