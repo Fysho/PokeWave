@@ -177,6 +177,14 @@ const MainLayout: React.FC<MainLayoutProps> = ({
               >
                 {colorScheme === 'dark' ? <IconSun size={20} /> : <IconMoon size={20} />}
               </ActionIcon>
+              <Button 
+                onClick={() => onTabChange('profile')}
+                variant={activeTab === 'profile' ? "filled" : "subtle"}
+                size="sm" 
+                leftSection={<IconUsers size={16} />}
+              >
+                Profile
+              </Button>
               <Button variant="outline" size="sm" leftSection={<IconUsers size={16} />}>
                 Sign In
               </Button>
