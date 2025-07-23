@@ -293,6 +293,7 @@ class PokemonShowdownService {
     let p2CurrentHP = 0;
     let p1MaxHP = 0;
     let p2MaxHP = 0;
+    let hpInitialized = false;
     
     // Give the stream a moment to initialize when logging
     if (enableLogging) {
@@ -317,32 +318,58 @@ class PokemonShowdownService {
         logger.info(`🎮 Battle Tester: Chunk received: ${chunk}`);
       }
 
-      // Track HP updates
-      if (chunk.includes('|-damage|') || chunk.includes('|switch|')) {
-        const lines = chunk.split('\n');
-        for (const line of lines) {
-          if (line.includes('|-damage|') || line.includes('|switch|')) {
-            const parts = line.split('|');
-            if (parts.length >= 4) {
-              const pokemonSide = parts[2];
-              const hpInfo = parts[3];
-              
-              if (hpInfo === '0 fnt') {
-                if (pokemonSide.startsWith('p1a:')) {
-                  p1CurrentHP = 0;
-                } else if (pokemonSide.startsWith('p2a:')) {
-                  p2CurrentHP = 0;
+      // Track HP updates - also check for initial spawn events
+      const lines = chunk.split('\n');
+      for (const line of lines) {
+        // Check for damage, switch, or initial spawn events
+        if (line.includes('|-damage|') || line.includes('|switch|') || line.includes('|drag|')) {
+          const parts = line.split('|');
+          // Handle switch/drag format: |switch|p1a: Pikachu|Pikachu, L50|100/100
+          if ((parts[1] === 'switch' || parts[1] === 'drag') && parts.length >= 5) {
+            const pokemonSide = parts[2];
+            const hpInfo = parts[4];
+            
+            if (hpInfo && hpInfo.includes('/')) {
+              const [current, max] = hpInfo.split('/').map(h => parseInt(h) || 0);
+              if (pokemonSide.startsWith('p1a:')) {
+                p1CurrentHP = current;
+                p1MaxHP = max;
+                hpInitialized = true;
+                if (enableLogging) {
+                  logger.info(`🎮 Battle Tester: P1 initial HP: ${current}/${max}`);
                 }
-              } else if (hpInfo.includes('/')) {
-                const [current, max] = hpInfo.split('/').map(h => parseInt(h) || 0);
-                if (pokemonSide.startsWith('p1a:')) {
-                  p1CurrentHP = current;
-                  p1MaxHP = max;
-                } else if (pokemonSide.startsWith('p2a:')) {
-                  p2CurrentHP = current;
-                  p2MaxHP = max;
+              } else if (pokemonSide.startsWith('p2a:')) {
+                p2CurrentHP = current;
+                p2MaxHP = max;
+                hpInitialized = true;
+                if (enableLogging) {
+                  logger.info(`🎮 Battle Tester: P2 initial HP: ${current}/${max}`);
                 }
               }
+            }
+          }
+          // Handle damage format: |-damage|p1a: Pikachu|80/100
+          else if (parts[1] === '-damage' && parts.length >= 4) {
+            const pokemonSide = parts[2];
+            const hpInfo = parts[3];
+            
+            if (hpInfo === '0 fnt') {
+              if (pokemonSide.startsWith('p1a:')) {
+                p1CurrentHP = 0;
+              } else if (pokemonSide.startsWith('p2a:')) {
+                p2CurrentHP = 0;
+              }
+              hpInitialized = true;
+            } else if (hpInfo.includes('/')) {
+              const [current, max] = hpInfo.split('/').map(h => parseInt(h) || 0);
+              if (pokemonSide.startsWith('p1a:')) {
+                p1CurrentHP = current;
+                p1MaxHP = max;
+              } else if (pokemonSide.startsWith('p2a:')) {
+                p2CurrentHP = current;
+                p2MaxHP = max;
+              }
+              hpInitialized = true;
             }
           }
         }
@@ -352,8 +379,9 @@ class PokemonShowdownService {
       if (chunk.includes('|win|')) {
         const declaredWinner = chunk.includes('Player 1') ? 1 : 2;
         
-        // Check if the winning Pokemon actually has 0 HP (indicating a draw from explosion/etc)
-        if ((declaredWinner === 1 && p1CurrentHP === 0) || (declaredWinner === 2 && p2CurrentHP === 0)) {
+        // Only check for 0 HP draw if we've actually tracked HP values
+        // (to avoid false draws when a Pokemon wins in 1 hit before HP is tracked)
+        if (hpInitialized && ((declaredWinner === 1 && p1CurrentHP === 0) || (declaredWinner === 2 && p2CurrentHP === 0))) {
           winner = 0; // Draw
           if (enableLogging) {
             logger.info(`🎮 Battle Tester: Battle ended in a DRAW! (Winner had 0 HP)`);
