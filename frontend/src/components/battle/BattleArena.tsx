@@ -8,6 +8,7 @@ import { BattleLoading } from '../ui/loading';
 import { FadeIn, SlideIn, ResultReveal, BounceIn, ScaleIn } from '../ui/transitions';
 import StreakCelebration from '../ui/streak-celebration';
 import { getTypeColor, getCategoryIcon } from '../../utils/typeColors';
+import { getTypeEffectiveness, formatTypeList } from '../../utils/typeEffectiveness';
 import { 
   IconSwords, 
   IconTrophy, 
@@ -242,23 +243,57 @@ export const PokemonBattleCard: React.FC<PokemonBattleCardProps> = ({
             {/* Types */}
             {pokemon.types && pokemon.types.length > 0 && (
               <Group justify="center" gap="sm">
-                {pokemon.types.map((type: string) => (
-                  <Badge
-                    key={type}
-                    size="lg"
-                    variant="filled"
-                    color={getTypeColor(type)}
-                    tt="capitalize"
-                    style={{ 
-                      ...badgeStyle,
-                      fontWeight: 700,
-                    }}
-                    onMouseEnter={(e: React.MouseEvent<HTMLDivElement>) => (e.currentTarget.style.transform = 'scale(1.1)')}
-                    onMouseLeave={(e: React.MouseEvent<HTMLDivElement>) => (e.currentTarget.style.transform = 'scale(1)')}
-                  >
-                    {type}
-                  </Badge>
-                ))}
+                {pokemon.types.map((type: string) => {
+                  const effectiveness = getTypeEffectiveness(type);
+                  return (
+                    <Tooltip
+                      key={type}
+                      label={
+                        <Box>
+                          <Text size="xs" fw={600} tt="capitalize" mb={4}>{type} Type</Text>
+                          {effectiveness.weakTo.length > 0 && (
+                            <>
+                              <Text size="xs" c="red.4">Weak to (2x):</Text>
+                              <Text size="xs" mb={4}>{formatTypeList(effectiveness.weakTo)}</Text>
+                            </>
+                          )}
+                          {effectiveness.resistantTo.length > 0 && (
+                            <>
+                              <Text size="xs" c="green.4">Resistant to (0.5x):</Text>
+                              <Text size="xs" mb={4}>{formatTypeList(effectiveness.resistantTo)}</Text>
+                            </>
+                          )}
+                          {effectiveness.immuneTo.length > 0 && (
+                            <>
+                              <Text size="xs" c="blue.4">Immune to (0x):</Text>
+                              <Text size="xs">{formatTypeList(effectiveness.immuneTo)}</Text>
+                            </>
+                          )}
+                        </Box>
+                      }
+                      position="top"
+                      withArrow
+                      multiline
+                      styles={{ tooltip: { maxWidth: 250 } }}
+                    >
+                      <Badge
+                        size="lg"
+                        variant="filled"
+                        color={getTypeColor(type)}
+                        tt="capitalize"
+                        style={{ 
+                          ...badgeStyle,
+                          fontWeight: 700,
+                          cursor: 'help',
+                        }}
+                        onMouseEnter={(e: React.MouseEvent<HTMLDivElement>) => (e.currentTarget.style.transform = 'scale(1.1)')}
+                        onMouseLeave={(e: React.MouseEvent<HTMLDivElement>) => (e.currentTarget.style.transform = 'scale(1)')}
+                      >
+                        {type}
+                      </Badge>
+                    </Tooltip>
+                  );
+                })}
               </Group>
             )}
 

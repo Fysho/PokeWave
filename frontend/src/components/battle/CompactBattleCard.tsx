@@ -1,6 +1,7 @@
 import React from 'react';
 import { Card, Badge, Group, Text, Box, Stack, Title, useMantineTheme, useMantineColorScheme, Tooltip, ScrollArea } from '@mantine/core';
 import { getTypeColor } from '../../utils/typeColors';
+import { getTypeEffectiveness, formatTypeList } from '../../utils/typeEffectiveness';
 import { IconCrown } from '@tabler/icons-react';
 import { PokemonBattleCard } from './BattleArena';
 
@@ -145,17 +146,51 @@ export const CompactBattleCard: React.FC<CompactBattleCardProps> = ({
         {/* Types */}
         {pokemon.types && pokemon.types.length > 0 && (
           <Group justify="center" gap={4}>
-            {pokemon.types.map((type: string) => (
-              <Badge
-                key={type}
-                size="xs"
-                variant="filled"
-                color={getTypeColor(type)}
-                tt="capitalize"
-              >
-                {type}
-              </Badge>
-            ))}
+            {pokemon.types.map((type: string) => {
+              const effectiveness = getTypeEffectiveness(type);
+              return (
+                <Tooltip
+                  key={type}
+                  label={
+                    <Box>
+                      <Text size="xs" fw={600} tt="capitalize" mb={4}>{type} Type</Text>
+                      {effectiveness.weakTo.length > 0 && (
+                        <>
+                          <Text size="xs" c="red.4">Weak to (2x):</Text>
+                          <Text size="xs" mb={4}>{formatTypeList(effectiveness.weakTo)}</Text>
+                        </>
+                      )}
+                      {effectiveness.resistantTo.length > 0 && (
+                        <>
+                          <Text size="xs" c="green.4">Resistant to (0.5x):</Text>
+                          <Text size="xs" mb={4}>{formatTypeList(effectiveness.resistantTo)}</Text>
+                        </>
+                      )}
+                      {effectiveness.immuneTo.length > 0 && (
+                        <>
+                          <Text size="xs" c="blue.4">Immune to (0x):</Text>
+                          <Text size="xs">{formatTypeList(effectiveness.immuneTo)}</Text>
+                        </>
+                      )}
+                    </Box>
+                  }
+                  position="top"
+                  withArrow
+                  multiline
+                  styles={{ tooltip: { maxWidth: 250 } }}
+                >
+                  <Badge
+                    size="xs"
+                    variant="filled"
+                    color={getTypeColor(type)}
+                    tt="capitalize"
+                    style={{ cursor: 'help' }}
+                  >
+                    {type}
+                  </Badge>
+                </Tooltip>
+              );
+            })}
           </Group>
         )}
 
