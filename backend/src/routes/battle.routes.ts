@@ -91,9 +91,8 @@ router.post('/simulate-test', async (req, res, next) => {
     const { showdownService } = require('../services/showdown.service');
     const { pokemonInstanceStore } = require('../services/pokemon-instance-store.service');
     
-    // Get the stored Pokemon instances
-    const instances = pokemonInstanceStore.getInstances();
-    if (!instances || !instances.pokemon1 || !instances.pokemon2) {
+    // Check if Pokemon instances are stored
+    if (!pokemonInstanceStore.pokemonInstance1 || !pokemonInstanceStore.pokemonInstance2) {
       throw new ApiError(500, 'Pokemon instances not found. Please generate new Pokemon first.');
     }
     
