@@ -260,9 +260,11 @@ const BattleTester: React.FC<BattleTesterProps> = ({
         </Box>
 
         {/* Content */}
-        <Collapse in={isExpanded} transitionDuration={300} style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
-          <Box p="md" style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-            <Stack gap="md" style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
+        <Collapse in={isExpanded} transitionDuration={300} style={{ flex: 1, overflow: 'hidden' }}>
+          <Box style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+            <ScrollArea style={{ flex: 1 }} offsetScrollbars scrollbarSize={8} type="hover">
+              <Box p="md">
+                <Stack gap="md">
               {/* Battle Setup */}
               {pokemon1 && pokemon2 && (
                 <Card withBorder p="md">
@@ -336,17 +338,16 @@ const BattleTester: React.FC<BattleTesterProps> = ({
                     <Divider />
 
                     {/* Turn-by-turn breakdown */}
-                    <ScrollArea
+                    <Box
                       style={{
-                        flex: 1,
                         border: `1px solid ${colorScheme === 'dark' ? theme.colors.dark[5] : theme.colors.gray[3]}`,
-                        borderRadius: '4px'
+                        borderRadius: '4px',
+                        padding: '8px',
+                        maxHeight: '400px',
+                        overflowY: 'auto'
                       }}
-                      offsetScrollbars
-                      scrollbarSize={8}
-                      type="hover"
                     >
-                        <Stack gap="xs" p="xs">
+                        <Stack gap="xs">
                         {simulation.turns?.map((turn: BattleTurn, index: number) => {
                           // Check if this is the start of a new turn number
                           const isNewTurn = index === 0 || turn.turn !== simulation.turns[index - 1].turn;
@@ -486,7 +487,7 @@ const BattleTester: React.FC<BattleTesterProps> = ({
                           );
                         })}
                         </Stack>
-                    </ScrollArea>
+                    </Box>
                   </Stack>
                 </Card>
               )}
@@ -514,7 +515,9 @@ const BattleTester: React.FC<BattleTesterProps> = ({
                   </Stack>
                 </Card>
               )}
-            </Stack>
+                </Stack>
+              </Box>
+            </ScrollArea>
           </Box>
         </Collapse>
 
