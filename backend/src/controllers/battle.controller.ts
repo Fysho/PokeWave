@@ -194,11 +194,11 @@ export const submitGuess = async (
       points,
       message,
       battleStats: {
-        totalGuesses: battleStats.totalAttempts,
-        correctGuesses: battleStats.successfulAttempts,
-        accuracyRate: battleStats.totalAttempts > 0 
-          ? ((battleStats.successfulAttempts / battleStats.totalAttempts) * 100).toFixed(2)
-          : '0.00'
+        totalAttempts: battleStats.totalAttempts,
+        successfulAttempts: battleStats.successfulAttempts,
+        successRate: battleStats.totalAttempts > 0 
+          ? Math.round((battleStats.successfulAttempts / battleStats.totalAttempts) * 100)
+          : 0
       }
     });
   } catch (error) {
