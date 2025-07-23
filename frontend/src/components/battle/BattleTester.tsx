@@ -262,7 +262,7 @@ const BattleTester: React.FC<BattleTesterProps> = ({
         {/* Content */}
         <Collapse in={isExpanded} transitionDuration={300} style={{ flex: 1, overflow: 'hidden' }}>
           <Box style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-            <ScrollArea style={{ flex: 1 }} offsetScrollbars scrollbarSize={8} type="hover">
+            <ScrollArea style={{ height: 'calc(100vh - 140px)' }} offsetScrollbars scrollbarSize={8} type="hover">
               <Box p="md">
                 <Stack gap="md">
               {/* Battle Setup */}
@@ -343,7 +343,7 @@ const BattleTester: React.FC<BattleTesterProps> = ({
                         border: `1px solid ${colorScheme === 'dark' ? theme.colors.dark[5] : theme.colors.gray[3]}`,
                         borderRadius: '4px',
                         padding: '8px',
-                        maxHeight: '400px',
+                        maxHeight: '300px',
                         overflowY: 'auto'
                       }}
                     >
