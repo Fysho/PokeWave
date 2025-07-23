@@ -21,6 +21,18 @@ interface UpdateAvatarResponse {
   };
 }
 
+interface ProfileResponse {
+  user: {
+    id: string;
+    username: string;
+    createdAt: string;
+    avatarPokemonId?: number;
+    avatarSprite?: string;
+    pokedex?: any;
+    gameStats?: any;
+  };
+}
+
 class AuthService {
   static async signIn(username: string, password: string): Promise<AuthResponse> {
     try {
