@@ -108,7 +108,44 @@ export const TypeColorSlider: React.FC<TypeColorSliderProps> = ({
         }}
       />
       
-      {/* Correct Answer Indicator */}
+      {/* Tolerance Range Indicators - Show based on current value when not showing results */}
+      {!showCorrectIndicator && (
+        <>
+          {/* Left range indicator (-10%) */}
+          {percentage - 10 > 0 && (
+            <Box
+              style={{
+                position: 'absolute',
+                top: '-8px',
+                left: `${percentage - 10}%`,
+                width: '2px',
+                height: '28px',
+                backgroundColor: 'rgba(0, 0, 0, 0.3)',
+                transform: 'translateX(-50%)',
+                pointerEvents: 'none',
+              }}
+            />
+          )}
+          
+          {/* Right range indicator (+10%) */}
+          {percentage + 10 < 100 && (
+            <Box
+              style={{
+                position: 'absolute',
+                top: '-8px',
+                left: `${percentage + 10}%`,
+                width: '2px',
+                height: '28px',
+                backgroundColor: 'rgba(0, 0, 0, 0.3)',
+                transform: 'translateX(-50%)',
+                pointerEvents: 'none',
+              }}
+            />
+          )}
+        </>
+      )}
+      
+      {/* Correct Answer Indicator - Show after submission */}
       {showCorrectIndicator && correctValue !== undefined && (
         <>
           <Box
