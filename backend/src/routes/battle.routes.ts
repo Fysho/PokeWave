@@ -80,7 +80,8 @@ router.post('/simulate-random', async (req, res, next) => {
     
     // Validate count
     if (count < 1 || count > 1000) {
-      return res.status(400).json({ error: 'Count must be between 1 and 1000' });
+      res.status(400).json({ error: 'Count must be between 1 and 1000' });
+      return;
     }
     
     logger.info(`Simulating ${count} random battles with options:`, options);
