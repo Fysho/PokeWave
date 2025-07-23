@@ -12,6 +12,25 @@ const api = axios.create({
   },
 });
 
+// Initialize auth token from localStorage if it exists
+// This ensures the token is set even after page reload
+const initializeAuthToken = () => {
+  try {
+    const authStorage = localStorage.getItem('auth-storage');
+    if (authStorage) {
+      const authState = JSON.parse(authStorage);
+      if (authState?.state?.token) {
+        api.defaults.headers.common['Authorization'] = `Bearer ${authState.state.token}`;
+      }
+    }
+  } catch (error) {
+    console.error('Error initializing auth token:', error);
+  }
+};
+
+// Initialize on module load
+initializeAuthToken();
+
 // Request interceptor for logging
 api.interceptors.request.use(
   (config) => {
