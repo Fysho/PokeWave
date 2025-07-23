@@ -988,7 +988,6 @@ const BattleArena: React.FC<BattleArenaProps> = ({ hideStats = false }) => {
       <Box maw={1400} mx="auto">
         {/* Title Section */}
         {/* Battle Arena */}
-        <FadeIn delay={0.4}>
           <Card withBorder shadow="xl" style={{ overflow: 'hidden' }}>
             <Box 
               pos="absolute" 
@@ -1282,7 +1281,6 @@ const BattleArena: React.FC<BattleArenaProps> = ({ hideStats = false }) => {
               )}
             </Card.Section>
           </Card>
-        </FadeIn>
       </Box>
 
       {/* Streak Celebration - Disabled to prevent flying text */}
