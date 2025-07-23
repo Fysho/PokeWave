@@ -1,5 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import UserDataService from '../services/userdata';
+import { useAuthStore } from './authStore';
 
 interface PokedexStore {
   unlockedPokemon: Set<number>;
@@ -16,6 +18,8 @@ interface PokedexStore {
   getUnlockedShinyCount: () => number;
   getTotalPokemonCount: () => number;
   resetPokedex: () => void;
+  syncWithBackend: () => Promise<void>;
+  loadFromBackend: () => Promise<void>;
 }
 
 const TOTAL_POKEMON = 1025;
@@ -28,7 +32,7 @@ export const usePokedexStore = create<PokedexStore>()(
       pokemonCounts: new Map<number, number>(),
       shinyPokemonCounts: new Map<number, number>(),
       
-      unlockPokemon: (pokemonId: number, isShiny?: boolean) => {
+      unlockPokemon: async (pokemonId: number, isShiny?: boolean) => {
         set((state) => {
           const newUnlocked = new Set(state.unlockedPokemon);
           const newUnlockedShiny = new Set(state.unlockedShinyPokemon);
@@ -52,6 +56,16 @@ export const usePokedexStore = create<PokedexStore>()(
             shinyPokemonCounts: newShinyCounts
           };
         });
+
+        // Sync with backend if authenticated
+        const authState = useAuthStore.getState();
+        if (authState.isAuthenticated) {
+          try {
+            await UserDataService.unlockPokemon(pokemonId, isShiny || false);
+          } catch (error) {
+            console.error('Failed to sync Pokemon unlock with backend:', error);
+          }
+        }
       },
       
       unlockMultiplePokemon: (pokemonIds: number[], areShiny?: boolean[]) => {
@@ -119,6 +133,47 @@ export const usePokedexStore = create<PokedexStore>()(
           pokemonCounts: new Map<number, number>(),
           shinyPokemonCounts: new Map<number, number>()
         });
+      },
+
+      syncWithBackend: async () => {
+        const state = get();
+        const authState = useAuthStore.getState();
+        
+        if (!authState.isAuthenticated) return;
+
+        try {
+          const pokedexData = UserDataService.convertPokedexToApiFormat(
+            state.unlockedPokemon,
+            state.unlockedShinyPokemon,
+            state.pokemonCounts,
+            state.shinyPokemonCounts
+          );
+          
+          await UserDataService.syncPokedex(pokedexData);
+        } catch (error) {
+          console.error('Failed to sync Pokedex with backend:', error);
+        }
+      },
+
+      loadFromBackend: async () => {
+        const authState = useAuthStore.getState();
+        
+        if (!authState.isAuthenticated) return;
+
+        try {
+          const userData = await UserDataService.getUserData();
+          if (userData.pokedex) {
+            const converted = UserDataService.convertApiToPokedexFormat(userData.pokedex);
+            set({
+              unlockedPokemon: converted.unlockedPokemon,
+              unlockedShinyPokemon: converted.unlockedShinyPokemon,
+              pokemonCounts: converted.pokemonCounts,
+              shinyPokemonCounts: converted.shinyPokemonCounts
+            });
+          }
+        } catch (error) {
+          console.error('Failed to load Pokedex from backend:', error);
+        }
       },
     }),
     {

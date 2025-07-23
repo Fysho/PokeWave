@@ -1,8 +1,7 @@
-import React from 'react';
-import { AppShell, Container, Group, Button, Badge, ActionIcon, useMantineColorScheme, Box, useMantineTheme, Text } from '@mantine/core';
+import React, { useState, useEffect } from 'react';
+import { AppShell, Container, Group, Button, Badge, ActionIcon, useMantineColorScheme, Box, useMantineTheme, Text, Menu, Avatar } from '@mantine/core';
 import { 
   IconHistory, 
-  IconChartBar, 
   IconDeviceGamepad2,
   IconCalendar,
   IconCrown,
@@ -11,11 +10,16 @@ import {
   IconMoon,
   IconInfoCircle,
   IconInfinity,
-  IconPokeball
+  IconPokeball,
+  IconLogout,
+  IconUser
 } from '@tabler/icons-react';
 import LeftSidePanel from '../panels/LeftSidePanel';
 import { useSettingsStore } from '../../store/settingsStore';
 import { useGameStore } from '../../store/gameStore';
+import { useAuthStore } from '../../store/authStore';
+import SignInModal from '../auth/SignInModal';
+import AuthService from '../../services/auth';
 // import ApiService from '../../services/api';
 
 interface MainLayoutProps {
@@ -44,11 +48,20 @@ const MainLayout: React.FC<MainLayoutProps> = ({
     setIsBattleTesterSimulating
   } = useSettingsStore();
   const { currentBattle } = useGameStore();
+  const { user, isAuthenticated, signOut, checkAuth, token } = useAuthStore();
+  const [signInModalOpened, setSignInModalOpened] = useState(false);
+  
+  // Set auth token on mount if it exists
+  useEffect(() => {
+    if (token) {
+      AuthService.setAuthToken(token);
+    }
+    checkAuth();
+  }, [token, checkAuth]);
 
   const navigationItems = [
     { id: 'battle', label: 'Battle', icon: IconDeviceGamepad2, description: 'Predict Pokemon battles' },
     { id: 'history', label: 'History', icon: IconHistory, description: 'View your battle history', badge: battleCount },
-    { id: 'stats', label: 'Stats', icon: IconChartBar, description: 'Detailed analytics' },
     { id: 'leaderboard', label: 'Leaderboard', icon: IconCrown, description: 'Global rankings' },
     { id: 'daily', label: 'Daily', icon: IconCalendar, description: 'Daily challenges' },
     { id: 'endless', label: 'Endless', icon: IconInfinity, description: 'Survival mode' },
@@ -177,17 +190,62 @@ const MainLayout: React.FC<MainLayoutProps> = ({
               >
                 {colorScheme === 'dark' ? <IconSun size={20} /> : <IconMoon size={20} />}
               </ActionIcon>
-              <Button 
-                onClick={() => onTabChange('profile')}
-                variant={activeTab === 'profile' ? "filled" : "subtle"}
-                size="sm" 
-                leftSection={<IconUsers size={16} />}
-              >
-                Profile
-              </Button>
-              <Button variant="outline" size="sm" leftSection={<IconUsers size={16} />}>
-                Sign In
-              </Button>
+              
+              {isAuthenticated ? (
+                <Menu shadow="md" width={200}>
+                  <Menu.Target>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      leftSection={
+                        <Avatar 
+                          src={user?.avatarSprite || 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/25.png'} 
+                          size={40} 
+                          radius="xl"
+                        />
+                      }
+                      styles={{
+                        root: { paddingLeft: '8px' },
+                        label: { marginLeft: '8px' }
+                      }}
+                    >
+                      {user?.username}
+                    </Button>
+                  </Menu.Target>
+                  <Menu.Dropdown>
+                    <Menu.Label>Account</Menu.Label>
+                    <Menu.Item
+                      leftSection={
+                        <Avatar 
+                          src={user?.avatarSprite || 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/25.png'} 
+                          size={18} 
+                          radius="xl"
+                        />
+                      }
+                      onClick={() => onTabChange('profile')}
+                    >
+                      View Profile
+                    </Menu.Item>
+                    <Menu.Divider />
+                    <Menu.Item
+                      color="red"
+                      leftSection={<IconLogout size={14} />}
+                      onClick={signOut}
+                    >
+                      Sign Out
+                    </Menu.Item>
+                  </Menu.Dropdown>
+                </Menu>
+              ) : (
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  leftSection={<IconUsers size={16} />}
+                  onClick={() => setSignInModalOpened(true)}
+                >
+                  Sign In
+                </Button>
+              )}
             </Group>
           </Group>
 
@@ -237,6 +295,12 @@ const MainLayout: React.FC<MainLayoutProps> = ({
           </Container>
         </AppShell.Main>
       </AppShell>
+      
+      {/* Sign In Modal */}
+      <SignInModal 
+        opened={signInModalOpened} 
+        onClose={() => setSignInModalOpened(false)} 
+      />
     </Box>
   );
 };

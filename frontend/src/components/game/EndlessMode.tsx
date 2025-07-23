@@ -9,14 +9,18 @@ import {
   Group,
   Badge,
   Button,
-  Grid
+  Grid,
+  Loader
 } from '@mantine/core';
 import { IconInfinity, IconHeart, IconTrophy, IconFlame } from '@tabler/icons-react';
+import { notifications } from '@mantine/notifications';
 import BattleArena from '../battle/BattleArena';
 import { useGameStore } from '../../store/gameStore';
 import { useEndlessStore } from '../../store/endlessStore';
 import { useSettingsStore } from '../../store/settingsStore';
+import { useAuthStore } from '../../store/authStore';
 import { FadeIn } from '../ui/transitions';
+import LeaderboardService from '../../services/leaderboard';
 
 interface EndlessModeProps {}
 
@@ -39,6 +43,9 @@ const EndlessMode: React.FC<EndlessModeProps> = () => {
 
   const lastProcessedBattleRef = useRef<number>(-1);
   const [hasStarted, setHasStarted] = useState(false);
+  const [isSubmittingScore, setIsSubmittingScore] = useState(false);
+  const [hasSubmittedScore, setHasSubmittedScore] = useState(false);
+  const { isAuthenticated } = useAuthStore();
 
   // Set endless mode as active when component mounts
   useEffect(() => {
@@ -74,12 +81,39 @@ const EndlessMode: React.FC<EndlessModeProps> = () => {
     }
   }, [battleHistory, isEndlessActive]);
 
-  // Check for game over
+  // Check for game over and submit score
   useEffect(() => {
+    if (endlessLives === 0 && !hasSubmittedScore && isAuthenticated && endlessScore > 0) {
+      submitScoreToLeaderboard();
+    }
     if (endlessLives === 0) {
       updateHighScore();
     }
-  }, [endlessLives]);
+  }, [endlessLives, hasSubmittedScore, isAuthenticated, endlessScore]);
+
+  const submitScoreToLeaderboard = async () => {
+    if (hasSubmittedScore || !isAuthenticated || endlessScore === 0) return;
+    
+    setIsSubmittingScore(true);
+    try {
+      await LeaderboardService.submitEndlessScore(endlessScore);
+      setHasSubmittedScore(true);
+      notifications.show({
+        title: 'Score Submitted!',
+        message: `Your score of ${endlessScore} has been added to the leaderboard!`,
+        color: 'green'
+      });
+    } catch (error) {
+      console.error('Failed to submit score:', error);
+      notifications.show({
+        title: 'Score Submission Failed',
+        message: 'Could not submit your score to the leaderboard.',
+        color: 'red'
+      });
+    } finally {
+      setIsSubmittingScore(false);
+    }
+  };
 
   const handleStartRun = async () => {
     resetEndlessMode();
@@ -92,6 +126,7 @@ const EndlessMode: React.FC<EndlessModeProps> = () => {
 
   const handleReset = () => {
     setHasStarted(false);
+    setHasSubmittedScore(false);
     resetEndlessMode();
     lastProcessedBattleRef.current = battleHistory.length;
   };
@@ -131,6 +166,19 @@ const EndlessMode: React.FC<EndlessModeProps> = () => {
                       High Score: {endlessHighScore}
                     </Text>
                   </Group>
+                )}
+                
+                {isSubmittingScore && (
+                  <Group gap="xs">
+                    <Loader size="sm" />
+                    <Text size="sm" c="dimmed">Submitting score to leaderboard...</Text>
+                  </Group>
+                )}
+                
+                {!isAuthenticated && endlessScore > 0 && (
+                  <Text size="sm" c="dimmed" fs="italic">
+                    Sign in to save your score to the leaderboard!
+                  </Text>
                 )}
                 
                 <Button 

@@ -3,9 +3,36 @@
 ## Project Overview
 PokeWave is a web-based Pokemon battle prediction game where users predict the winner of simulated battles between randomly selected Pokemon. The system uses Pokemon Showdown's battle engine to simulate battles between two Pokemon and challenges users to correctly identify which Pokemon will win.
 
-**Current Status**: The game is fully functional with additional features including Pokedex, Daily Challenges, and enhanced UI components.
+**Current Status**: The game is fully functional with additional features including Pokedex, Daily Challenges, User Authentication, and Leaderboards.
 
 ## Implementation Status
+
+### ✅ Phase 9 - User Authentication & Leaderboards (Complete)
+**Status**: Fully functional with user accounts and competitive leaderboards
+**Recent Features**:
+- **User Authentication System**:
+  - JWT-based authentication with sign-up/sign-in functionality
+  - User profiles with customizable avatars from unlocked Pokemon
+  - Avatar selection includes both regular and shiny Pokemon sprites
+  - Default avatar is Pikachu (#25)
+  - Persistent auth state with Zustand
+- **Profile System**:
+  - User profile page showing username, join date, and battle statistics
+  - Avatar displayed in navigation bar and profile page
+  - Edit button to change avatar from unlocked Pokemon collection
+  - Search functionality in avatar selection modal
+- **Leaderboard System**:
+  - Endless mode high scores tracked per user
+  - Global leaderboard showing top 50 players
+  - Displays rank, username, avatar, high score, total runs
+  - Gold/silver/bronze badges for top 3 players
+  - Current user's row highlighted
+  - Automatic score submission when endless mode game ends
+- **UI Updates**:
+  - Removed redundant Stats tab (info available on Profile)
+  - Removed duplicate Profile button in navigation
+  - Removed stats display below battle screen
+  - Cleaner, more focused interface
 
 ### ✅ Phase 8 - Pokedex & Daily Challenges (Complete)
 **Status**: Fully functional with Pokedex collection system and daily challenge mode
@@ -685,6 +712,24 @@ curl -X POST http://localhost:4000/api/battle/simulate \
   - Simplified result display: "Correct!" or "Incorrect!" only
   - Removed percentage increment labels (0%, 50%, 100%) below slider
   - Added space after Pokemon name, removed space after sprite
+
+### Authentication & Profile Features
+- **Backend Services**:
+  - `auth.controller.ts`: Handles sign-up, sign-in, profile retrieval, and avatar updates
+  - `user.service.ts`: In-memory user storage with username/password management
+  - `auth.middleware.ts`: JWT verification for protected routes
+  - Password hashing with bcryptjs, JWT tokens with 7-day expiry
+- **Frontend Components**:
+  - `SignInModal`: Combined sign-in/sign-up modal with form validation
+  - `authStore.ts`: Zustand store for persistent auth state
+  - `auth.ts`: Service layer for auth API calls
+  - Avatar selection modal with search and Pokemon name display
+- **Leaderboard Implementation**:
+  - `leaderboard.service.ts`: Tracks endless mode scores per user
+  - `leaderboard.controller.ts`: Endpoints for score submission and retrieval
+  - In-memory storage with high score calculation
+  - Automatic score submission on endless mode game over
+  - Real-time leaderboard updates
 
 ### Recent Battle Mode Updates
 - **Green Arrow Fix**: TypeColorSlider now uses `isCorrect` prop from backend instead of custom calculation
