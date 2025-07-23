@@ -206,12 +206,14 @@ const BattleTester: React.FC<BattleTesterProps> = ({
 
   return (
     <Box
-      pos="fixed"
-      top={60}
-      right={rightOffset}
-      h="calc(100vh - 60px)"
       style={{
+        position: 'fixed',
+        top: 60,
+        right: rightOffset,
         width: isExpanded ? '400px' : '60px',
+        height: 'calc(100vh - 60px)',
+        display: 'flex',
+        flexDirection: 'column',
         transition: 'width 0.3s ease, right 0.3s ease',
         borderLeft: `1px solid ${colorScheme === 'dark' ? theme.colors.dark[5] : theme.colors.gray[3]}`,
         zIndex: 1100,
@@ -219,12 +221,13 @@ const BattleTester: React.FC<BattleTesterProps> = ({
         backgroundColor: colorScheme === 'dark' ? theme.colors.dark[7] : theme.white
       }}
     >
-      <Stack h="100%" gap={0} style={{ overflow: 'hidden' }}>
+      <Stack h="100%" gap={0} style={{ flex: 1, overflow: 'hidden' }}>
         {/* Header */}
         <Box
           p="md"
           style={{
-            borderBottom: `1px solid ${colorScheme === 'dark' ? theme.colors.dark[5] : theme.colors.gray[3]}`
+            borderBottom: `1px solid ${colorScheme === 'dark' ? theme.colors.dark[5] : theme.colors.gray[3]}`,
+            flexShrink: 0
           }}
         >
           <Group justify="space-between" align="center">
@@ -257,9 +260,9 @@ const BattleTester: React.FC<BattleTesterProps> = ({
         </Box>
 
         {/* Content */}
-        <Collapse in={isExpanded} transitionDuration={300} style={{ flex: 1, minHeight: 0 }}>
+        <Collapse in={isExpanded} transitionDuration={300} style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
           <Box p="md" style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-            <Stack gap="md" style={{ flex: 1, minHeight: 0 }}>
+            <Stack gap="md" style={{ flex: 1, minHeight: 0, overflow: 'hidden' }}>
               {/* Battle Setup */}
               {pokemon1 && pokemon2 && (
                 <Card withBorder p="md">
@@ -305,8 +308,8 @@ const BattleTester: React.FC<BattleTesterProps> = ({
 
               {/* Battle Results */}
               {simulation && (
-                <Card withBorder p="md" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-                  <Stack gap="md" style={{ flex: 1 }}>
+                <Card withBorder p="md" style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+                  <Stack gap="md" style={{ flex: 1, minHeight: 0 }}>
                     <Group justify="space-between" align="center">
                       <Text fw={600} size="sm">
                         Battle Result
@@ -333,15 +336,15 @@ const BattleTester: React.FC<BattleTesterProps> = ({
                     <Divider />
 
                     {/* Turn-by-turn breakdown */}
-                    <Box 
-                      style={{ 
-                        height: '400px', 
-                        overflowY: 'auto',
-                        overflowX: 'hidden',
+                    <ScrollArea
+                      style={{
+                        flex: 1,
                         border: `1px solid ${colorScheme === 'dark' ? theme.colors.dark[5] : theme.colors.gray[3]}`,
-                        borderRadius: '4px',
-                        padding: '8px'
+                        borderRadius: '4px'
                       }}
+                      offsetScrollbars
+                      scrollbarSize={8}
+                      type="hover"
                     >
                         <Stack gap="xs" p="xs">
                         {simulation.turns?.map((turn: BattleTurn, index: number) => {
@@ -483,7 +486,7 @@ const BattleTester: React.FC<BattleTesterProps> = ({
                           );
                         })}
                         </Stack>
-                    </Box>
+                    </ScrollArea>
                   </Stack>
                 </Card>
               )}
