@@ -1438,7 +1438,8 @@ class PokemonShowdownService {
             category: moveData.category,
             power: moveData.power,
             accuracy: moveData.accuracy,
-            pp: moveData.pp
+            pp: moveData.pp,
+            description: moveData.effectEntries.length > 0 ? moveData.effectEntries[0] : undefined
           });
         }
       }

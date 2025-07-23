@@ -407,12 +407,18 @@ export const PokemonBattleCard: React.FC<PokemonBattleCardProps> = ({
                                 {moveDetail.power && <Text size="xs">Power: {moveDetail.power}</Text>}
                                 {moveDetail.accuracy && <Text size="xs">Accuracy: {moveDetail.accuracy}%</Text>}
                                 <Text size="xs">PP: {moveDetail.pp}</Text>
+                                {moveDetail.description && (
+                                  <>
+                                    <Box h={4} />
+                                    <Text size="xs" c="dimmed">{moveDetail.description}</Text>
+                                  </>
+                                )}
                               </Box>
                             }
                             position="top"
                             withArrow
                             multiline
-                            styles={{ tooltip: { maxWidth: 200 } }}
+                            styles={{ tooltip: { maxWidth: 300 } }}
                           >
                             <Box 
                               ta="center" 

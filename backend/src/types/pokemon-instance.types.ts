@@ -110,6 +110,7 @@ export interface PokemonInstanceData {
     power: number | null;
     accuracy: number | null;
     pp: number;
+    description?: string;
   }[];
   stats: {                // Calculated stats (with IVs, EVs, Nature)
     hp: number;

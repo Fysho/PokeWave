@@ -81,6 +81,7 @@ export interface BattleResult {
       power: number | null;
       accuracy: number | null;
       pp: number;
+      description?: string;
     }[];
     levelupMoves?: Array<{ level: number; move: string }>;
     shiny?: boolean;
@@ -149,6 +150,7 @@ export interface BattleResult {
       power: number | null;
       accuracy: number | null;
       pp: number;
+      description?: string;
     }[];
     levelupMoves?: Array<{ level: number; move: string }>;
     nature?: string;
@@ -218,6 +220,7 @@ export interface PokemonInstanceData {
     power: number | null;
     accuracy: number | null;
     pp: number;
+    description?: string;
   }[];
   stats: {
     hp: number;
