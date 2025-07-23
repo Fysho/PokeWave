@@ -362,60 +362,62 @@ const BattleTester: React.FC<BattleTesterProps> = ({
                                 )}
                               </Group>
                               
-                              <Text size="xs">
+                              <Box>
                                 {/* Check if this is a stat change */}
                                 {turn.move === 'Stat Change' && turn.statChange ? (
                                   <>
-                                    <Text component="span" fw={500} tt="capitalize">
+                                    <Text component="span" size="xs" fw={500} tt="capitalize">
                                       {turn.attacker}
                                     </Text>
-                                    {"'s "}
-                                    <Text component="span" fw={500} c={turn.statChange.stages > 0 ? 'green.6' : turn.statChange.stages < 0 ? 'red.6' : 'gray.6'}>
+                                    <Text component="span" size="xs">{"'s "}</Text>
+                                    <Text component="span" size="xs" fw={500} c={turn.statChange.stages > 0 ? 'green.6' : turn.statChange.stages < 0 ? 'red.6' : 'gray.6'}>
                                       {getStatChangeText(turn.statChange)}
                                     </Text>
                                   </>
                                 ) : ['confusion', 'poison', 'burn', 'sandstorm', 'hail', 'recoil', 'Life Orb'].includes(turn.attacker) ? (
                                   <>
-                                    <Text component="span" fw={500} tt="capitalize">
+                                    <Text component="span" size="xs" fw={500} tt="capitalize">
                                       {turn.defender}
                                     </Text>
-                                    {' '}took{' '}
-                                    <Text component="span" fw={500} c={getStatusEffectColor(turn.attacker)}>
+                                    <Text component="span" size="xs">{' '}took{' '}</Text>
+                                    <Text component="span" size="xs" fw={500} c={getStatusEffectColor(turn.attacker)}>
                                       {turn.damage} damage
                                     </Text>
-                                    {' '}from{' '}
-                                    <Text component="span" fw={500}>
+                                    <Text component="span" size="xs">{' '}from{' '}</Text>
+                                    <Text component="span" size="xs" fw={500}>
                                       {turn.attacker === 'confusion' ? 'confusion' : 
                                        turn.attacker === 'recoil' ? 'recoil' :
                                        turn.attacker === 'Life Orb' ? 'Life Orb' :
                                        turn.attacker}
                                     </Text>
-                                    {turn.attacker === 'confusion' && '!'}
+                                    <Text component="span" size="xs">{turn.attacker === 'confusion' && '!'}</Text>
                                   </>
                                 ) : turn.move.startsWith("Can't move") ? (
-                                  <Text size="xs" c="gray.6" fs="italic">
-                                    <Text component="span" fw={500} tt="capitalize">
+                                  <>
+                                    <Text component="span" size="xs" fw={500} tt="capitalize">
                                       {turn.attacker}
                                     </Text>
-                                    {' '}{turn.move.replace("Can't move", "couldn't move")}
-                                  </Text>
+                                    <Text component="span" size="xs" c="gray.6" fs="italic">
+                                      {' '}{turn.move.replace("Can't move", "couldn't move")}
+                                    </Text>
+                                  </>
                                 ) : (
                                   <>
-                                    <Text component="span" fw={500} tt="capitalize">
+                                    <Text component="span" size="xs" fw={500} tt="capitalize">
                                       {turn.attacker}
                                     </Text>
-                                    {' '}used{' '}
-                                    <Text component="span" fw={500} tt="capitalize">
+                                    <Text component="span" size="xs">{' '}used{' '}</Text>
+                                    <Text component="span" size="xs" fw={500} tt="capitalize">
                                       {turn.move}
                                     </Text>
                                     {turn.missed && (
-                                      <Text component="span" c="gray.6" fs="italic">
+                                      <Text component="span" size="xs" c="gray.6" fs="italic">
                                         {' '}but it missed!
                                       </Text>
                                     )}
                                   </>
                                 )}
-                              </Text>
+                              </Box>
                               
                               {!turn.missed && turn.move !== 'Stat Change' && !['confusion', 'poison', 'burn', 'sandstorm', 'hail', 'recoil', 'Life Orb'].includes(turn.attacker) && (
                                 <Group gap="xs" align="center">
