@@ -261,7 +261,7 @@ const Profile: React.FC = () => {
                           alignItems: 'center',
                           justifyContent: 'center',
                           gap: 4,
-                          backgroundColor: 'var(--mantine-color-gray-0)'
+                          backgroundColor: 'var(--mantine-color-default-hover)'
                         }}
                         onMouseEnter={(e) => {
                           e.currentTarget.style.backgroundColor = 'var(--mantine-color-gray-1)';
@@ -313,7 +313,7 @@ const Profile: React.FC = () => {
                             alignItems: 'center',
                             justifyContent: 'center',
                             gap: 4,
-                            backgroundColor: 'var(--mantine-color-gray-0)',
+                            backgroundColor: 'var(--mantine-color-default-hover)',
                             position: 'relative'
                           }}
                           onMouseEnter={(e) => {

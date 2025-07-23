@@ -99,6 +99,15 @@ class AuthService {
       throw new Error(error.response?.data?.message || 'Failed to update avatar');
     }
   }
+
+  static async getProfile(): Promise<ProfileResponse> {
+    try {
+      const response = await api.get<ProfileResponse>('/auth/profile');
+      return response.data;
+    } catch (error: any) {
+      throw new Error(error.response?.data?.message || 'Failed to get profile');
+    }
+  }
 }
 
 export default AuthService;
