@@ -305,8 +305,8 @@ const BattleTester: React.FC<BattleTesterProps> = ({
 
               {/* Battle Results */}
               {simulation && (
-                <Card withBorder p="md" style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', maxHeight: 'calc(100% - 200px)' }}>
-                  <Stack gap="md" style={{ height: '100%' }}>
+                <Card withBorder p="md" style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+                  <Stack gap="md" style={{ flex: 1 }}>
                     <Group justify="space-between" align="center">
                       <Text fw={600} size="sm">
                         Battle Result
@@ -333,11 +333,15 @@ const BattleTester: React.FC<BattleTesterProps> = ({
                     <Divider />
 
                     {/* Turn-by-turn breakdown */}
-                    <ScrollArea.Autosize 
-                      mah={400}
-                      scrollbarSize={8} 
-                      type="always"
-                      offsetScrollbars
+                    <Box 
+                      style={{ 
+                        height: '400px', 
+                        overflowY: 'auto',
+                        overflowX: 'hidden',
+                        border: `1px solid ${colorScheme === 'dark' ? theme.colors.dark[5] : theme.colors.gray[3]}`,
+                        borderRadius: '4px',
+                        padding: '8px'
+                      }}
                     >
                         <Stack gap="xs" p="xs">
                         {simulation.turns?.map((turn: BattleTurn, index: number) => {
@@ -479,7 +483,7 @@ const BattleTester: React.FC<BattleTesterProps> = ({
                           );
                         })}
                         </Stack>
-                    </ScrollArea.Autosize>
+                    </Box>
                   </Stack>
                 </Card>
               )}
