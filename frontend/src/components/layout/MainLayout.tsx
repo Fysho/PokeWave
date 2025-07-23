@@ -15,6 +15,7 @@ import {
   IconUser
 } from '@tabler/icons-react';
 import LeftSidePanel from '../panels/LeftSidePanel';
+import RightSidePanel from '../panels/RightSidePanel';
 import { useSettingsStore } from '../../store/settingsStore';
 import { useGameStore } from '../../store/gameStore';
 import { useAuthStore } from '../../store/authStore';
@@ -47,6 +48,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({
     setBattleTesterSimulation,
     setIsBattleTesterSimulating
   } = useSettingsStore();
+  const [isBattleTesterExpanded, setIsBattleTesterExpanded] = useState(false);
   const { currentBattle } = useGameStore();
   const { user, isAuthenticated, signOut, checkAuth, token } = useAuthStore();
   const [signInModalOpened, setSignInModalOpened] = useState(false);
@@ -71,13 +73,21 @@ const MainLayout: React.FC<MainLayoutProps> = ({
 
   return (
     <Box>
-      {/* Combined Left Panel with Settings and Battle Tester */}
+      {/* Left Panel with Settings */}
       {(activeTab === 'battle' || activeTab === 'endless') && (
         <LeftSidePanel
           isExpanded={isSettingsPanelExpanded}
           onToggleExpanded={toggleSettingsPanel}
           settings={battleSettings}
           onSettingsChange={setBattleSettings}
+        />
+      )}
+      
+      {/* Right Panel with Battle Tester */}
+      {(activeTab === 'battle' || activeTab === 'endless') && (
+        <RightSidePanel
+          isExpanded={isBattleTesterExpanded}
+          onToggleExpanded={() => setIsBattleTesterExpanded(!isBattleTesterExpanded)}
           pokemon1={currentBattle?.pokemon1}
           pokemon2={currentBattle?.pokemon2}
           onSimulateBattle={async () => {
@@ -284,10 +294,10 @@ const MainLayout: React.FC<MainLayoutProps> = ({
             size="xl"
             style={{
               marginLeft: (activeTab === 'battle' || activeTab === 'endless') ? (isSettingsPanelExpanded ? '400px' : '60px') : '0',
-              marginRight: '0',
-              transition: 'margin-left 0.3s ease',
+              marginRight: (activeTab === 'battle' || activeTab === 'endless') ? (isBattleTesterExpanded ? '400px' : '60px') : '0',
+              transition: 'margin-left 0.3s ease, margin-right 0.3s ease',
               maxWidth: (activeTab === 'battle' || activeTab === 'endless') ? 
-                `calc(100% - ${isSettingsPanelExpanded ? '400px' : '60px'})` : 
+                `calc(100% - ${isSettingsPanelExpanded ? '400px' : '60px'} - ${isBattleTesterExpanded ? '400px' : '60px'})` : 
                 '100%'
             }}
           >
