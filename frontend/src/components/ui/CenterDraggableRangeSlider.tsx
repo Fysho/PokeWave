@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Box, Text, useMantineTheme, useMantineColorScheme } from '@mantine/core';
+import { getTypeColor } from '../../utils/typeColors';
 
 interface CenterDraggableRangeSliderProps {
   value: [number, number];
@@ -13,6 +14,8 @@ interface CenterDraggableRangeSliderProps {
   size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl';
   hideHandles?: boolean;
   disableIndividualDrag?: boolean;
+  leftType?: string;
+  rightType?: string;
 }
 
 export const CenterDraggableRangeSlider: React.FC<CenterDraggableRangeSliderProps> = ({
@@ -27,6 +30,8 @@ export const CenterDraggableRangeSlider: React.FC<CenterDraggableRangeSliderProp
   size = 'md',
   hideHandles = false,
   disableIndividualDrag = false,
+  leftType,
+  rightType,
 }) => {
   const theme = useMantineTheme();
   const { colorScheme } = useMantineColorScheme();
@@ -206,9 +211,38 @@ export const CenterDraggableRangeSlider: React.FC<CenterDraggableRangeSliderProp
           opacity: disabled ? 0.5 : 1,
           border: `1px solid ${colorScheme === 'dark' ? theme.colors.dark[3] : theme.colors.gray[4]}`,
           boxShadow: 'inset 0 1px 2px rgba(0, 0, 0, 0.1)',
+          overflow: 'hidden',
         }}
       >
-        {/* Active range */}
+        {/* Left type color section */}
+        {leftType && leftPos > 0 && (
+          <Box
+            style={{
+              position: 'absolute',
+              left: 0,
+              width: `${leftPos}%`,
+              height: '100%',
+              backgroundColor: getTypeColor(leftType),
+              opacity: 0.6,
+            }}
+          />
+        )}
+
+        {/* Right type color section */}
+        {rightType && rightPos < 100 && (
+          <Box
+            style={{
+              position: 'absolute',
+              left: `${rightPos}%`,
+              width: `${100 - rightPos}%`,
+              height: '100%',
+              backgroundColor: getTypeColor(rightType),
+              opacity: 0.6,
+            }}
+          />
+        )}
+
+        {/* Active range (blue) */}
         <Box
           style={{
             position: 'absolute',

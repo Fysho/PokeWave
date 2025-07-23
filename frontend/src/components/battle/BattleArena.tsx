@@ -1165,6 +1165,8 @@ const BattleArena: React.FC<BattleArenaProps> = ({ hideStats = false }) => {
                               label={(value) => `${value}%`}
                               hideHandles={true}
                               disableIndividualDrag={true}
+                              leftType={currentBattle.pokemon1.types[0]}
+                              rightType={currentBattle.pokemon2.types[0]}
                             />
                             {/* Correct Answer Indicator for Endless Mode */}
                             {showResults && guessResult && (
