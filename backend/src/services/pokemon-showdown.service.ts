@@ -201,6 +201,12 @@ class PokemonShowdownService {
       const maxTurns = 50;
       let p1Request: any = null;
       let p2Request: any = null;
+      
+      // Track HP for both Pokemon
+      let p1CurrentHP = 0;
+      let p2CurrentHP = 0;
+      let p1MaxHP = 0;
+      let p2MaxHP = 0;
 
       logger.info('🎮 Battle Tester: Battle started! Processing turns...');
       
@@ -225,8 +231,17 @@ class PokemonShowdownService {
         // Check for winner first
         if (chunk.includes('|win|')) {
           battleEnded = true;
-          winner = chunk.includes('Player 1') ? pokemon1.name : pokemon2.name;
-          logger.info(`🎮 Battle Tester: Battle ended! Winner: ${winner}`);
+          const declaredWinner = chunk.includes('Player 1') ? 'p1' : 'p2';
+          
+          // Check if the winning Pokemon actually has 0 HP (indicating a draw)
+          if ((declaredWinner === 'p1' && p1CurrentHP === 0) || (declaredWinner === 'p2' && p2CurrentHP === 0)) {
+            winner = 'draw';
+            logger.info(`🎮 Battle Tester: Battle ended in a DRAW! (Winner had 0 HP)`);
+            logger.info(`🎮 Battle Tester: P1 HP: ${p1CurrentHP}/${p1MaxHP}, P2 HP: ${p2CurrentHP}/${p2MaxHP}`);
+          } else {
+            winner = declaredWinner === 'p1' ? pokemon1.name : pokemon2.name;
+            logger.info(`🎮 Battle Tester: Battle ended! Winner: ${winner}`);
+          }
           break;
         }
         
@@ -291,10 +306,31 @@ class PokemonShowdownService {
               logger.info(`🎮 Battle Tester: ${this.extractPokemonName(moveMatch[1])} used ${moveMatch[2]}!`);
             }
           }
-          if (line.includes('|-damage|')) {
-            const damageMatch = line.match(/\|-damage\|([^|]+)\|([^|]+)/);
+          if (line.includes('|-damage|') || line.includes('|-sethp|')) {
+            const damageMatch = line.match(/\|(?:-damage|-sethp)\|([^|]+)\|([^|]+)/);
             if (damageMatch) {
+              const pokemonSide = damageMatch[1];
+              const hpInfo = damageMatch[2];
+              
               logger.info(`🎮 Battle Tester: ${this.extractPokemonName(damageMatch[1])} took damage! HP: ${damageMatch[2]}`);
+              
+              // Update HP tracking
+              if (hpInfo === '0 fnt') {
+                if (pokemonSide.startsWith('p1a:')) {
+                  p1CurrentHP = 0;
+                } else if (pokemonSide.startsWith('p2a:')) {
+                  p2CurrentHP = 0;
+                }
+              } else if (hpInfo.includes('/')) {
+                const [current, max] = hpInfo.split('/').map(h => parseInt(h) || 0);
+                if (pokemonSide.startsWith('p1a:')) {
+                  p1CurrentHP = current;
+                  p1MaxHP = max;
+                } else if (pokemonSide.startsWith('p2a:')) {
+                  p2CurrentHP = current;
+                  p2MaxHP = max;
+                }
+              }
             }
           }
           if (line.includes('|-supereffective|')) {
