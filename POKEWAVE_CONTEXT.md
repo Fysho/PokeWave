@@ -709,3 +709,13 @@ curl -X POST http://localhost:4000/api/battle/simulate \
   - Resolved nested `<p>` tag hydration errors by converting parent Text to Box
   - Used `component="span"` for inline text elements to maintain proper HTML structure
   - ScrollArea now correctly displays scrollbar when battle has many turns
+  - **Battle Tester Panel Relocation**: Moved from right side panel to left side panel
+    - Combined with Battle Settings in a single left panel with vertical icon navigation
+    - Fixed collapsed state to show both Settings and Battle Tester icons vertically
+    - Improved dark mode colors with semi-transparent backgrounds (15% opacity)
+    - Replaced segmented control with cleaner vertical list layout when expanded
+  - **Battle Simulation Consistency Fix**: Synchronized draw detection between single and bulk battles
+    - Added HP tracking to bulk battle simulation (runSingleShowdownBattle)
+    - Checks if declared winner has 0 HP (from Explosion, etc) and marks as draw
+    - Fixes discrepancy where Explosion battles showed as draws in tester but not bulk mode
+    - Both simulation methods now properly detect mutual KOs as draws

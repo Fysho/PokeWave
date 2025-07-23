@@ -219,7 +219,7 @@ const BattleTester: React.FC<BattleTesterProps> = ({
         backgroundColor: colorScheme === 'dark' ? theme.colors.dark[7] : theme.white
       }}
     >
-      <Stack h="100%" gap={0}>
+      <Stack h="100%" gap={0} style={{ overflow: 'hidden' }}>
         {/* Header */}
         <Box
           p="md"
@@ -257,9 +257,9 @@ const BattleTester: React.FC<BattleTesterProps> = ({
         </Box>
 
         {/* Content */}
-        <Collapse in={isExpanded} transitionDuration={300} style={{ flex: 1, overflow: 'hidden' }}>
-          <Box p="md" style={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
-            <Stack gap="md" style={{ height: '100%' }}>
+        <Collapse in={isExpanded} transitionDuration={300} style={{ flex: 1, minHeight: 0 }}>
+          <Box p="md" style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            <Stack gap="md" style={{ flex: 1, minHeight: 0 }}>
               {/* Battle Setup */}
               {pokemon1 && pokemon2 && (
                 <Card withBorder p="md">
@@ -305,8 +305,8 @@ const BattleTester: React.FC<BattleTesterProps> = ({
 
               {/* Battle Results */}
               {simulation && (
-                <Card withBorder p="md" style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-                  <Stack gap="md" style={{ height: '100%' }}>
+                <Card withBorder p="md" style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+                  <Stack gap="md" style={{ flex: 1, minHeight: 0 }}>
                     <Group justify="space-between" align="center">
                       <Text fw={600} size="sm">
                         Battle Result
@@ -333,7 +333,13 @@ const BattleTester: React.FC<BattleTesterProps> = ({
                     <Divider />
 
                     {/* Turn-by-turn breakdown */}
-                    <ScrollArea style={{ flex: 1 }} scrollbarSize={8} type="always">
+                    <ScrollArea 
+                      style={{ flex: 1 }} 
+                      scrollbarSize={8} 
+                      type="always"
+                      offsetScrollbars
+                      viewportProps={{ style: { minHeight: 0 } }}
+                    >
                         <Stack gap="xs" p="xs">
                         {simulation.turns?.map((turn: BattleTurn, index: number) => {
                           // Check if this is the start of a new turn number
