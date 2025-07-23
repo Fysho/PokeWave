@@ -155,303 +155,39 @@ class PokemonShowdownService {
   async simulateSingleBattleTester(config: ShowdownBattleConfig): Promise<SingleBattleResult> {
     const startTime = Date.now();
     
-    logger.info('🎮 Battle Tester: Starting single battle simulation', {
-      generation: config.generation || 9,
-      pokemon1Instance: config.pokemon1 || null,
-      pokemon2Instance: config.pokemon2 || null
-    });
-    
     try {
-      let stream: BattleStreams.BattleStream | null = new BattleStreams.BattleStream();
-      const outputs: string[] = [];
-
       const pokemon1 = config.pokemon1;
       const pokemon2 = config.pokemon2;
-      // Create teams with moves from Pokemon Showdown
-      logger.info('🎮 Battle Tester: Creating teams...');
-      const p1teamString = await this.createTeam(pokemon1, config.generation);
-      const p2teamString = await this.createTeam(pokemon2, config.generation);
       
-      // Convert team strings to packed format
-      const p1teamImported = Teams.importTeam(p1teamString);
-      const p2teamImported = Teams.importTeam(p2teamString);
+      // Use the shared battle simulation core with logging and parsing enabled
+      const result = await this.runBattleSimulation(pokemon1, pokemon2, config.generation, {
+        enableLogging: true,
+        parseLog: true
+      });
       
-      if (!p1teamImported || !p2teamImported) {
-        throw new Error('Failed to import team data');
-      }
-      
-      const p1team = Teams.packTeam(p1teamImported);
-      const p2team = Teams.packTeam(p2teamImported);
-      
-      logger.info(`🎮 Battle Tester: P1 team (packed): ${p1team}`);
-      logger.info(`🎮 Battle Tester: P2 team (packed): ${p2team}`);
-
-      // Start battle
-      logger.info('🎮 Battle Tester: Initializing battle stream...');
-      await stream.write(`>start {"formatid":"gen${config.generation}singles"}`);
-      await stream.write(`>player p1 ${JSON.stringify({ name: 'Player 1', team: p1team })}`);
-      await stream.write(`>player p2 ${JSON.stringify({ name: 'Player 2', team: p2team })}`);
-      
-      // Log both Pokemon levels
-      logger.info(`🎮 Battle Tester: ${pokemon1.name} Level ${pokemon1.level} vs ${pokemon2.name} Level ${pokemon2.level}`);
-      
-      let winner: string | 'draw' = config.pokemon1.name;
-      let battleEnded = false;
-      let turnCount = 0;
-      const maxTurns = 50;
-      let p1Request: any = null;
-      let p2Request: any = null;
-      
-      // Track HP for both Pokemon
-      let p1CurrentHP = 0;
-      let p2CurrentHP = 0;
-      let p1MaxHP = 0;
-      let p2MaxHP = 0;
-
-      logger.info('🎮 Battle Tester: Battle started! Processing turns...');
-      
-      // Give the stream a moment to initialize
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
-      // Process battle synchronously for simplicity
-      while (!battleEnded && turnCount < maxTurns) {
-        logger.info(`🎮 Battle Tester: ========================================================`);
-        logger.info(`🎮 Battle Tester: Turn ${turnCount}`);
-        
-        // Read from stream
-        
-        const chunk = await stream.read();
-        if (!chunk) break;
-        
-        logger.info(`🎮 Battle Tester: Chunk received: ${chunk}`);
-        
-        outputs.push(chunk);
-        
-        
-        // Check for winner first
-        if (chunk.includes('|win|')) {
-          battleEnded = true;
-          const declaredWinner = chunk.includes('Player 1') ? 'p1' : 'p2';
-          
-          // Check if the winning Pokemon actually has 0 HP (indicating a draw)
-          if ((declaredWinner === 'p1' && p1CurrentHP === 0) || (declaredWinner === 'p2' && p2CurrentHP === 0)) {
-            winner = 'draw';
-            logger.info(`🎮 Battle Tester: Battle ended in a DRAW! (Winner had 0 HP)`);
-            logger.info(`🎮 Battle Tester: P1 HP: ${p1CurrentHP}/${p1MaxHP}, P2 HP: ${p2CurrentHP}/${p2MaxHP}`);
-          } else {
-            winner = declaredWinner === 'p1' ? pokemon1.name : pokemon2.name;
-            logger.info(`🎮 Battle Tester: Battle ended! Winner: ${winner}`);
-          }
-          break;
-        }
-        
-        // Check for tie message from Pokemon Showdown
-        // Must be a complete |tie| message, not part of another word like |tier|
-        const tieLines = chunk.split('\n');
-        for (const line of tieLines) {
-          if (line === '|tie' || line.startsWith('|tie|')) {
-            battleEnded = true;
-            winner = 'draw';
-            logger.info(`🎮 Battle Tester: Battle ended in a TIE!`);
-            break;
-          }
-        }
-        
-        // Only check for faints after the battle has started (after turn 1)
-        if (turnCount > 0 && chunk.includes('|faint|')) {
-          const lines = chunk.split('\n');
-          let p1FaintedThisChunk = false;
-          let p2FaintedThisChunk = false;
-          
-          for (const line of lines) {
-            if (line.startsWith('|faint|')) {
-              // Format is |faint|p1a: PokemonName
-              const parts = line.split('|');
-              if (parts.length >= 3) {
-                const faintedPokemon = parts[2];
-                if (faintedPokemon.startsWith('p1a:')) {
-                  p1FaintedThisChunk = true;
-                  logger.info(`🎮 Battle Tester: ${pokemon1.name} fainted!`);
-                } else if (faintedPokemon.startsWith('p2a:')) {
-                  p2FaintedThisChunk = true;
-                  logger.info(`🎮 Battle Tester: ${pokemon2.name} fainted!`);
-                }
-              }
-            }
-          }
-          
-          // Only count as draw if both fainted in the same chunk (simultaneous)
-          if (p1FaintedThisChunk && p2FaintedThisChunk) {
-            battleEnded = true;
-            winner = 'draw';
-            logger.info(`🎮 Battle Tester: Battle ended in a DRAW!`);
-            break;
-          }
-        }
-        
-        // Handle team preview
-        if (chunk.includes('|teampreview')) {
-          logger.info('🎮 Battle Tester: Team preview phase');
-          await stream.write('>p1 team 1');
-          await stream.write('>p2 team 1');
-        }
-        
-        // Parse requests and make moves
-        const lines = chunk.split('\n');
-        for (const line of lines) {
-          // Log important battle events
-          if (line.includes('|move|')) {
-            const moveMatch = line.match(/\|move\|([^|]+)\|([^|]+)\|([^|]+)/);
-            if (moveMatch) {
-              logger.info(`🎮 Battle Tester: ${this.extractPokemonName(moveMatch[1])} used ${moveMatch[2]}!`);
-            }
-          }
-          if (line.includes('|-damage|') || line.includes('|-sethp|')) {
-            const damageMatch = line.match(/\|(?:-damage|-sethp)\|([^|]+)\|([^|]+)/);
-            if (damageMatch) {
-              const pokemonSide = damageMatch[1];
-              const hpInfo = damageMatch[2];
-              
-              logger.info(`🎮 Battle Tester: ${this.extractPokemonName(damageMatch[1])} took damage! HP: ${damageMatch[2]}`);
-              
-              // Update HP tracking
-              if (hpInfo === '0 fnt') {
-                if (pokemonSide.startsWith('p1a:')) {
-                  p1CurrentHP = 0;
-                } else if (pokemonSide.startsWith('p2a:')) {
-                  p2CurrentHP = 0;
-                }
-              } else if (hpInfo.includes('/')) {
-                const [current, max] = hpInfo.split('/').map(h => parseInt(h) || 0);
-                if (pokemonSide.startsWith('p1a:')) {
-                  p1CurrentHP = current;
-                  p1MaxHP = max;
-                } else if (pokemonSide.startsWith('p2a:')) {
-                  p2CurrentHP = current;
-                  p2MaxHP = max;
-                }
-              }
-            }
-          }
-          if (line.includes('|-supereffective|')) {
-            logger.info('🎮 Battle Tester: It\'s super effective!');
-          }
-          if (line.includes('|-resisted|')) {
-            logger.info('🎮 Battle Tester: It\'s not very effective...');
-          }
-          if (line.includes('|-crit|')) {
-            logger.info('🎮 Battle Tester: Critical hit!');
-          }
-          
-          // Better request parsing - look for request data in each line
-          if (line.includes('|request|')) {
-            // Extract the JSON data after |request|
-            const parts = line.split('|request|');
-            if (parts.length > 1) {
-              const requestData = parts[1].trim();
-              if (requestData && requestData.startsWith('{')) {
-                try {
-                  logger.debug(`🎮 Battle Tester: Found request data: ${requestData.substring(0, 100)}...`);
-                  const request = JSON.parse(requestData);
-                  
-                  // Determine which player this is for based on previous line context
-                  // Look for the player indicator in the previous lines
-                  let playerFound = false;
-                  for (let i = lines.indexOf(line) - 1; i >= 0 && i > lines.indexOf(line) - 5; i--) {
-                    if (lines[i] && lines[i].startsWith('>p1')) {
-                      p1Request = request;
-                      playerFound = true;
-                      logger.info(`🎮 Battle Tester: Parsed P1 request with ${request.active?.[0]?.moves?.length || 0} moves`);
-                      break;
-                    } else if (lines[i] && lines[i].startsWith('>p2')) {
-                      p2Request = request;
-                      playerFound = true;
-                      logger.info(`🎮 Battle Tester: Parsed P2 request with ${request.active?.[0]?.moves?.length || 0} moves`);
-                      break;
-                    }
-                  }
-                  
-                  // If we couldn't determine the player from context, check if we can infer it
-                  if (!playerFound) {
-                    // If we don't have a p1 request yet, assume this is for p1
-                    if (!p1Request && !p2Request) {
-                      p1Request = request;
-                      logger.info(`🎮 Battle Tester: Assigned request to P1 by default`);
-                    } else if (p1Request && !p2Request) {
-                      p2Request = request;
-                      logger.info(`🎮 Battle Tester: Assigned request to P2 (P1 already has request)`);
-                    }
-                  }
-                } catch (e) {
-                  logger.error(`🎮 Battle Tester: Failed to parse request JSON:`, e);
-                }
-              }
-            }
-          }
-        }
-        
-        // Handle requests similar to runSingleShowdownBattle
-        if (chunk.includes('|request|')) {
-          const requestData = JSON.parse(chunk.split('|request|')[1]);
-          
-          // Determine which player is making the request
-          const side = requestData.side && requestData.side.id ? requestData.side.id : null;
-          if (!side) {
-            logger.warn('🎮 Battle Tester: No side info found in requestData');
-            continue;
-          }
-          
-          // Choose a move for the appropriate player
-          if (requestData.active && requestData.active[0]) {
-            const active = requestData.active[0];
-            const validMoves: (number | 'struggle')[] = [];
-            
-            active.moves.forEach((move: any, i: number) => {
-              logger.info(`🎮 Battle Tester: Available move for ${side}: ${move.move}`);
-              if (!move.disabled && (move.pp === undefined || move.pp > 0)) {
-                validMoves.push(i + 1); // Moves are 1-indexed in Showdown
-              }
-            });
-            
-            const moveChoice = validMoves.length > 0
-                ? validMoves[Math.floor(Math.random() * validMoves.length)]
-                : 'struggle';
-            
-            logger.info(`🎮 Battle Tester: >>> ${side} chose move: ${moveChoice}`);
-            await stream.write(`>${side} move ${moveChoice}`);
-          }
-        }
-        
-        if (chunk.includes('|turn|')) {
-          turnCount++;
-          logger.info(`🎮 Battle Tester: ========================================================`);
-          logger.info(`🎮 Battle Tester: NEW TURN ${turnCount}`);
-        }
-      }
-      
-      // Force end if battle takes too long
-      if (turnCount >= maxTurns) {
-        // Decide winner based on base stat totals
-        const bst1 = Object.values(pokemon1.baseStats).reduce((a, b) => a + b, 0);
-        const bst2 = Object.values(pokemon2.baseStats).reduce((a, b) => a + b, 0);
-        winner = bst1 >= bst2 ? pokemon1.name : pokemon2.name;
-        logger.info(`🎮 Battle Tester: MAX TURN COUNT EXCEEDED - Winner: ${winner}`);
-      }
-
       // Parse battle log
       logger.info('🎮 Battle Tester: Parsing battle log...');
-      const turns = this.parseBattleLog(outputs);
+      const turns = this.parseBattleLog(result.outputs || []);
       
       logger.info(`🎮 Battle Tester: Battle simulation complete!`, {
-        winner,
-        totalTurns: turnCount,
+        winner: result.winner,
+        totalTurns: result.turnCount,
         parsedTurns: turns.length
       });
       
       // If no turns were parsed, create a simple turn for demo purposes
       if (turns.length === 0) {
         logger.info(`🎮 Battle Tester: Battle simulation had zero turn!!!`);
+      }
 
+      // Map numeric winner to string
+      let winner: string | 'draw';
+      if (result.winner === 0) {
+        winner = 'draw';
+      } else if (result.winner === 1) {
+        winner = pokemon1.name;
+      } else {
+        winner = pokemon2.name;
       }
 
       // Extract final HP from the last turn or set to 0 for the loser
@@ -459,17 +195,6 @@ class PokemonShowdownService {
       const finalHP2 = winner === 'draw' ? 0 : (winner === pokemon2.name ? turns[turns.length - 1]?.remainingHP || 0 : 0);
       
       const executionTime = Date.now() - startTime;
-
-      // Important: Clean up the stream properly
-      try {
-        // Instead of destroying the stream, let it be garbage collected
-        // The BattleStream doesn't properly implement destroy() method
-        // and calling it causes internal state corruption
-        // Just nullify the reference and let GC handle it
-        stream = null;
-      } catch (cleanupError) {
-        logger.error('Error during stream cleanup in simulateSingleBattle:', cleanupError);
-      }
 
       logger.info(`🎮 Battle Tester: Returning battle result. Winner: ${winner}, Total turns: ${turns.length}, Execution time: ${executionTime}ms`);
 
@@ -499,14 +224,40 @@ class PokemonShowdownService {
     }
   }
 
-  private async runSingleShowdownBattle(
+  private async runBattleSimulation(
       pokemon1: PokemonInstanceData,
       pokemon2: PokemonInstanceData,
-      generation: number
-  ): Promise<0 | 1 | 2> {
+      generation: number,
+      options: {
+        enableLogging?: boolean;
+        parseLog?: boolean;
+      } = {}
+  ): Promise<{
+    winner: 0 | 1 | 2;
+    outputs?: string[];
+    turnCount?: number;
+    p1CurrentHP?: number;
+    p2CurrentHP?: number;
+    p1MaxHP?: number;
+    p2MaxHP?: number;
+  }> {
+    const { enableLogging = false, parseLog = false } = options;
+    const outputs: string[] = [];
+    
+    if (enableLogging) {
+      logger.info('🎮 Battle Tester: Starting single battle simulation', {
+        generation: generation || 9,
+        pokemon1Instance: pokemon1 || null,
+        pokemon2Instance: pokemon2 || null
+      });
+    }
+
     const stream = new BattleStreams.BattleStream();
 
     // Create teams
+    if (enableLogging) {
+      logger.info('🎮 Battle Tester: Creating teams...');
+    }
     const p1teamString = await this.createTeam(pokemon1, generation);
     const p2teamString = await this.createTeam(pokemon2, generation);
 
@@ -520,15 +271,15 @@ class PokemonShowdownService {
     
     const p1team = Teams.packTeam(p1teamImported);
     const p2team = Teams.packTeam(p2teamImported);
+    
+    if (enableLogging) {
+      logger.info(`🎮 Battle Tester: P1 team (packed): ${p1team}`);
+      logger.info(`🎮 Battle Tester: P2 team (packed): ${p2team}`);
+      logger.info(`🎮 Battle Tester: ${pokemon1.name} Level ${pokemon1.level} vs ${pokemon2.name} Level ${pokemon2.level}`);
+      logger.info('🎮 Battle Tester: Battle started! Processing turns...');
+    }
 
-    // Teams are now in packed format
-
-
-    // Log teams for debugging
-    //logger.info(`P1 team (unpacked):\n${p1teamString}`);
-    //logger.info(`P1 team (packed): ${p1team}`);
-
-// Start the battle
+    // Start the battle
     await stream.write(`>start ${JSON.stringify({ formatid: `gen${generation}singles` })}`);
     await stream.write(`>player p1 ${JSON.stringify({ name: 'Player 1', team: p1team })}`);
     await stream.write(`>player p2 ${JSON.stringify({ name: 'Player 2', team: p2team })}`);
@@ -542,21 +293,29 @@ class PokemonShowdownService {
     let p2CurrentHP = 0;
     let p1MaxHP = 0;
     let p2MaxHP = 0;
+    
+    // Give the stream a moment to initialize when logging
+    if (enableLogging) {
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
 
-    //logger.info(`\n\n==========================================================================='`);
-    //logger.info(`NewTurnCourt ` + turnCount);
     while (turnCount < maxTurns) {
-      //logger.info(`=========================================================='`);
-
-      //logger.info(`turn ${turnCount}`);
+      if (enableLogging) {
+        logger.info(`🎮 Battle Tester: ========================================================`);
+        logger.info(`🎮 Battle Tester: Turn ${turnCount}`);
+      }
+      
       const chunk = await stream.read();
       
-      // Debug logging for first few chunks
-      if (turnCount < 3) {
-        logger.debug(`Chunk ${turnCount}: ${chunk?.substring(0, 200)}...`);
-      }
-
       if (!chunk) break;
+      
+      if (parseLog) {
+        outputs.push(chunk);
+      }
+      
+      if (enableLogging) {
+        logger.info(`🎮 Battle Tester: Chunk received: ${chunk}`);
+      }
 
       // Track HP updates
       if (chunk.includes('|-damage|') || chunk.includes('|switch|')) {
@@ -596,9 +355,17 @@ class PokemonShowdownService {
         // Check if the winning Pokemon actually has 0 HP (indicating a draw from explosion/etc)
         if ((declaredWinner === 1 && p1CurrentHP === 0) || (declaredWinner === 2 && p2CurrentHP === 0)) {
           winner = 0; // Draw
-          logger.debug(`Battle ended in DRAW - winner had 0 HP. P1: ${p1CurrentHP}/${p1MaxHP}, P2: ${p2CurrentHP}/${p2MaxHP}`);
+          if (enableLogging) {
+            logger.info(`🎮 Battle Tester: Battle ended in a DRAW! (Winner had 0 HP)`);
+            logger.info(`🎮 Battle Tester: P1 HP: ${p1CurrentHP}/${p1MaxHP}, P2 HP: ${p2CurrentHP}/${p2MaxHP}`);
+          } else {
+            logger.debug(`Battle ended in DRAW - winner had 0 HP. P1: ${p1CurrentHP}/${p1MaxHP}, P2: ${p2CurrentHP}/${p2MaxHP}`);
+          }
         } else {
           winner = declaredWinner;
+          if (enableLogging) {
+            logger.info(`🎮 Battle Tester: Battle ended! Winner: ${winner === 1 ? pokemon1.name : pokemon2.name}`);
+          }
         }
         break;
       }
@@ -609,6 +376,9 @@ class PokemonShowdownService {
       for (const line of tieLines) {
         if (line === '|tie' || line.startsWith('|tie|')) {
           winner = 0;
+          if (enableLogging) {
+            logger.info(`🎮 Battle Tester: Battle ended in a TIE!`);
+          }
           break;
         }
       }
@@ -627,10 +397,18 @@ class PokemonShowdownService {
               const faintedPokemon = parts[2];
               if (faintedPokemon.startsWith('p1a:')) {
                 p1FaintedThisChunk = true;
-                logger.debug(`Battle: P1 fainted - ${faintedPokemon}`);
+                if (enableLogging) {
+                  logger.info(`🎮 Battle Tester: ${pokemon1.name} fainted!`);
+                } else {
+                  logger.debug(`Battle: P1 fainted - ${faintedPokemon}`);
+                }
               } else if (faintedPokemon.startsWith('p2a:')) {
                 p2FaintedThisChunk = true;
-                logger.debug(`Battle: P2 fainted - ${faintedPokemon}`);
+                if (enableLogging) {
+                  logger.info(`🎮 Battle Tester: ${pokemon2.name} fainted!`);
+                } else {
+                  logger.debug(`Battle: P2 fainted - ${faintedPokemon}`);
+                }
               }
             }
           }
@@ -638,22 +416,27 @@ class PokemonShowdownService {
         
         // Only count as draw if both fainted in the same chunk (simultaneous)
         if (p1FaintedThisChunk && p2FaintedThisChunk) {
-          logger.warn(`Battle: DRAW detected - both Pokemon fainted simultaneously at turn ${turnCount}`);
           winner = 0;
+          if (enableLogging) {
+            logger.info(`🎮 Battle Tester: Battle ended in a DRAW!`);
+          } else {
+            logger.warn(`Battle: DRAW detected - both Pokemon fainted simultaneously at turn ${turnCount}`);
+          }
           break;
         }
       }
+      
       if (chunk.includes('|teampreview')) {
         await stream.write('>p1 team 1');
         await stream.write('>p2 team 1');
       }
+      
       if (chunk.includes('|request|')) {
         const requestData = JSON.parse(chunk.split('|request|')[1]);
 
         // Determine which player is making the request
         const side = requestData.side && requestData.side.id ? requestData.side.id : null;
         if (!side) {
-        //  logger.warn('No side info found in requestData');
           continue;
         }
 
@@ -663,7 +446,9 @@ class PokemonShowdownService {
           const validMoves: (number | 'struggle')[] = [];
 
           active.moves.forEach((move: any, i: number) => {
-         //   logger.info(`Available move for ${side}: ${move.move}`);
+            if (enableLogging) {
+              logger.info(`🎮 Battle Tester: Available move for ${side}: ${move.move}`);
+            }
             if (!move.disabled && (move.pp === undefined || move.pp > 0)) {
               validMoves.push(i + 1); // Moves are 1-indexed in Showdown
             }
@@ -673,15 +458,19 @@ class PokemonShowdownService {
               ? validMoves[Math.floor(Math.random() * validMoves.length)]
               : 'struggle';
 
-         // logger.info(`>>> ${side} chose move: ${moveChoice}`);
+          if (enableLogging) {
+            logger.info(`🎮 Battle Tester: >>> ${side} chose move: ${moveChoice}`);
+          }
           await stream.write(`>${side} move ${moveChoice}`);
         }
       }
+      
       if (chunk.includes('|turn|')) {
         turnCount++;
-       // logger.info(`\n\n==========================================================================='`);
-      //  logger.info(`NewTurnCourt ` + turnCount);
-
+        if (enableLogging) {
+          logger.info(`🎮 Battle Tester: ========================================================`);
+          logger.info(`🎮 Battle Tester: NEW TURN ${turnCount}`);
+        }
       }
 
       if (turnCount >= maxTurns) {
@@ -689,13 +478,36 @@ class PokemonShowdownService {
         const bst1 = Object.values(pokemon1.baseStats).reduce((a, b) => a + b, 0);
         const bst2 = Object.values(pokemon2.baseStats).reduce((a, b) => a + b, 0);
         winner = bst1 >= bst2 ? 1 : 2;
-       // logger.info(`MAX TURN COUNT EXCEEDED`);
-        return winner;
+        if (enableLogging) {
+          logger.info(`🎮 Battle Tester: MAX TURN COUNT EXCEEDED - Winner: ${winner === 1 ? pokemon1.name : pokemon2.name}`);
+        }
+        break;
       }
     }
 
+    return {
+      winner,
+      outputs: parseLog ? outputs : undefined,
+      turnCount: parseLog ? turnCount : undefined,
+      p1CurrentHP: parseLog ? p1CurrentHP : undefined,
+      p2CurrentHP: parseLog ? p2CurrentHP : undefined,
+      p1MaxHP: parseLog ? p1MaxHP : undefined,
+      p2MaxHP: parseLog ? p2MaxHP : undefined
+    };
+  }
 
-    return winner;
+  private async runSingleShowdownBattle(
+      pokemon1: PokemonInstanceData,
+      pokemon2: PokemonInstanceData,
+      generation: number
+  ): Promise<0 | 1 | 2> {
+    // Use the shared battle simulation core with logging disabled
+    const result = await this.runBattleSimulation(pokemon1, pokemon2, generation, {
+      enableLogging: false,
+      parseLog: false
+    });
+    
+    return result.winner;
   }
 
   // Fish Editing Function
