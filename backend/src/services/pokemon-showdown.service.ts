@@ -43,6 +43,11 @@ interface BattleTurn {
   statusInflicted?: boolean;
   healing?: number;
   fainted?: boolean;
+  statChange?: {
+    stat: string;
+    stages: number;
+    type: 'boost' | 'unboost' | 'failed';
+  };
 }
 
 interface SingleBattleResult {
