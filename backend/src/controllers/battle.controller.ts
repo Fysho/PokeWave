@@ -124,7 +124,7 @@ export const submitGuess = async (
     }
 
     // Record the guess attempt in battle stats
-    const battleStats = await battleStatsService.recordGuessAttempt(battleId, isCorrect);
+    const battleStats = await battleStatsService.recordGuessAttempt(battleId, isCorrect, guessPercentage);
     
     // Update battle prediction statistics in database
     try {
@@ -198,7 +198,8 @@ export const submitGuess = async (
         successfulAttempts: battleStats.successfulAttempts,
         successRate: battleStats.totalAttempts > 0 
           ? Math.round((battleStats.successfulAttempts / battleStats.totalAttempts) * 100)
-          : 0
+          : 0,
+        averageGuess: Math.round(battleStats.averageGuess)
       }
     });
   } catch (error) {

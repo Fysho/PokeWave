@@ -6,6 +6,8 @@ interface BattleStats {
   totalAttempts: number;
   successfulAttempts: number;
   successRate: number;
+  sumOfGuesses: number; // Sum of all guess percentages for calculating average
+  averageGuess: number; // Average guess percentage
   lastUpdated: Date;
 }
 
@@ -16,7 +18,7 @@ class BattleStatsService {
   /**
    * Record a guess attempt for a battle
    */
-  async recordGuessAttempt(battleId: string, isCorrect: boolean): Promise<BattleStats> {
+  async recordGuessAttempt(battleId: string, isCorrect: boolean, guessPercentage?: number): Promise<BattleStats> {
     try {
       const statsKey = `${this.STATS_PREFIX}${battleId}`;
       
@@ -29,6 +31,8 @@ class BattleStatsService {
           totalAttempts: 0,
           successfulAttempts: 0,
           successRate: 0,
+          sumOfGuesses: 0,
+          averageGuess: 0,
           lastUpdated: new Date()
         };
       }
@@ -41,6 +45,19 @@ class BattleStatsService {
       stats.successRate = stats.totalAttempts > 0 
         ? (stats.successfulAttempts / stats.totalAttempts) * 100 
         : 0;
+      
+      // Update average guess if provided
+      if (guessPercentage !== undefined) {
+        // For existing stats with no sumOfGuesses, initialize it
+        if (!stats.sumOfGuesses && stats.totalAttempts > 1) {
+          // Estimate previous sum based on current average and previous count
+          stats.sumOfGuesses = stats.averageGuess * (stats.totalAttempts - 1);
+        }
+        
+        stats.sumOfGuesses += guessPercentage;
+        stats.averageGuess = stats.sumOfGuesses / stats.totalAttempts;
+      }
+      
       stats.lastUpdated = new Date();
       
       // Save updated stats
@@ -50,6 +67,7 @@ class BattleStatsService {
         totalAttempts: stats.totalAttempts,
         successfulAttempts: stats.successfulAttempts,
         successRate: stats.successRate.toFixed(2) + '%',
+        averageGuess: stats.averageGuess.toFixed(2) + '%',
         isCorrect
       });
       
