@@ -3,6 +3,7 @@ import { showdownService } from './showdown.service';
 import { pokemonInstanceStore } from './pokemon-instance-store.service';
 import { pokemonShowdownService } from './pokemon-showdown.service';
 import logger from '../utils/logger';
+import { BATTLE_CONFIG } from '../config/game-constants';
 
 interface CachedBattle {
   battleId: string;
@@ -19,8 +20,8 @@ interface CachedBattle {
 
 class BattleCacheService {
   private readonly CACHE_PREFIX = 'battle-cache:';
-  private readonly CACHE_SIZE = 5;
-  private readonly CACHE_TTL = 86400; // 24 hours
+  private readonly CACHE_SIZE = BATTLE_CONFIG.CACHE_SIZE;
+  private readonly CACHE_TTL = BATTLE_CONFIG.CACHE_TTL;
   private readonly BATTLE_LIST_KEY = 'battle-cache:list';
   
   /**

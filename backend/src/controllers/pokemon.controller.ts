@@ -4,6 +4,7 @@ import { pokemonService } from '../services/pokemon.service';
 import { battleCacheService } from '../services/battle-cache.service';
 import { RandomPokemonSettings } from '../types/pokemon-instance.types';
 import logger from '../utils/logger';
+import { DEFAULT_SHINY_CHANCE } from '../config/game-constants';
 
 export const getPokemon = async (
   req: Request,
@@ -212,10 +213,9 @@ export const getCachedBattle = async (
     // Generate a unique instance ID for this battle retrieval
     const battleInstanceId = `${cachedBattle.battleId}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     
-    // Calculate shiny status for each Pokemon (1/4096 chance)
-    const SHINY_CHANCE = 1 / 4096;
-    const pokemon1Shiny = Math.random() < SHINY_CHANCE;
-    const pokemon2Shiny = Math.random() < SHINY_CHANCE;
+    // Calculate shiny status for each Pokemon
+    const pokemon1Shiny = Math.random() < DEFAULT_SHINY_CHANCE;
+    const pokemon2Shiny = Math.random() < DEFAULT_SHINY_CHANCE;
     
     // Log if any shiny Pokemon appeared
     if (pokemon1Shiny || pokemon2Shiny) {
