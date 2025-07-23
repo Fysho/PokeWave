@@ -9,6 +9,7 @@ import {
   getBattleStats
 } from '../controllers/battle.controller';
 import { optionalAuthMiddleware } from '../middleware/auth.middleware';
+import logger from '../utils/logger';
 
 const router = Router();
 
@@ -88,9 +89,24 @@ router.get('/stats/:battleId', getBattleStats);
 router.post('/cache-refresh', async (req, res, next) => {
   try {
     const { battleCacheService } = require('../services/battle-cache.service');
+    const { isDatabaseEnabled } = require('../config/database.config');
+    const { BATTLE_CONFIG } = require('../config/game-constants');
     
     // Clear existing cache
     await battleCacheService.clearCache();
+    
+    // If database is enabled, also clear database records
+    if (isDatabaseEnabled()) {
+      const { prisma } = require('../lib/prisma');
+      
+      // Delete all battles first (this will cascade delete related records)
+      const deletedBattles = await prisma.battle.deleteMany({});
+      logger.info(`Deleted ${deletedBattles.count} battles from database`);
+      
+      // Delete all Pokemon instances
+      const deletedInstances = await prisma.pokemonInstance.deleteMany({});
+      logger.info(`Deleted ${deletedInstances.count} Pokemon instances from database`);
+    }
     
     // Reinitialize with new settings
     await battleCacheService.initialize();
@@ -98,9 +114,9 @@ router.post('/cache-refresh', async (req, res, next) => {
     const stats = await battleCacheService.getCacheStats();
     
     res.json({
-      message: 'Battle cache refreshed successfully',
+      message: 'Battle cache and database refreshed successfully',
       cacheSize: stats.size,
-      targetSize: 100
+      targetSize: BATTLE_CONFIG.CACHE_SIZE
     });
   } catch (error) {
     next(error);
