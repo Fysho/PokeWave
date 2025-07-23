@@ -72,13 +72,20 @@ const MainLayout: React.FC<MainLayoutProps> = ({
             
             setIsBattleTesterSimulating(true);
             try {
-              // Call the backend API for single battle simulation
-              // The backend uses the stored instances from the current battle
+              // Send the current Pokemon data to the backend for battle testing
               const response = await fetch('http://localhost:4000/api/battle/simulate-single', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({})
+                body: JSON.stringify({
+                  pokemon1: currentBattle.pokemon1,
+                  pokemon2: currentBattle.pokemon2
+                })
               });
+              
+              if (!response.ok) {
+                throw new Error(`Battle test failed: ${response.statusText}`);
+              }
+              
               const result = await response.json();
               
               // The result already contains the formatted data we need
