@@ -9,6 +9,7 @@ import { pokemonMoveStoreService } from './services/pokemon-move-store.service';
 import { pokemonItemStoreService } from './services/pokemon-item-store.service';
 import { pokemonAbilityStoreService } from './services/pokemon-ability-store.service';
 import { dailyChallengeService } from './services/daily-challenge.service';
+import { battleCacheService } from './services/battle-cache.service';
 
 // Load environment variables
 dotenv.config();
@@ -70,6 +71,15 @@ const server = app.listen(PORT, async () => {
     logger.info('Daily challenges initialization complete');
   } catch (error) {
     logger.error('Failed to initialize daily challenges:', error);
+  }
+  
+  // Initialize battle cache
+  logger.info('Initializing battle cache...');
+  try {
+    await battleCacheService.initialize();
+    logger.info('Battle cache initialization complete');
+  } catch (error) {
+    logger.error('Failed to initialize battle cache:', error);
   }
 });
 

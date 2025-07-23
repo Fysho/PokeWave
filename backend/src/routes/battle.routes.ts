@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { simulateBattle, submitGuess, simulateSingleBattle } from '../controllers/battle.controller';
+import { simulateBattle, submitGuess, simulateSingleBattle, getBattleCacheStats } from '../controllers/battle.controller';
 
 const router = Router();
 
@@ -62,5 +62,8 @@ router.post('/guess', submitGuess);
 
 // Simulate a single battle with turn-by-turn details
 router.post('/simulate-single', simulateSingleBattle);
+
+// Get battle cache statistics
+router.get('/cache-stats', getBattleCacheStats);
 
 export default router;
