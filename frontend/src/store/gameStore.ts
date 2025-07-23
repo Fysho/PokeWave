@@ -1,3 +1,4 @@
+import React from 'react';
 import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
 import type { GameState, ApiError, BattleResult } from '../types/api';
@@ -215,6 +216,9 @@ export const useGameStore = create<GameStore>()(
             // Unlock Pokemon in Pokedex when guessed correctly
             if (guessResult.isCorrect && currentBattle.pokemon1 && currentBattle.pokemon2) {
               const { usePokedexStore } = await import('./pokedexStore');
+              const { notifications } = await import('@mantine/notifications');
+              const { PokedexNotification } = await import('../components/ui/PokedexNotification');
+              
               const pokedexStore = usePokedexStore.getState();
               const pokemon1Shiny = currentBattle.pokemon1.shiny || false;
               const pokemon2Shiny = currentBattle.pokemon2.shiny || false;
@@ -226,10 +230,46 @@ export const useGameStore = create<GameStore>()(
                 pokemon2Shiny
               });
               
+              // Check if Pokemon were already unlocked before
+              const pokemon1WasUnlocked = pokedexStore.isPokemonUnlocked(currentBattle.pokemon1.id);
+              const pokemon2WasUnlocked = pokedexStore.isPokemonUnlocked(currentBattle.pokemon2.id);
+              
               pokedexStore.unlockMultiplePokemon(
                 [currentBattle.pokemon1.id, currentBattle.pokemon2.id],
                 [pokemon1Shiny, pokemon2Shiny]
               );
+              
+              // Show notifications for newly unlocked Pokemon
+              if (!pokemon1WasUnlocked) {
+                notifications.show({
+                  message: React.createElement(PokedexNotification, {
+                    pokemonName: currentBattle.pokemon1.name,
+                    pokemonSprite: currentBattle.pokemon1.sprites?.front || '',
+                    shinySprite: currentBattle.pokemon1.sprites?.shiny || '',
+                    isShiny: pokemon1Shiny
+                  }),
+                  color: 'blue',
+                  autoClose: 4000,
+                  withBorder: true
+                });
+              }
+              
+              // Add a slight delay for the second notification
+              if (!pokemon2WasUnlocked) {
+                setTimeout(() => {
+                  notifications.show({
+                    message: React.createElement(PokedexNotification, {
+                      pokemonName: currentBattle.pokemon2.name,
+                      pokemonSprite: currentBattle.pokemon2.sprites?.front || '',
+                      shinySprite: currentBattle.pokemon2.sprites?.shiny || '',
+                      isShiny: pokemon2Shiny
+                    }),
+                    color: 'blue',
+                    autoClose: 4000,
+                    withBorder: true
+                  });
+                }, 500);
+              }
             }
 
             // Add to battle history
