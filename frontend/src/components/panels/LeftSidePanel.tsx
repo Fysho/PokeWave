@@ -13,7 +13,8 @@ import {
   Switch,
   NumberInput,
   Select,
-  Divider
+  Divider,
+  Button
 } from '@mantine/core';
 import { 
   IconChevronLeft, 
@@ -23,8 +24,10 @@ import {
   IconEqual,
   IconPokeball,
   IconPackage,
-  IconBug
+  IconBug,
+  IconSwords
 } from '@tabler/icons-react';
+import { useGameStore } from '../../store/gameStore';
 
 interface LeftSidePanelProps {
   isExpanded: boolean;
@@ -132,6 +135,7 @@ const BattleSettingsContent: React.FC<{
   settings: any;
   onSettingsChange: (settings: any) => void;
 }> = ({ isExpanded, settings, onSettingsChange }) => {
+  const { generateNewBattle } = useGameStore();
   const handleLevelModeChange = (checked: boolean) => {
     onSettingsChange({
       ...settings,
@@ -173,6 +177,18 @@ const BattleSettingsContent: React.FC<{
       <Box p="md" style={{ overflowY: 'auto', height: '100%' }}>
         {/* Content copied from BattleSettings */}
         <Stack gap="lg">
+          {/* Generate New Battle Button */}
+          <Button
+            fullWidth
+            size="md"
+            variant="gradient"
+            gradient={{ from: 'blue', to: 'grape', deg: 135 }}
+            leftSection={<IconSwords size={20} />}
+            onClick={() => generateNewBattle(settings)}
+          >
+            Generate New Battle
+          </Button>
+          
           {/* Level Settings */}
           <Card withBorder p="md">
             <Stack gap="md">
