@@ -1042,7 +1042,7 @@ const BattleArena: React.FC<BattleArenaProps> = ({ hideStats = false }) => {
                     <Grid gutter={{ base: 'md', md: 'xl' }} align="flex-start" justify="center" maw={1200} mx="auto">
                       <Grid.Col span={{ base: 12, sm: 6 }}>
                         {/* Pokemon 1 */}
-                        <FadeIn key={`pokemon1-${currentBattle.pokemon1.id}`}>
+                        <FadeIn key={`pokemon1-${currentBattle.battleInstanceId || currentBattle.battleId}-${currentBattle.pokemon1.id}`}>
                           <PokemonBattleCard
                             pokemon={currentBattle.pokemon1}
                             showResults={showResults}
@@ -1091,7 +1091,7 @@ const BattleArena: React.FC<BattleArenaProps> = ({ hideStats = false }) => {
                       <Grid.Col span={{ base: 12, sm: 6 }}>
 
                         {/* Pokemon 2 */}
-                        <FadeIn key={`pokemon2-${currentBattle.pokemon2.id}`}>
+                        <FadeIn key={`pokemon2-${currentBattle.battleInstanceId || currentBattle.battleId}-${currentBattle.pokemon2.id}`}>
                           <PokemonBattleCard
                             pokemon={currentBattle.pokemon2}
                             showResults={showResults}

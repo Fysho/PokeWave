@@ -208,11 +208,15 @@ export const getCachedBattle = async (
       throw new ApiError(500, 'No cached battles available');
     }
     
+    // Generate a unique instance ID for this battle retrieval
+    const battleInstanceId = `${cachedBattle.battleId}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    
     // Return the Pokemon instances and battle info
     res.json({
       pokemon1: cachedBattle.pokemon1,
       pokemon2: cachedBattle.pokemon2,
       battleId: cachedBattle.battleId,
+      battleInstanceId: battleInstanceId, // Unique for each retrieval
       totalBattles: cachedBattle.totalBattles,
       pokemon1Wins: cachedBattle.pokemon1Wins,
       pokemon2Wins: cachedBattle.pokemon2Wins,

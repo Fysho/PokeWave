@@ -8,6 +8,7 @@ interface BattleSettings {
   withItems: boolean;
   movesetType?: 'random' | 'competitive';
   aiDifficulty?: 'random' | 'elite';
+  debugMode?: boolean;
 }
 
 interface SettingsState {

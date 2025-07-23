@@ -17,6 +17,7 @@ export interface Pokemon {
 
 export interface BattleResult {
   battleId: string;
+  battleInstanceId?: string; // Unique ID for each battle instance (for animation purposes)
   pokemon1: {
     id: number;
     name: string;
@@ -269,6 +270,13 @@ export interface GetRandomPokemonWithInstancesResponse {
   generation: number;
   pokemon1InstanceId?: string;
   pokemon2InstanceId?: string;
+  battleId?: string;
+  battleInstanceId?: string;
+  totalBattles?: number;
+  pokemon1Wins?: number;
+  pokemon2Wins?: number;
+  winRate?: number;
+  executionTime?: number;
 }
 
 export interface SimpleBattleResult {

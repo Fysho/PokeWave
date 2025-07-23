@@ -96,18 +96,20 @@ export const useGameStore = create<GameStore>()(
 
             // The cached battle already includes battle results
             const battleResult = {
-              battleId: battleData.battleId,
-              pokemon1Wins: battleData.pokemon1Wins,
-              pokemon2Wins: battleData.pokemon2Wins,
-              draws: battleData.draws || 0,
-              totalBattles: battleData.totalBattles,
-              winRate: battleData.winRate,
+              battleId: battleData.battleId || 'unknown',
+              battleInstanceId: battleData.battleInstanceId, // Unique instance ID for animations
+              pokemon1Wins: battleData.pokemon1Wins || 0,
+              pokemon2Wins: battleData.pokemon2Wins || 0,
+              draws: 0, // draws not included in cached battle response
+              totalBattles: battleData.totalBattles || 100,
+              winRate: battleData.winRate || 50,
               executionTime: battleData.executionTime || 0
             };
             
             // Construct the full battle result using cached data
             const enhancedBattleResult: BattleResult = {
               battleId: battleResult.battleId,
+              battleInstanceId: battleResult.battleInstanceId, // Pass through the unique instance ID
               totalBattles: battleResult.totalBattles,
               winRate: battleResult.winRate,
               executionTime: battleResult.executionTime,
