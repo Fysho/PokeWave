@@ -110,20 +110,50 @@ export const TypeColorSlider: React.FC<TypeColorSliderProps> = ({
       
       {/* Correct Answer Indicator */}
       {showCorrectIndicator && correctValue !== undefined && (
-        <Box
-          style={{
-            position: 'absolute',
-            top: '-14px',
-            left: `${correctPercentage}%`,
-            transform: 'translateX(-50%)',
-            width: 0,
-            height: 0,
-            borderLeft: '8px solid transparent',
-            borderRight: '8px solid transparent',
-            borderTop: `12px solid ${isCorrect ? '#27ae60' : '#e74c3c'}`,
-            pointerEvents: 'none',
-          }}
-        />
+        <>
+          <Box
+            style={{
+              position: 'absolute',
+              top: '-14px',
+              left: `${correctPercentage}%`,
+              transform: 'translateX(-50%)',
+              width: 0,
+              height: 0,
+              borderLeft: '8px solid transparent',
+              borderRight: '8px solid transparent',
+              borderTop: `12px solid ${isCorrect ? '#27ae60' : '#e74c3c'}`,
+              pointerEvents: 'none',
+            }}
+          />
+          
+          {/* Left range indicator (-10%) */}
+          <Box
+            style={{
+              position: 'absolute',
+              top: '-8px',
+              left: `${Math.max(0, correctPercentage - 10)}%`,
+              width: '2px',
+              height: '28px',
+              backgroundColor: 'rgba(0, 0, 0, 0.3)',
+              transform: 'translateX(-50%)',
+              pointerEvents: 'none',
+            }}
+          />
+          
+          {/* Right range indicator (+10%) */}
+          <Box
+            style={{
+              position: 'absolute',
+              top: '-8px',
+              left: `${Math.min(100, correctPercentage + 10)}%`,
+              width: '2px',
+              height: '28px',
+              backgroundColor: 'rgba(0, 0, 0, 0.3)',
+              transform: 'translateX(-50%)',
+              pointerEvents: 'none',
+            }}
+          />
+        </>
       )}
     </Box>
   );
