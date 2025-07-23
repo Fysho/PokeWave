@@ -633,20 +633,6 @@ export const PokemonBattleCard: React.FC<PokemonBattleCardProps> = ({
               </Group>
             </Box>
 
-            {/* Battle Results */}
-            {showResults && (
-              <ScaleIn delay={0.5}>
-                <Box bg={colorScheme === 'dark' ? 'dark.6' : 'gray.0'} p="lg" style={{ borderRadius: '8px' }} ta="center">
-                  <Text size="sm" c="gray.6" mb="xs">Battle Results</Text>
-                  <Text size="xl" fw={700} c="blue.6" mb="xs">
-                    {displayWinPercentage}%
-                  </Text>
-                  <Text size="sm" c="gray.6">
-                    {pokemon.wins} out of {totalBattles || 999} wins
-                  </Text>
-                </Box>
-              </ScaleIn>
-            )}
           </Stack>
         </Card.Section>
       </Card>

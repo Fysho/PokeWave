@@ -230,23 +230,6 @@ export const CompactBattleCard: React.FC<CompactBattleCardProps> = ({
           </Group>
         )}
 
-        {/* Battle Results */}
-        {showResults && (
-          <Box 
-            bg={colorScheme === 'dark' ? 'dark.6' : 'gray.0'} 
-            p="xs" 
-            style={{ borderRadius: '4px' }}
-            ta="center"
-            mt="auto"
-          >
-            <Text size="xs" fw={700} c="blue.6">
-              {displayWinPercentage}%
-            </Text>
-            <Text size="xs" c="gray.6">
-              {pokemon.wins}/{totalBattles || 999}
-            </Text>
-          </Box>
-        )}
       </Stack>
     </Card>
   );
