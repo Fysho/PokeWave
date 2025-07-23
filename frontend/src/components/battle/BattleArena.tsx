@@ -1004,7 +1004,7 @@ const BattleArena: React.FC<BattleArenaProps> = ({ hideStats = false }) => {
                                   height: 0,
                                   borderLeft: '8px solid transparent',
                                   borderRight: '8px solid transparent',
-                                  borderTop: '12px solid #e74c3c',
+                                  borderTop: `12px solid ${guessResult.isCorrect ? '#27ae60' : '#e74c3c'}`,
                                   pointerEvents: 'none',
                                 }}
                               />
@@ -1056,70 +1056,22 @@ const BattleArena: React.FC<BattleArenaProps> = ({ hideStats = false }) => {
                           </Button>
                         </Group>
                       ) : (
-                        <Stack gap="lg">
-                          <ResultReveal 
-                            isVisible={!!guessResult} 
-                            isCorrect={guessResult?.isCorrect}
-                          >
-                            {guessResult && (
-                              <Box maw={800} mx="auto">
-                                <Card 
-                                  withBorder 
-                                  p="xl"
-                                  shadow="lg"
-                                  style={{
-                                    backgroundColor: guessResult.isCorrect 
-                                      ? colorScheme === 'dark' ? theme.colors.green[9] : theme.colors.green[0]
-                                      : colorScheme === 'dark' ? theme.colors.red[9] : theme.colors.red[0],
-                                    borderColor: guessResult.isCorrect 
-                                      ? colorScheme === 'dark' ? theme.colors.green[7] : theme.colors.green[3]
-                                      : colorScheme === 'dark' ? theme.colors.red[7] : theme.colors.red[3],
-                                    borderWidth: '2px',
-                                    minHeight: '180px'
-                                  }}
-                                >
-                                  <Stack align="center" gap="md" justify="center" style={{ minHeight: '120px' }}>
-                                    <Text 
-                                      size="xl" 
-                                      fw={700} 
-                                      c={guessResult.isCorrect ? 'green.7' : 'red.7'}
-                                    >
-                                      {guessResult.isCorrect ? '🎉 Correct!' : '❌ Incorrect!'}
-                                    </Text>
-                                    <Text size="lg">
-                                      Your guess: <Text component="span" fw={700}>
-                                        {isEndlessActive 
-                                          ? `${guessRange[0]}% - ${guessRange[1]}% for ${currentBattle.pokemon1.name}`
-                                          : `${guessResult.guessPercentage}% for ${currentBattle.pokemon1.name}`
-                                        }
-                                      </Text>
-                                    </Text>
-                                    <Text size="lg">
-                                      Actual win rate: <Text component="span" fw={700} c="blue.6">{guessResult.actualWinRate.toFixed(1)}%</Text>
-                                    </Text>
-                                  </Stack>
-                                </Card>
-                              </Box>
-                            )}
-                          </ResultReveal>
-
-                          <Group justify="center" gap="md">
-                            <Group gap="xs">
-                              <IconClock size={16} />
-                              <Text size="sm" c="dimmed">
-                                Simulation completed in {currentBattle.executionTime}ms
-                              </Text>
-                            </Group>
-                            <Button
-                              onClick={handleNewBattle}
-                              size="lg"
-                              leftSection={<IconRotateClockwise2 size={16} />}
-                              variant="filled"
-                            >
-                              Next Battle
-                            </Button>
+                        <Group justify="center" gap="md">
+                          <Group gap="xs">
+                            <IconClock size={16} />
+                            <Text size="sm" c="dimmed">
+                              Simulation completed in {currentBattle.executionTime}ms
+                            </Text>
                           </Group>
-                        </Stack>
+                          <Button
+                            onClick={handleNewBattle}
+                            size="lg"
+                            leftSection={<IconRotateClockwise2 size={16} />}
+                            variant="filled"
+                          >
+                            Next Battle
+                          </Button>
+                        </Group>
                       )}
                     </Stack>
                   </Center>

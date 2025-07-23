@@ -118,7 +118,7 @@ export const TypeColorSlider: React.FC<TypeColorSliderProps> = ({
             height: 0,
             borderLeft: '8px solid transparent',
             borderRight: '8px solid transparent',
-            borderTop: '12px solid #e74c3c',
+            borderTop: `12px solid ${Math.abs(value - correctValue) <= 5 ? '#27ae60' : '#e74c3c'}`,
             pointerEvents: 'none',
           }}
         />
