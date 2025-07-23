@@ -936,76 +936,99 @@ const BattleArena: React.FC<BattleArenaProps> = ({ hideStats = false }) => {
                   </div>
 
                   {/* Win Rate Prediction Slider */}
-                  {!showResults && (
-                    <Box maw={800} mx="auto" mt="xl">
+                  <Box maw={800} mx="auto" mt="xl">
+                    
+                    <Card withBorder p="xl" shadow="lg" style={{ borderColor: colorScheme === 'dark' ? theme.colors.blue[7] : theme.colors.blue[3], borderWidth: '2px' }}>
+                      <Box pos="relative" mb="xl">
+                        <Group justify="space-between" align="center">
+                          <Stack align="flex-start" gap="xs">
+                            <Text fw={600} size="lg">{currentBattle.pokemon1.name}</Text>
+                            {showResults && guessResult ? (
+                              <Text size="xl" fw={700} c="blue.6">{guessResult.actualWinRate.toFixed(1)}%</Text>
+                            ) : isEndlessActive ? (
+                              <Text size="xl" fw={700} c="blue.6">{guessRange[0]}% - {guessRange[1]}%</Text>
+                            ) : (
+                              <Text size="xl" fw={700} c="blue.6">{guessPercentage}%</Text>
+                            )}
+                          </Stack>
+                          <Stack align="flex-end" gap="xs">
+                            <Text fw={600} size="lg">{currentBattle.pokemon2.name}</Text>
+                            {showResults && guessResult ? (
+                              <Text size="xl" fw={700} c="grape.6">{(100 - guessResult.actualWinRate).toFixed(1)}%</Text>
+                            ) : isEndlessActive ? (
+                              <Text size="xl" fw={700} c="grape.6">
+                                {100 - guessRange[1]}% - {100 - guessRange[0]}%
+                              </Text>
+                            ) : (
+                              <Text size="xl" fw={700} c="grape.6">{100 - guessPercentage}%</Text>
+                            )}
+                          </Stack>
+                        </Group>
+                        <Text 
+                          size="xl" 
+                          fw={700} 
+                          pos="absolute" 
+                          top="50%" 
+                          left="50%" 
+                          style={{ transform: 'translate(-50%, -50%)' }}
+                        >
+                          VS
+                        </Text>
+                      </Box>
                       
-                      <Card withBorder p="xl" shadow="lg" style={{ borderColor: colorScheme === 'dark' ? theme.colors.blue[7] : theme.colors.blue[3], borderWidth: '2px' }}>
-                        <Box pos="relative" mb="xl">
-                          <Group justify="space-between" align="center">
-                            <Stack align="flex-start" gap="xs">
-                              <Text fw={600} size="lg">{currentBattle.pokemon1.name}</Text>
-                              {isEndlessActive ? (
-                                <Text size="xl" fw={700} c="blue.6">{guessRange[0]}% - {guessRange[1]}%</Text>
-                              ) : (
-                                <Text size="xl" fw={700} c="blue.6">{guessPercentage}%</Text>
-                              )}
-                            </Stack>
-                            <Stack align="flex-end" gap="xs">
-                              <Text fw={600} size="lg">{currentBattle.pokemon2.name}</Text>
-                              {isEndlessActive ? (
-                                <Text size="xl" fw={700} c="grape.6">
-                                  {100 - guessRange[1]}% - {100 - guessRange[0]}%
-                                </Text>
-                              ) : (
-                                <Text size="xl" fw={700} c="grape.6">{100 - guessPercentage}%</Text>
-                              )}
-                            </Stack>
-                          </Group>
-                          <Text 
-                            size="xl" 
-                            fw={700} 
-                            pos="absolute" 
-                            top="50%" 
-                            left="50%" 
-                            style={{ transform: 'translate(-50%, -50%)' }}
-                          >
-                            VS
-                          </Text>
-                        </Box>
-                        
-                        <Stack gap="md">
-                          {isEndlessActive ? (
+                      <Stack gap="md">
+                        {isEndlessActive ? (
+                          <Box pos="relative">
                             <CenterDraggableRangeSlider
                               value={guessRange}
                               onChange={handleRangeSliderChange}
                               min={0}
                               max={100}
                               step={1}
-                              disabled={isLoading}
+                              disabled={isLoading || showResults}
                               color="blue"
                               size="xl"
                               label={(value) => `${value}%`}
                               hideHandles={true}
                               disableIndividualDrag={true}
                             />
-                          ) : (
-                            <Box style={{ padding: '12px 0' }}>
-                              <TypeColorSlider
-                                value={guessPercentage}
-                                onChange={(value) => handleSliderChange([value])}
-                                leftType={currentBattle.pokemon1.types[0]}
-                                rightType={currentBattle.pokemon2.types[0]}
-                                min={0}
-                                max={100}
-                                step={1}
-                                disabled={isLoading}
+                            {/* Correct Answer Indicator for Endless Mode */}
+                            {showResults && guessResult && (
+                              <Box
+                                style={{
+                                  position: 'absolute',
+                                  top: '-15px',
+                                  left: `${guessResult.actualWinRate}%`,
+                                  transform: 'translateX(-50%)',
+                                  width: 0,
+                                  height: 0,
+                                  borderLeft: '8px solid transparent',
+                                  borderRight: '8px solid transparent',
+                                  borderTop: '12px solid #e74c3c',
+                                  pointerEvents: 'none',
+                                }}
                               />
-                            </Box>
-                          )}
-                        </Stack>
-                      </Card>
-                    </Box>
-                  )}
+                            )}
+                          </Box>
+                        ) : (
+                          <Box style={{ padding: '12px 0' }}>
+                            <TypeColorSlider
+                              value={guessPercentage}
+                              onChange={(value) => handleSliderChange([value])}
+                              leftType={currentBattle.pokemon1.types[0]}
+                              rightType={currentBattle.pokemon2.types[0]}
+                              min={0}
+                              max={100}
+                              step={1}
+                              disabled={isLoading || showResults}
+                              correctValue={showResults && guessResult ? guessResult.actualWinRate : undefined}
+                              showCorrectIndicator={showResults}
+                            />
+                          </Box>
+                        )}
+                      </Stack>
+                    </Card>
+                  </Box>
 
                   {/* Action Buttons */}
                   <Center>
