@@ -66,8 +66,8 @@ export const TypeColorSlider: React.FC<TypeColorSliderProps> = ({
     <Box
       style={{
         position: 'relative',
-        height: '10px',
-        borderRadius: '5px',
+        height: '12px',
+        borderRadius: '6px',
         background: `linear-gradient(to right, ${leftColor} 0%, ${leftColor} ${percentage}%, ${rightColor} ${percentage}%, ${rightColor} 100%)`,
         cursor: disabled ? 'not-allowed' : 'pointer',
         opacity: disabled ? 0.5 : 1,
@@ -97,8 +97,8 @@ export const TypeColorSlider: React.FC<TypeColorSliderProps> = ({
           top: '50%',
           left: `${percentage}%`,
           transform: 'translate(-50%, -50%)',
-          width: '20px',
-          height: '20px',
+          width: '24px',
+          height: '24px',
           borderRadius: '50%',
           background: theme.white,
           boxShadow: '0 2px 4px rgba(0, 0, 0, 0.2), 0 0 0 2px rgba(0, 0, 0, 0.1)',
