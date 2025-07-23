@@ -1216,8 +1216,6 @@ const BattleArena: React.FC<BattleArenaProps> = ({ hideStats = false }) => {
                             disabled={isLoading}
                             size="lg"
                             leftSection={isLoading ? <Loader size={20} /> : <IconSwords size={20} />}
-                            loading={isLoading}
-                            loaderProps={{ size: 20 }}
                             style={{ minWidth: '200px' }}
                           >
                             {isLoading ? 'Simulating...' : 'Submit Prediction'}
