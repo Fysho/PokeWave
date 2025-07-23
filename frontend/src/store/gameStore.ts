@@ -249,7 +249,7 @@ export const useGameStore = create<GameStore>()(
                     isShiny: pokemon1Shiny
                   }),
                   color: 'blue',
-                  autoClose: 4000,
+                  autoClose: 2500,
                   withBorder: true
                 });
               }
@@ -265,7 +265,7 @@ export const useGameStore = create<GameStore>()(
                       isShiny: pokemon2Shiny
                     }),
                     color: 'blue',
-                    autoClose: 4000,
+                    autoClose: 2500,
                     withBorder: true
                   });
                 }, 500);
