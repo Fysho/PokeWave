@@ -34,6 +34,7 @@ import { useAuthStore } from '../../store/authStore';
 import { usePokedexStore } from '../../store/pokedexStore';
 import { notifications } from '@mantine/notifications';
 import { pokemonNames, getPokemonName } from '../../data/pokemonNames';
+import AdminTools from '../admin/AdminTools';
 
 const Profile: React.FC = () => {
   const { user, isAuthenticated, signOut, checkAuth, updateAvatar } = useAuthStore();
@@ -184,6 +185,13 @@ const Profile: React.FC = () => {
           </Card>
         </Stack>
       </Paper>
+
+      {/* Admin Tools (Development Only) */}
+      {process.env.NODE_ENV === 'development' && (
+        <Box mt="xl">
+          <AdminTools />
+        </Box>
+      )}
       
       {/* Avatar Selection Modal */}
       <Modal
