@@ -20,13 +20,11 @@ class DailyChallengeService {
     try {
       const cached = await cacheService.get<DailyChallenge>(cacheKey);
       if (cached) {
-        logger.info(`Daily challenge found in cache for ${dateKey}`);
         return cached;
       }
       
       // If not in cache and it's a valid date range, generate it
       if (this.isDateInValidRange(date)) {
-        logger.info(`Generating daily challenge for ${dateKey}`);
         return await this.generateDailyChallenge(date);
       }
       
@@ -57,8 +55,7 @@ class DailyChallengeService {
    * Initialize daily challenges on app startup
    */
   async initializeDailyChallenges(): Promise<void> {
-    logger.info('Initializing daily challenges...');
-    
+
     const today = new Date();
     const dates: Date[] = [];
     
@@ -80,22 +77,24 @@ class DailyChallengeService {
     }
     
     // Check and generate challenges for each date
+    let generatedCount = 0;
+    let existingCount = 0;
+    
     for (const date of dates) {
-      const dateKey = this.getDateKey(date);
       const existing = await this.getDailyChallenge(date);
       
       if (!existing) {
-        logger.info(`Generating missing daily challenge for ${dateKey}`);
         await this.generateDailyChallenge(date);
+        generatedCount++;
       } else {
-        logger.info(`Daily challenge already exists for ${dateKey}`);
+        existingCount++;
       }
     }
     
+    logger.info(`Daily challenges initialized: ${existingCount} existing, ${generatedCount} newly generated (Total: ${dates.length})`);
+    
     // Clean up old challenges
     await this.cleanupOldChallenges();
-    
-    logger.info('Daily challenges initialization complete');
   }
 
   /**
@@ -127,7 +126,6 @@ class DailyChallengeService {
     const cacheKey = `${this.CACHE_PREFIX}${dateKey}`;
     await cacheService.set(cacheKey, challenge, this.CACHE_TTL);
     
-    logger.info(`Generated and cached daily challenge for ${dateKey}`);
     return challenge;
   }
 
@@ -260,11 +258,11 @@ class DailyChallengeService {
    * Clean up challenges older than DAYS_TO_KEEP_PAST
    */
   private async cleanupOldChallenges(): Promise<void> {
-    logger.info('Cleaning up old daily challenges...');
-    
     const today = new Date();
     const oldestDate = new Date(today);
     oldestDate.setDate(oldestDate.getDate() - this.DAYS_TO_KEEP_PAST - 1);
+    
+    let cleanedCount = 0;
     
     // We can't easily iterate Redis keys with the current setup,
     // so we'll just try to delete specific old dates
@@ -275,20 +273,23 @@ class DailyChallengeService {
       const cacheKey = `${this.CACHE_PREFIX}${dateKey}`;
       
       try {
-        await cacheService.delete(cacheKey);
+        const deleted = await cacheService.delete(cacheKey);
+        if (deleted) cleanedCount++;
       } catch (error) {
         // Ignore errors for non-existent keys
       }
     }
     
-    logger.info('Old daily challenges cleanup complete');
+    if (cleanedCount > 0) {
+      logger.info(`Cleaned up ${cleanedCount} old daily challenges`);
+    }
   }
 
   /**
    * Manually refresh challenges (for testing or admin purposes)
    */
   async refreshAllChallenges(): Promise<void> {
-    logger.info('Manually refreshing all daily challenges...');
+    logger.info('Manually refreshing daily challenges...');
     
     // First, clear all existing challenges from cache
     const today = new Date();
