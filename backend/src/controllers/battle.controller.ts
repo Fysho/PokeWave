@@ -1,14 +1,14 @@
 import { Request, Response, NextFunction } from 'express';
 import { ApiError } from '../middleware/error.middleware';
-//import { battleService } from '../services/battle.service';
+import { getBattleService, getUserService } from '../services/service-factory';
 import {showdownService} from "../services/showdown.service";
 import { battleCacheService } from '../services/battle-cache.service';
 import { pokemonInstanceStore } from '../services/pokemon-instance-store.service';
 import { battleStatsService } from '../services/battle-stats.service';
-import { getUserService } from '../services/service-factory';
-
-const userService = getUserService();
 import logger from "../utils/logger";
+
+const battleService = getBattleService();
+const userService = getUserService();
 
 interface AuthRequest extends Request {
   user?: {
@@ -23,30 +23,41 @@ export const simulateBattle = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-
-    logger.info('/simulate endpoint reached - using cached battle', {
+    console.log('/simulate endpoint reached', {
+      method: req.method,
       body: req.body,
+      headers: req.headers,
       timestamp: new Date().toISOString()
     });
 
-    // Get a random cached battle instead of simulating a new one
+    const { pokemon1, pokemon2 } = req.body;
+
+    // Validate input
+    if (!pokemon1 || !pokemon2) {
+      throw new ApiError(400, 'Both pokemon1 and pokemon2 are required');
+    }
+
+    logger.info('/simulate endpoint reached', {
+      pokemon1: pokemon1?.name,
+      pokemon2: pokemon2?.name,
+      timestamp: new Date().toISOString()
+    });
+
+    // Return a pre-generated battle from the cache
     const result = await battleCacheService.getRandomBattle();
     
     if (!result) {
-      throw new ApiError(500, 'Failed to get battle from cache');
+      throw new ApiError(503, 'No battles available in cache');
     }
     
-    console.log('Battle controller sending cached battle response');
-
+    console.log('Battle controller sending response...');
+    
     res.json({
       battleId: result.battleId,
       pokemon1: result.pokemon1,
       pokemon2: result.pokemon2,
-      pokemon1Wins: result.pokemon1Wins,
-      pokemon2Wins: result.pokemon2Wins,
-      draws: result.draws,
-      totalBattles: result.totalBattles,
       winRate: result.winRate,
+      totalBattles: result.totalBattles,
       executionTime: result.executionTime
     });
 
@@ -114,6 +125,23 @@ export const submitGuess = async (
 
     // Record the guess attempt in battle stats
     const battleStats = await battleStatsService.recordGuessAttempt(battleId, isCorrect);
+    
+    // Update battle prediction statistics in database
+    try {
+      const cachedBattle = await battleCacheService.getCachedBattle(battleId);
+      if (cachedBattle && 'dbBattleId' in cachedBattle && cachedBattle.dbBattleId) {
+        // If this battle has a database record, update the statistics
+        const { battleTrackerService } = await import('../services/battle-tracker.service');
+        await battleTrackerService.updateBattlePrediction(
+          cachedBattle.dbBattleId,
+          guessPercentage,
+          actualWinRate / 100 // Convert to 0-1 range
+        );
+      }
+    } catch (error) {
+      // Don't fail the request if stats update fails
+      logger.error('Failed to update battle prediction stats:', error);
+    }
 
     // If user is authenticated and guess is correct, unlock Pokemon in their Pokedex
     if (req.user && isCorrect) {
@@ -147,26 +175,30 @@ export const submitGuess = async (
       accuracy: accuracy.toFixed(2),
       points,
       battleStats: {
-        totalAttempts: battleStats.totalAttempts,
-        successRate: battleStats.successRate.toFixed(2)
+        totalGuesses: battleStats.totalAttempts,
+        correctGuesses: battleStats.successfulAttempts
       }
     });
 
-    // Return the result with battle statistics
+    const message = isCorrect 
+      ? `Great job! You were ${accuracy.toFixed(1)}% accurate!`
+      : `Not quite! You were ${(100 - accuracy).toFixed(1)}% off.`;
+
     res.json({
+      success: true,
       battleId,
       guessPercentage,
       actualWinRate,
       isCorrect,
-      accuracy,
+      accuracy: accuracy.toFixed(2),
       points,
-      message: isCorrect 
-        ? `Great guess! You were ${accuracy.toFixed(1)}% accurate!` 
-        : `Not quite! The actual win rate was ${actualWinRate.toFixed(1)}%`,
+      message,
       battleStats: {
-        totalAttempts: battleStats.totalAttempts,
-        successfulAttempts: battleStats.successfulAttempts,
-        successRate: parseFloat(battleStats.successRate.toFixed(2))
+        totalGuesses: battleStats.totalAttempts,
+        correctGuesses: battleStats.successfulAttempts,
+        accuracyRate: battleStats.totalAttempts > 0 
+          ? ((battleStats.successfulAttempts / battleStats.totalAttempts) * 100).toFixed(2)
+          : '0.00'
       }
     });
   } catch (error) {
@@ -223,6 +255,7 @@ export const getBattleCacheStats = async (
   next: NextFunction
 ): Promise<void> => {
   try {
+    // Get current cache statistics
     const stats = await battleCacheService.getCacheStats();
     res.json({
       status: 'ok',
@@ -230,6 +263,89 @@ export const getBattleCacheStats = async (
       targetSize: 5,
       battles: stats.battles
     });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Get popular battles
+export const getPopularBattles = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const limit = parseInt(req.query.limit as string) || 10;
+    
+    if (limit < 1 || limit > 100) {
+      throw new ApiError(400, 'Limit must be between 1 and 100');
+    }
+    
+    if (!battleService.getPopularBattles) {
+      throw new ApiError(501, 'This feature is only available with database storage enabled');
+    }
+    
+    const popularBattles = await battleService.getPopularBattles(limit);
+    
+    res.json({
+      battles: popularBattles
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Get hardest battles
+export const getHardestBattles = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const limit = parseInt(req.query.limit as string) || 10;
+    
+    if (limit < 1 || limit > 100) {
+      throw new ApiError(400, 'Limit must be between 1 and 100');
+    }
+    
+    if (!battleService.getHardestBattles) {
+      throw new ApiError(501, 'This feature is only available with database storage enabled');
+    }
+    
+    const hardestBattles = await battleService.getHardestBattles(limit);
+    
+    res.json({
+      battles: hardestBattles
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+// Get battle statistics
+export const getBattleStats = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { battleId } = req.params;
+    
+    if (!battleId) {
+      throw new ApiError(400, 'Battle ID is required');
+    }
+    
+    if (!battleService.getBattleStats) {
+      throw new ApiError(501, 'This feature is only available with database storage enabled');
+    }
+    
+    const stats = await battleService.getBattleStats(battleId);
+    
+    if (!stats) {
+      throw new ApiError(404, 'Battle not found or statistics not available');
+    }
+    
+    res.json(stats);
   } catch (error) {
     next(error);
   }

@@ -1,5 +1,13 @@
 import { Router } from 'express';
-import { simulateBattle, submitGuess, simulateSingleBattle, getBattleCacheStats } from '../controllers/battle.controller';
+import { 
+  simulateBattle, 
+  submitGuess, 
+  simulateSingleBattle, 
+  getBattleCacheStats,
+  getPopularBattles,
+  getHardestBattles,
+  getBattleStats
+} from '../controllers/battle.controller';
 import { optionalAuthMiddleware } from '../middleware/auth.middleware';
 
 const router = Router();
@@ -66,6 +74,15 @@ router.post('/simulate-single', simulateSingleBattle);
 
 // Get battle cache statistics
 router.get('/cache-stats', getBattleCacheStats);
+
+// Get popular battles (most played)
+router.get('/popular', getPopularBattles);
+
+// Get hardest battles (lowest accuracy rate)
+router.get('/hardest', getHardestBattles);
+
+// Get battle statistics by ID
+router.get('/stats/:battleId', getBattleStats);
 
 // Refresh battle cache (admin/development route)
 router.post('/cache-refresh', async (req, res, next) => {

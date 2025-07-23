@@ -2,6 +2,8 @@ import { cacheService } from './cache.service';
 import { showdownService } from './showdown.service';
 import { pokemonInstanceStore } from './pokemon-instance-store.service';
 import { pokemonShowdownService } from './pokemon-showdown.service';
+import { isDatabaseEnabled } from '../config/database.config';
+import { battleTrackerService } from './battle-tracker.service';
 import logger from '../utils/logger';
 import { BATTLE_CONFIG } from '../config/game-constants';
 
@@ -16,6 +18,7 @@ interface CachedBattle {
   winRate: number;
   executionTime: number;
   createdAt: Date;
+  dbBattleId?: string; // Reference to database battle record
 }
 
 class BattleCacheService {
@@ -131,6 +134,25 @@ class BattleCacheService {
       // Use showdown service to simulate a full battle
       const battleResult = await showdownService.simulateBattle();
       
+      // Save to database if enabled
+      let dbBattleId: string | undefined;
+      if (isDatabaseEnabled()) {
+        try {
+          const dbBattle = await battleTrackerService.saveOrGetBattle(
+            pokemon1,
+            pokemon2,
+            battleResult.pokemon1Wins / battleResult.totalBattles, // Win rate as 0-1
+            battleResult.totalBattles,
+            battleResult.executionTime
+          );
+          dbBattleId = dbBattle.id;
+          logger.info(`Saved battle to database with ID: ${dbBattleId}`);
+        } catch (error) {
+          logger.error('Failed to save battle to database:', error);
+          // Continue without database tracking
+        }
+      }
+      
       const cachedBattle: CachedBattle = {
         battleId: battleResult.battleId,
         pokemon1: pokemon1,
@@ -141,7 +163,8 @@ class BattleCacheService {
         totalBattles: battleResult.totalBattles,
         winRate: (battleResult.pokemon1Wins / battleResult.totalBattles) * 100,
         executionTime: battleResult.executionTime,
-        createdAt: new Date()
+        createdAt: new Date(),
+        dbBattleId
       };
       
       // Cache the battle

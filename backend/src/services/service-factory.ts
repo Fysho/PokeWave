@@ -3,8 +3,11 @@ import { userService } from './user.service';
 import { userServiceDB } from './user.service.db';
 import { leaderboardService } from './leaderboard.service';
 import { leaderboardServiceDB } from './leaderboard.service.db';
+import { battleServiceMemory } from './battle.service.memory';
+import { battleServiceDB } from './battle.service.db';
 import { IUserService } from './interfaces/user.service.interface';
 import { ILeaderboardService } from './interfaces/leaderboard.service.interface';
+import { IBattleService } from './interfaces/battle.service.interface';
 import logger from '../utils/logger';
 
 // Service factory that returns the appropriate implementation
@@ -21,6 +24,15 @@ export function getLeaderboardService(): ILeaderboardService {
     return leaderboardServiceDB as ILeaderboardService;
   } else {
     return leaderboardService as ILeaderboardService;
+  }
+}
+
+// Service factory for battle service
+export function getBattleService(): IBattleService {
+  if (isDatabaseEnabled()) {
+    return battleServiceDB as IBattleService;
+  } else {
+    return battleServiceMemory as IBattleService;
   }
 }
 

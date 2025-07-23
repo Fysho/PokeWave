@@ -100,3 +100,87 @@ model DailyChallengeScore {
   @@index([challengeDate])
   @@index([score])
 }
+
+// PokemonInstance model - stores complete Pokemon data for battles
+model PokemonInstance {
+  id              String   @id @default(uuid())
+  
+  // Basic info
+  pokemonId       Int
+  name            String
+  level           Int
+  
+  // Types
+  types           String[] // ["fire", "flying"]
+  
+  // Stats (calculated with IVs, EVs, nature)
+  hp              Int
+  attack          Int
+  defense         Int
+  specialAttack   Int
+  specialDefense  Int
+  speed           Int
+  
+  // Battle details
+  ability         String
+  abilityName     String
+  item            String?
+  itemName        String?
+  nature          String
+  
+  // Moves
+  moves           Json     // Array of move objects with details
+  
+  // IVs and EVs
+  ivs             Json     // {hp: 31, attack: 31, ...}
+  evs             Json     // {hp: 0, attack: 0, ...}
+  
+  // Visual
+  sprite          String
+  spriteBack      String?
+  isShiny         Boolean  @default(false)
+  
+  // Future expansion
+  gender          String?  // "M", "F", or null
+  teraType        String?  // For future generations
+  dynamaxLevel    Int?     // For future features
+  customData      Json?    // Flexible field for future additions
+  
+  createdAt       DateTime @default(now())
+  
+  // Relations
+  battlesAsPokemon1 Battle[] @relation("Pokemon1")
+  battlesAsPokemon2 Battle[] @relation("Pokemon2")
+
+  @@index([pokemonId])
+  @@index([createdAt])
+}
+
+// Battle model - stores battle results and aggregate user predictions
+model Battle {
+  id              String   @id @default(uuid())
+  
+  // Link to actual Pokemon instances used
+  pokemon1Id      String
+  pokemon1        PokemonInstance @relation("Pokemon1", fields: [pokemon1Id], references: [id])
+  
+  pokemon2Id      String
+  pokemon2        PokemonInstance @relation("Pokemon2", fields: [pokemon2Id], references: [id])
+  
+  // Battle simulation results
+  winRate         Float    // Pokemon 1's win rate (0-1)
+  totalBattles    Int      // Number of simulations (100)
+  executionTime   Int?     // Milliseconds to run simulation
+  
+  // User prediction statistics
+  totalGuesses    Int      @default(0)  // How many users have guessed
+  correctGuesses  Int      @default(0)  // How many guessed correctly (within 10%)
+  avgGuessPercent Float?   // Average user guess for Pokemon 1 win rate
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@unique([pokemon1Id, pokemon2Id]) // Prevent duplicate battles
+  @@index([pokemon1Id, pokemon2Id])
+  @@index([totalGuesses]) // For finding popular battles
+}
