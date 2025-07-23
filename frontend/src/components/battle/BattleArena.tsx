@@ -1230,6 +1230,12 @@ const BattleArena: React.FC<BattleArenaProps> = ({ hideStats = false }) => {
                                   {guessResult.battleStats.averageGuess || 0}%
                                 </Text>
                               </Stack>
+                              <Stack gap={4}>
+                                <Text size="xs" c="dimmed">Correct Answer</Text>
+                                <Text size="lg" fw={700} c="teal">
+                                  {Math.round(guessResult.actualWinRate)}%
+                                </Text>
+                              </Stack>
                             </Group>
                           </Stack>
                           {guessResult.isCorrect && (
