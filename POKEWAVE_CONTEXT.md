@@ -143,6 +143,22 @@ PokeWave is a web-based Pokemon battle prediction game where users predict the w
 
 ## Technical Architecture
 
+### Database Architecture
+**Status**: ✅ Fully implemented with dual-storage support
+
+PokeWave uses a flexible dual-storage architecture that supports both:
+- **In-Memory Storage** (default): Fast development with Map-based storage
+- **PostgreSQL Database**: Production-ready persistent storage
+
+For comprehensive database documentation, see [DATABASE_ARCHITECTURE.md](./DATABASE_ARCHITECTURE.md).
+
+**Key Features**:
+- Seamless switching via `USE_DATABASE` environment variable
+- Prisma ORM for type-safe database access
+- Service factory pattern for storage abstraction
+- Complete data models for users, scores, pokedex, and statistics
+- Docker-based PostgreSQL setup for easy local development
+
 ### Backend (Express + TypeScript) - Port 4000
 **Status**: ✅ Fully functional
 
@@ -266,7 +282,10 @@ pokewave/
 │   │   ├── routes/       # Route definitions
 │   │   ├── services/     # Business logic (Showdown, Battle, Cache)
 │   │   ├── middleware/   # Express middleware
+│   │   ├── lib/          # Database connection (Prisma)
+│   │   ├── config/       # Configuration files
 │   │   └── utils/        # Utilities
+│   ├── prisma/           # Database schema and migrations
 │   ├── package.json
 │   └── tsconfig.json
 ├── frontend/             # React + Vite frontend
@@ -283,8 +302,11 @@ pokewave/
 │   ├── package.json
 │   └── tailwind.config.js
 ├── POKEWAVE_CONTEXT.md   # This file
+├── DATABASE_ARCHITECTURE.md # Database structure and persistence documentation
+├── DATABASE_SETUP.md     # Database setup instructions
 ├── BATTLETESTER_CONTEXT.md # Battle Tester feature documentation
 ├── ImplementationSpec.md # Technical specification
+├── docker-compose.yml    # Docker configuration for PostgreSQL & Redis
 └── README.md            # Setup instructions
 ```
 
@@ -293,9 +315,12 @@ pokewave/
 ### Backend Stack
 - **Express.js 5.x**: Web framework with TypeScript
 - **Pokemon Showdown**: Battle simulation engine (@pkmn/sim, @pkmn/dex, @pkmn/sets)
+- **PostgreSQL**: Persistent database storage (optional, via Docker)
+- **Prisma ORM**: Type-safe database access and migrations
 - **Redis**: Caching layer (optional, graceful fallback)
 - **Winston**: Structured logging
 - **TypeScript**: Strict type checking
+- **Docker Compose**: Container orchestration for PostgreSQL and Redis
 
 ### Frontend Stack
 - **React 19**: UI framework with TypeScript
@@ -328,6 +353,21 @@ npm run dev  # Starts on port 4001
 # If Docker is available
 docker compose up -d redis
 ```
+
+### Optional: PostgreSQL Database
+```bash
+# For persistent storage (requires Docker)
+docker compose up -d postgres
+
+# Run database migrations
+cd backend
+npx prisma migrate dev --name init
+
+# Enable database mode in .env
+echo "USE_DATABASE=true" >> .env
+```
+
+See [DATABASE_SETUP.md](./DATABASE_SETUP.md) for detailed setup instructions.
 
 ## API Documentation
 
