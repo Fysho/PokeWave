@@ -115,6 +115,50 @@ router.post('/simulate-test', async (req, res, next) => {
   }
 });
 
+// Simulate multiple battles with provided Pokemon
+router.post('/simulate-multiple', async (req, res, next) => {
+  try {
+    const { count = 100, pokemon1, pokemon2 } = req.body;
+    
+    // Validate input
+    if (!pokemon1 || !pokemon2) {
+      res.status(400).json({ error: 'Both pokemon1 and pokemon2 are required' });
+      return;
+    }
+    
+    if (count < 1 || count > 1000) {
+      res.status(400).json({ error: 'Count must be between 1 and 1000' });
+      return;
+    }
+    
+    logger.info(`Simulating ${count} battles: ${pokemon1.name} vs ${pokemon2.name}`);
+    
+    // Import required services
+    const { showdownService } = require('../services/showdown.service');
+    const { pokemonInstanceStore } = require('../services/pokemon-instance-store.service');
+    
+    // Store the Pokemon instances
+    pokemonInstanceStore.storeInstances(pokemon1, pokemon2);
+    
+    // Simulate the battles
+    const result = await showdownService.simulateBattle(count);
+    
+    logger.info(`Simulated ${count} battles: ${pokemon1.name} (${result.pokemon1Wins} wins) vs ${pokemon2.name} (${result.pokemon2Wins} wins)`);
+    
+    res.json({
+      battleCount: count,
+      pokemon1Wins: result.pokemon1Wins,
+      pokemon2Wins: result.pokemon2Wins,
+      draws: result.draws,
+      winRate: result.winRate,
+      executionTime: result.executionTime
+    });
+  } catch (error) {
+    logger.error('Error in simulate-multiple:', error);
+    next(error);
+  }
+});
+
 // Simulate multiple random battles for testing
 router.post('/simulate-random', async (req, res, next) => {
   try {

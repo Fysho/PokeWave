@@ -135,7 +135,7 @@ const BattleSettingsContent: React.FC<{
   settings: any;
   onSettingsChange: (settings: any) => void;
 }> = ({ isExpanded, settings, onSettingsChange }) => {
-  const { generateTestBattle } = useGameStore();
+  const { generateTestBattle, currentBattle } = useGameStore();
   const [battleCount, setBattleCount] = useState(100);
   const [isGenerating, setIsGenerating] = useState(false);
   
@@ -219,15 +219,26 @@ const BattleSettingsContent: React.FC<{
                 variant="light"
                 leftSection={<IconDice size={16} />}
                 onClick={async () => {
+                  if (!currentBattle || !currentBattle.pokemon1 || !currentBattle.pokemon2) {
+                    const { notifications } = await import('@mantine/notifications');
+                    notifications.show({
+                      title: 'No Battle Loaded',
+                      message: 'Please generate a battle first before running test simulations',
+                      color: 'yellow'
+                    });
+                    return;
+                  }
+                  
                   setIsGenerating(true);
                   try {
-                    // Call new endpoint for random battle generation
-                    const response = await fetch('http://localhost:4000/api/battle/simulate-random', {
+                    // Use current battle Pokemon for simulation
+                    const response = await fetch('http://localhost:4000/api/battle/simulate-multiple', {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
                       body: JSON.stringify({
                         count: battleCount,
-                        options: settings
+                        pokemon1: currentBattle.pokemon1,
+                        pokemon2: currentBattle.pokemon2
                       })
                     });
                     
@@ -241,8 +252,8 @@ const BattleSettingsContent: React.FC<{
                     // Show notification or handle result
                     const { notifications } = await import('@mantine/notifications');
                     notifications.show({
-                      title: 'Battles Generated',
-                      message: `Successfully simulated ${battleCount} random battles. Winner: ${result.pokemon1Name} (${result.pokemon1Wins} wins) vs ${result.pokemon2Name} (${result.pokemon2Wins} wins)`,
+                      title: 'Test Battles Complete',
+                      message: `Simulated ${battleCount} battles: ${currentBattle.pokemon1.name} (${result.pokemon1Wins} wins) vs ${currentBattle.pokemon2.name} (${result.pokemon2Wins} wins)`,
                       color: 'green',
                       autoClose: 5000
                     });
