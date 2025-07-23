@@ -16,6 +16,7 @@ export interface ShowdownBattleResult {
   battleId: string;
   pokemon1Wins: number;
   pokemon2Wins: number;
+  draws: number;
   totalBattles: number;
   executionTime: number;
 }

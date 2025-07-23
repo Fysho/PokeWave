@@ -196,8 +196,6 @@ class PokemonShowdownService {
       const maxTurns = 50;
       let p1Request: any = null;
       let p2Request: any = null;
-      let pokemon1Fainted = false;
-      let pokemon2Fainted = false;
 
       logger.info('🎮 Battle Tester: Battle started! Processing turns...');
       
@@ -219,26 +217,7 @@ class PokemonShowdownService {
         outputs.push(chunk);
         
         
-        // Check for faints
-        if (chunk.includes('|faint|')) {
-          if (chunk.includes('p1a:')) {
-            pokemon1Fainted = true;
-            logger.info(`🎮 Battle Tester: ${pokemon1.name} fainted!`);
-          } else if (chunk.includes('p2a:')) {
-            pokemon2Fainted = true;
-            logger.info(`🎮 Battle Tester: ${pokemon2.name} fainted!`);
-          }
-          
-          // Check for draw (both Pokemon fainted)
-          if (pokemon1Fainted && pokemon2Fainted) {
-            battleEnded = true;
-            winner = 'draw';
-            logger.info(`🎮 Battle Tester: Battle ended in a DRAW!`);
-            break;
-          }
-        }
-        
-        // Check for winner
+        // Check for winner first
         if (chunk.includes('|win|')) {
           battleEnded = true;
           winner = chunk.includes('Player 1') ? pokemon1.name : pokemon2.name;
@@ -252,6 +231,33 @@ class PokemonShowdownService {
           winner = 'draw';
           logger.info(`🎮 Battle Tester: Battle ended in a TIE!`);
           break;
+        }
+        
+        // Check for faints - only count as draw if BOTH faint in the same chunk
+        if (chunk.includes('|faint|')) {
+          const lines = chunk.split('\n');
+          let p1FaintedThisChunk = false;
+          let p2FaintedThisChunk = false;
+          
+          for (const line of lines) {
+            if (line.includes('|faint|')) {
+              if (line.includes('p1a:')) {
+                p1FaintedThisChunk = true;
+                logger.info(`🎮 Battle Tester: ${pokemon1.name} fainted!`);
+              } else if (line.includes('p2a:')) {
+                p2FaintedThisChunk = true;
+                logger.info(`🎮 Battle Tester: ${pokemon2.name} fainted!`);
+              }
+            }
+          }
+          
+          // Only count as draw if both fainted in the same chunk (simultaneous)
+          if (p1FaintedThisChunk && p2FaintedThisChunk) {
+            battleEnded = true;
+            winner = 'draw';
+            logger.info(`🎮 Battle Tester: Battle ended in a DRAW!`);
+            break;
+          }
         }
         
         // Handle team preview
@@ -480,8 +486,6 @@ class PokemonShowdownService {
     let winner: 0 | 1 | 2 = 1;
     let turnCount = 0;
     const maxTurns = 50;
-    let pokemon1Fainted = false;
-    let pokemon2Fainted = false;
 
     //logger.info(`\n\n==========================================================================='`);
     //logger.info(`NewTurnCourt ` + turnCount);
@@ -494,21 +498,7 @@ class PokemonShowdownService {
 
       if (!chunk) break;
 
-      // Check for faints
-      if (chunk.includes('|faint|')) {
-        if (chunk.includes('p1a:')) {
-          pokemon1Fainted = true;
-        } else if (chunk.includes('p2a:')) {
-          pokemon2Fainted = true;
-        }
-        
-        // Check for draw (both Pokemon fainted)
-        if (pokemon1Fainted && pokemon2Fainted) {
-          winner = 0;
-          break;
-        }
-      }
-
+      // Check for win first
       if (chunk.includes('|win|')) {
         winner = chunk.includes('Player 1') ? 1 : 2;
         break;
@@ -518,6 +508,29 @@ class PokemonShowdownService {
       if (chunk.includes('|tie')) {
         winner = 0;
         break;
+      }
+      
+      // Check for faints - only count as draw if BOTH faint in the same chunk
+      if (chunk.includes('|faint|')) {
+        const lines = chunk.split('\n');
+        let p1FaintedThisChunk = false;
+        let p2FaintedThisChunk = false;
+        
+        for (const line of lines) {
+          if (line.includes('|faint|')) {
+            if (line.includes('p1a:')) {
+              p1FaintedThisChunk = true;
+            } else if (line.includes('p2a:')) {
+              p2FaintedThisChunk = true;
+            }
+          }
+        }
+        
+        // Only count as draw if both fainted in the same chunk (simultaneous)
+        if (p1FaintedThisChunk && p2FaintedThisChunk) {
+          winner = 0;
+          break;
+        }
       }
       if (chunk.includes('|teampreview')) {
         await stream.write('>p1 team 1');
