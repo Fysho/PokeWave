@@ -118,7 +118,7 @@ class PokemonShowdownService {
           pokemon1Wins += 0.5;
           pokemon2Wins += 0.5;
           draws++;
-          //logger.info(`Battle ${i + 1} ended in a draw`, {skipFormat: true});
+          logger.warn(`Battle ${i + 1} ended in a DRAW - this should be rare!`, {skipFormat: true});
         } else if (winner === 1) {
           pokemon1Wins++;
           //logger.info(`${config.pokemon1.name} won battle ${i + 1}`, {skipFormat: true});
@@ -142,7 +142,8 @@ class PokemonShowdownService {
       // Cache the result disabled
       // await cacheService.set(`showdown:${cacheKey}`, result, 3600);
 
-      logger.info(`Simulation complete: ${config.pokemon1.name} won ${pokemon1Wins}, ${config.pokemon2.name} won ${pokemon2Wins}`, {skipFormat: true});
+      // Log detailed result including draw count
+      logger.info(`Simulation complete: ${config.pokemon1.name} won ${pokemon1Wins}, ${config.pokemon2.name} won ${pokemon2Wins}, Draws: ${draws}`, {skipFormat: true});
       return result;
     } catch (error) {
       logger.error('Failed to simulate battle with Pokemon Showdown:', {
@@ -511,6 +512,11 @@ class PokemonShowdownService {
         }
         break;
       }
+    }
+
+    // Log if battle ended without a clear winner (potential issue)
+    if (winner === 1 && turnCount === 0) {
+      logger.warn(`Battle ended with default winner (P1) but 0 turns - possible stream issue!`);
     }
 
     return {
