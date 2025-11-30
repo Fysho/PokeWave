@@ -80,6 +80,8 @@ interface SimulationResult {
   totalBattles: number;
   executionTime: number;
   sampleBattle?: SampleBattle;
+  pokemon1Instance?: PokemonInstanceData;
+  pokemon2Instance?: PokemonInstanceData;
 }
 
 const BattleLab: React.FC = () => {
@@ -373,7 +375,9 @@ const BattleLab: React.FC = () => {
         winRate: result.winRate,
         totalBattles: result.battleCount,
         executionTime: result.executionTime,
-        sampleBattle: result.sampleBattle
+        sampleBattle: result.sampleBattle,
+        pokemon1Instance: result.pokemon1Instance,
+        pokemon2Instance: result.pokemon2Instance
       });
     } catch (error) {
       console.error('Simulation error:', error);
@@ -770,6 +774,40 @@ const BattleLab: React.FC = () => {
 
                               <ScrollArea.Autosize mah={400} type="scroll">
                                 <Stack gap="xs">
+                                  {/* Battle Start - Initial HP */}
+                                  <Card withBorder p="sm" bg={colorScheme === 'dark' ? 'dark.7' : 'blue.0'}>
+                                    <Stack gap="xs">
+                                      <Group justify="space-between" align="center">
+                                        <Text size="xs" fw={600} c="blue">
+                                          Battle Start
+                                        </Text>
+                                        <Badge size="xs" variant="light" color="blue">
+                                          Turn 0
+                                        </Badge>
+                                      </Group>
+                                      <Grid gutter="md">
+                                        <Grid.Col span={6}>
+                                          <Group gap="xs">
+                                            <IconHeart size={12} color="var(--mantine-color-red-6)" />
+                                            <Text size="xs" tt="capitalize" fw={500}>{pokemon1?.name}:</Text>
+                                            <Text size="xs" c="green.6" fw={600}>
+                                              {simulationResult.pokemon1Instance?.stats?.hp || '???'} HP
+                                            </Text>
+                                          </Group>
+                                        </Grid.Col>
+                                        <Grid.Col span={6}>
+                                          <Group gap="xs">
+                                            <IconHeart size={12} color="var(--mantine-color-red-6)" />
+                                            <Text size="xs" tt="capitalize" fw={500}>{pokemon2?.name}:</Text>
+                                            <Text size="xs" c="green.6" fw={600}>
+                                              {simulationResult.pokemon2Instance?.stats?.hp || '???'} HP
+                                            </Text>
+                                          </Group>
+                                        </Grid.Col>
+                                      </Grid>
+                                    </Stack>
+                                  </Card>
+
                                   {simulationResult.sampleBattle.turns?.map((turn: BattleTurn, index: number) => {
                                     const isNewTurn = index === 0 || turn.turn !== simulationResult.sampleBattle!.turns[index - 1].turn;
 
@@ -829,7 +867,9 @@ const BattleLab: React.FC = () => {
                                             {!turn.missed && turn.move !== 'Stat Change' && !['confusion', 'poison', 'burn', 'sandstorm', 'hail', 'recoil', 'Life Orb'].includes(turn.attacker) && (
                                               <Group gap="xs" align="center">
                                                 {turn.damage > 0 && (
-                                                  <Text size="xs" c="red.6">{turn.damage} damage</Text>
+                                                  <Text size="xs" c="red.6">
+                                                    <Text component="span" tt="capitalize">{turn.defender}</Text> took {turn.damage} damage
+                                                  </Text>
                                                 )}
                                                 {turn.effectiveness !== 'normal' && (
                                                   <Group gap={2}>
