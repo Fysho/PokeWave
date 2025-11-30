@@ -35,6 +35,43 @@ else
     exit 1
 fi
 
+# Validate required environment variables
+validate_env() {
+    local missing=0
+
+    if [ -z "$JWT_SECRET" ]; then
+        echo -e "${RED}✗ JWT_SECRET is not set${NC}"
+        missing=1
+    fi
+
+    if [ -z "$POSTGRES_PASSWORD" ]; then
+        echo -e "${RED}✗ POSTGRES_PASSWORD is not set${NC}"
+        missing=1
+    fi
+
+    if [ $missing -eq 1 ]; then
+        echo -e "${RED}Please set required variables in .env.production${NC}"
+        exit 1
+    fi
+
+    echo -e "${GREEN}✓ Environment variables validated${NC}"
+}
+
+# Check prerequisites
+check_prerequisites() {
+    if ! command -v docker &> /dev/null; then
+        echo -e "${RED}✗ Docker is not installed${NC}"
+        exit 1
+    fi
+
+    if ! docker info &> /dev/null; then
+        echo -e "${RED}✗ Docker daemon is not running${NC}"
+        exit 1
+    fi
+
+    echo -e "${GREEN}✓ Prerequisites checked${NC}"
+}
+
 # Ensure shared-proxy-network exists
 ensure_network() {
     if ! docker network ls | grep -q "shared-proxy-network"; then
@@ -46,8 +83,14 @@ ensure_network() {
 
 # Commands
 deploy() {
+    check_prerequisites
+    validate_env
+
     echo -e "${YELLOW}Pulling latest code...${NC}"
-    git pull
+    git pull --ff-only || {
+        echo -e "${RED}✗ Git pull failed. Check for conflicts.${NC}"
+        exit 1
+    }
 
     ensure_network
 
@@ -58,10 +101,16 @@ deploy() {
     echo -e "Frontend: https://pokewave.fysho.dev"
     echo -e "API: https://pokewave.fysho.dev/api"
 
+    # Wait for health checks
+    echo -e "${YELLOW}Waiting for services to be healthy...${NC}"
+    sleep 10
+
     status
 }
 
 start() {
+    check_prerequisites
+    validate_env
     ensure_network
     echo -e "${YELLOW}Starting containers...${NC}"
     docker compose -f docker-compose.prod.yml up -d
@@ -93,6 +142,8 @@ status() {
 }
 
 rebuild() {
+    check_prerequisites
+    validate_env
     echo -e "${YELLOW}Forcing rebuild...${NC}"
     ensure_network
     docker compose -f docker-compose.prod.yml up -d --build --force-recreate

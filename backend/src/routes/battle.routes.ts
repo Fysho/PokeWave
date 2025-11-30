@@ -1,8 +1,8 @@
-import { Router } from 'express';
-import { 
-  simulateBattle, 
-  submitGuess, 
-  simulateSingleBattle, 
+import { Router, Request, Response, NextFunction } from 'express';
+import {
+  simulateBattle,
+  submitGuess,
+  simulateSingleBattle,
   getBattleCacheStats,
   getPopularBattles,
   getHardestBattles,
@@ -13,33 +13,43 @@ import { ApiError } from '../middleware/error.middleware';
 import logger from '../utils/logger';
 
 const router = Router();
+const isDev = process.env.NODE_ENV !== 'production';
 
-// Test endpoint
-router.get('/test', (req, res) => {
+// Development-only middleware
+const devOnly = (req: Request, res: Response, next: NextFunction) => {
+  if (!isDev) {
+    res.status(404).json({ error: 'Not found' });
+    return;
+  }
+  next();
+};
+
+// Test endpoint (development only)
+router.get('/test', devOnly, (req, res) => {
   res.json({ message: 'Battle routes are working!', timestamp: new Date().toISOString() });
 });
 
-// Debug endpoint for testing battle simulation
-router.post('/test-simulate', async (req, res) => {
+// Debug endpoint for testing battle simulation (development only)
+router.post('/test-simulate', devOnly, async (req, res) => {
   try {
     const { Dex } = require('@pkmn/dex');
     const dex = Dex.forGen(1);
-    
+
     // Test getting species
     const allSpecies = dex.species.all();
-    const pikachu = allSpecies.find((s: any) => s.num === 25);
-    const charizard = allSpecies.find((s: any) => s.num === 6);
-    
+    const pikachu = allSpecies.find((s: { num: number }) => s.num === 25);
+    const charizard = allSpecies.find((s: { num: number }) => s.num === 6);
+
     res.json({
       message: 'Test successful',
       pikachu: pikachu ? { name: pikachu.name, types: pikachu.types } : null,
       charizard: charizard ? { name: charizard.name, types: charizard.types } : null
     });
-  } catch (error: any) {
+  } catch (error) {
+    const err = error as Error;
     res.status(500).json({
       error: 'Test failed',
-      message: error.message,
-      stack: error.stack
+      message: err.message
     });
   }
 });
@@ -47,14 +57,15 @@ router.post('/test-simulate', async (req, res) => {
 // Simulate a battle between two Pokemon
 router.post('/simulate', simulateBattle);
 
-// Simulate a battle with Pokemon instances
-router.post('/simulate-with-instances', async (req, res, next) => {
+// Simulate a battle with Pokemon instances (development only)
+router.post('/simulate-with-instances', devOnly, async (req, res, next) => {
   try {
-    console.log('/simulate-with-instances endpoint reached', {
-      body: req.body,
-      timestamp: new Date().toISOString()
+    logger.debug('/simulate-with-instances endpoint reached', {
+      hasPokemon1: !!req.body.pokemon1,
+      hasPokemon2: !!req.body.pokemon2,
+      generation: req.body.generation
     });
-    
+
     res.json({
       message: 'Endpoint reached successfully',
       receivedData: {
@@ -74,8 +85,8 @@ router.post('/guess', optionalAuthMiddleware, submitGuess);
 // Simulate a single battle with turn-by-turn details
 router.post('/simulate-single', simulateSingleBattle);
 
-// Simulate a test battle with specific Pokemon IDs and settings
-router.post('/simulate-test', async (req, res, next) => {
+// Simulate a test battle with specific Pokemon IDs and settings (development only)
+router.post('/simulate-test', devOnly, async (req, res, next) => {
   try {
     const { pokemon1Id, pokemon2Id, options = {} } = req.body;
     
@@ -115,8 +126,8 @@ router.post('/simulate-test', async (req, res, next) => {
   }
 });
 
-// Simulate multiple battles with provided Pokemon
-router.post('/simulate-multiple', async (req, res, next) => {
+// Simulate multiple battles with provided Pokemon (development only)
+router.post('/simulate-multiple', devOnly, async (req, res, next) => {
   try {
     const { count = 100, pokemon1, pokemon2 } = req.body;
     
@@ -159,8 +170,8 @@ router.post('/simulate-multiple', async (req, res, next) => {
   }
 });
 
-// Simulate multiple random battles for testing
-router.post('/simulate-random', async (req, res, next) => {
+// Simulate multiple random battles for testing (development only)
+router.post('/simulate-random', devOnly, async (req, res, next) => {
   try {
     const { count = 100, options = {} } = req.body;
     
@@ -217,8 +228,8 @@ router.get('/hardest', getHardestBattles);
 // Get battle statistics by ID
 router.get('/stats/:battleId', getBattleStats);
 
-// Refresh battle cache (admin/development route)
-router.post('/cache-refresh', async (req, res, next) => {
+// Refresh battle cache (development only)
+router.post('/cache-refresh', devOnly, async (req, res, next) => {
   try {
     const { battleCacheService } = require('../services/battle-cache.service');
     const { isDatabaseEnabled } = require('../config/database.config');

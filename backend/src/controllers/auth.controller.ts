@@ -5,9 +5,21 @@ import { ApiError } from '../middleware/error.middleware';
 import { getUserService } from '../services/service-factory';
 import logger from '../utils/logger';
 
+// Authenticated request interface
+interface AuthenticatedRequest extends Request {
+  user?: {
+    id: string;
+    username: string;
+  };
+}
+
 const userService = getUserService();
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-super-secret-jwt-key-change-this-in-production';
+const JWT_SECRET = process.env.JWT_SECRET;
+
+if (!JWT_SECRET) {
+  throw new Error('JWT_SECRET environment variable is required');
+}
 const JWT_EXPIRES_IN = '7d';
 
 export const signUp = async (
@@ -124,7 +136,7 @@ export const signIn = async (
 };
 
 export const getProfile = async (
-  req: Request & { user?: any },
+  req: AuthenticatedRequest,
   res: Response,
   next: NextFunction
 ): Promise<void> => {
@@ -158,7 +170,7 @@ export const getProfile = async (
 };
 
 export const updateAvatar = async (
-  req: Request & { user?: any },
+  req: AuthenticatedRequest,
   res: Response,
   next: NextFunction
 ): Promise<void> => {

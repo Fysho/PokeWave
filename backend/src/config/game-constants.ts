@@ -25,7 +25,10 @@ export const SHINY_ODDS = {
 };
 
 // Default shiny chance to use in the game
-export const DEFAULT_SHINY_CHANCE = SHINY_ODDS.DEBUG;
+// Use BOOSTED (1/2048) for better gameplay experience while still being rare
+export const DEFAULT_SHINY_CHANCE = process.env.NODE_ENV === 'development'
+  ? SHINY_ODDS.DEBUG
+  : SHINY_ODDS.BOOSTED;
 
 // Battle Configuration
 export const BATTLE_CONFIG = {
