@@ -1404,8 +1404,8 @@ class PokemonShowdownService {
         throw new ApiError(400, `Pokemon with ID ${pokemonId} not found`);
       }
 
-      // Get sprites
-      const sprites = await pokemonService.getPokemonSprites(pokemonId);
+      // Get sprites (local paths)
+      const sprites = pokemonService.getPokemonSprites(pokemonId);
 
       // Get random nature FIRST (needed for stat calculation)
       const natures = ['Hardy', 'Lonely', 'Brave', 'Adamant', 'Naughty', 'Bold',

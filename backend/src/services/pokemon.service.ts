@@ -1,4 +1,3 @@
-import axios from 'axios';
 import { cacheService } from './cache.service';
 import logger from '../utils/logger';
 import { ApiError } from '../middleware/error.middleware';
@@ -25,7 +24,6 @@ const GENERATION_RANGES: Record<number, { start: number; end: number }> = {
 };
 
 class PokemonService {
-  private pokeApiUrl = 'https://pokeapi.co/api/v2';
 
   async getPokedexData(generation?: number): Promise<any[]> {
     try {
@@ -77,35 +75,15 @@ class PokemonService {
       // Wait for all Pokemon data
       await Promise.all(pokemonPromises);
       
-      // Now fetch sprites for valid Pokemon only
-      const spritePromises: Promise<{ id: number; sprites: PokemonSprites }>[] = [];
-      for (const [id] of pokemonDataMap.entries()) {
-        spritePromises.push(
-          this.getPokemonSprites(id)
-            .then(sprites => ({ id, sprites }))
-        );
-      }
-      
-      // Fetch all sprites in parallel
-      const spriteResults = await Promise.all(spritePromises);
-      
-      // Create a map of sprites by ID
-      const spriteMap = new Map<number, PokemonSprites>();
-      spriteResults.forEach(result => {
-        spriteMap.set(result.id, result.sprites);
-      });
-      
-      // Combine data
+      // Combine Pokemon data with local sprite paths
       for (const [id, pokemon] of pokemonDataMap.entries()) {
-        const sprites = spriteMap.get(id);
-        if (sprites) {
-          pokedexData.push({
-            id: pokemon.num,
-            name: pokemon.name,
-            types: pokemon.types,
-            sprite: sprites.front
-          });
-        }
+        const sprites = this.getPokemonSprites(id);
+        pokedexData.push({
+          id: pokemon.num,
+          name: pokemon.name,
+          types: pokemon.types,
+          sprite: sprites.front
+        });
       }
       
       // Sort by ID to ensure correct order
@@ -131,8 +109,8 @@ class PokemonService {
     try {
       // Use createPokemonInstance to get Pokemon data
       const pokemonInstance = await pokemonShowdownService.createPokemonInstance(id, 50, 9, 'none');
-      const sprites = await this.getPokemonSprites(id);
-      
+      const sprites = this.getPokemonSprites(id);
+
       return {
         id: pokemonInstance.id,
         name: pokemonInstance.name,
@@ -149,34 +127,14 @@ class PokemonService {
     }
   }
 
-  async getPokemonSprites(id: number): Promise<PokemonSprites> {
-    try {
-      // Check cache first
-      const cached = await cacheService.get<PokemonSprites>(`pokemon-sprites:${id}`);
-      if (cached) {
-        logger.info(`Pokemon sprites ${id} found in cache`);
-        return cached;
-      }
-
-      // Fetch sprites only from PokeAPI
-      logger.info(`Fetching Pokemon sprites ${id} from PokeAPI`);
-      const response = await axios.get(`${this.pokeApiUrl}/pokemon/${id}`);
-      const data = response.data;
-
-      const sprites: PokemonSprites = {
-        front: data.sprites.front_default,
-        back: data.sprites.back_default,
-        shiny: data.sprites.front_shiny
-      };
-
-      // Cache for 24 hours
-      await cacheService.set(`pokemon-sprites:${id}`, sprites, 86400);
-
-      return sprites;
-    } catch (error) {
-      logger.error('Failed to fetch Pokemon sprites:', error);
-      throw new ApiError(500, 'Failed to fetch Pokemon sprites');
-    }
+  getPokemonSprites(id: number): PokemonSprites {
+    // Use local sprite paths - sprites are stored in frontend/public/sprites/
+    // These paths are relative to the frontend public directory
+    return {
+      front: `/sprites/front/${id}.png`,
+      back: `/sprites/back/${id}.png`,
+      shiny: `/sprites/shiny/${id}.png`
+    };
   }
 
   getRandomPokemonIds(generation: number = 9): { pokemon1Id: number; pokemon2Id: number; generation: number } {
