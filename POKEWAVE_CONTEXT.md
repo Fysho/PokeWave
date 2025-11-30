@@ -804,3 +804,116 @@ curl -X POST http://localhost:4000/api/battle/simulate \
     - Checks if declared winner has 0 HP (from Explosion, etc) and marks as draw
     - Fixes discrepancy where Explosion battles showed as draws in tester but not bulk mode
     - Both simulation methods now properly detect mutual KOs as draws
+
+## Docker Production Deployment
+
+### Container Architecture
+PokeWave uses Docker Compose for production deployment with the following containers:
+
+1. **pokewave-postgres**: PostgreSQL 16 database
+   - Stores user data, pokedex, scores, and battle statistics
+   - Volume: `pokewave_postgres_data`
+   - Health checks enabled
+
+2. **pokewave-redis**: Redis 7 cache
+   - Caches Pokemon sprites, battle results, and API data
+   - Volume: `pokewave_redis_data`
+   - Configured with AOF persistence
+
+3. **pokewave-backend**: Node.js Express API
+   - Handles all game logic and Pokemon Showdown simulations
+   - Runs on port 4000 internally
+   - Non-root user (nodejs:1001) for security
+   - Includes Prisma migrations on startup
+
+4. **pokewave-frontend**: Nginx serving React app
+   - Serves the built React application
+   - Proxies `/api` and `/health` to backend
+   - Internal nginx on port 80
+
+5. **pokewave-nginx**: Main Nginx reverse proxy
+   - Listens on ports 80 and 443 (public facing)
+   - Handles SSL termination with Let's Encrypt certificates
+   - Routes to frontend container
+   - Includes security headers
+
+6. **pokewave-certbot**: Let's Encrypt certificate management
+   - Automatically renews SSL certificates
+   - Certificates valid for 90 days
+
+### Production Environment Files
+- `.env.production`: Contains production secrets
+  - `POSTGRES_PASSWORD`: Database password (no special chars to avoid URL encoding issues)
+  - `JWT_SECRET`: Authentication token secret
+  - `DOMAIN`: pokewave.fysho.dev
+  - `LETSENCRYPT_EMAIL`: SSL certificate notifications
+
+- `docker-compose.prod.yml`: Production Docker configuration
+  - All services configured with proper networking
+  - Health checks and restart policies
+  - Volume persistence for data
+
+### Networking
+- All containers use `pokewave_pokewave-network` (bridge network)
+- Internal container communication uses container names (e.g., `pokewave-backend:4000`)
+- Only nginx exposes public ports (80/443)
+
+### SSL/HTTPS Setup
+1. Initial deployment uses HTTP-only nginx config
+2. Certbot obtains certificates from Let's Encrypt
+3. Nginx config updated to use SSL with HTTP→HTTPS redirect
+4. Automatic renewal via certbot container
+
+### Common Docker Commands
+```bash
+# Start all services
+docker-compose -f docker-compose.prod.yml up -d
+
+# Stop all services
+docker-compose -f docker-compose.prod.yml down
+
+# Restart specific service
+docker-compose -f docker-compose.prod.yml restart backend
+
+# View logs
+docker logs pokewave-backend --tail 50
+
+# Rebuild after code changes
+docker-compose -f docker-compose.prod.yml build frontend
+docker-compose -f docker-compose.prod.yml up -d frontend
+```
+
+### Known Issues & Solutions
+1. **docker-compose v1.29.2 ContainerConfig error**: 
+   - Use `docker run` directly or restart services individually
+   - This is a known bug with the older docker-compose version
+
+2. **Frontend API calls to localhost:4000**:
+   - Update all API calls to use relative paths (`/api`)
+   - Frontend nginx proxies these to the backend container
+
+3. **Database connection issues**:
+   - Ensure password doesn't contain special characters
+   - Backend must use container name `postgres` not `localhost`
+
+4. **502 Bad Gateway errors**:
+   - Usually DNS resolution issues between containers
+   - Restart affected containers to refresh DNS
+
+### Production URLs
+- Main application: https://pokewave.fysho.dev
+- API endpoints: https://pokewave.fysho.dev/api/*
+- Health check: https://pokewave.fysho.dev/health
+
+### Deployment Process
+1. Update code in `/opt/apps/PokeWave/`
+2. Rebuild affected containers: `docker-compose -f docker-compose.prod.yml build [service]`
+3. Restart services: `docker-compose -f docker-compose.prod.yml up -d`
+4. Monitor logs: `docker logs [container-name] --follow`
+
+### Multi-App Hosting
+The server can host multiple applications using nginx virtual hosting:
+- Each app gets its own subdomain (e.g., pokewave.fysho.dev, app2.fysho.dev)
+- All apps share the same nginx container on ports 80/443
+- Nginx routes based on `server_name` to different backend containers
+- Each app has isolated containers and networks

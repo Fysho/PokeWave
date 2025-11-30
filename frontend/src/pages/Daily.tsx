@@ -1,4 +1,4 @@
-import { BATTLE_CONFIG } from '../../../shared/config/battle.config';
+import { BATTLE_CONFIG } from '../shared/config/battle.config';
 
 export function Daily() {
   return (

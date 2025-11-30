@@ -1,7 +1,7 @@
 import axios from 'axios';
 import type { Pokemon, BattleResult, GuessSubmission, GuessResult, ApiError, GetRandomPokemonWithInstancesResponse, SimpleBattleResult } from '../types/api';
 
-const API_BASE_URL = 'http://localhost:4000/api';
+const API_BASE_URL = '/api';
 
 // Create axios instance with default config
 const api = axios.create({
@@ -82,7 +82,7 @@ export class ApiService {
   // Health check
   static async checkHealth(): Promise<{ status: string; timestamp: string }> {
     try {
-      const response = await axios.get('http://localhost:4000/health');
+      const response = await axios.get('/health');
       return response.data;
     } catch (error) {
       throw new Error('Backend server is not responding');

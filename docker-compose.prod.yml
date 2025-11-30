@@ -1,0 +1,106 @@
+version: '3.8'
+
+services:
+  # Redis cache
+  redis:
+    image: redis:7-alpine
+    container_name: pokewave-redis
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    restart: unless-stopped
+    networks:
+      - pokewave-network
+
+  # PostgreSQL database
+  postgres:
+    image: postgres:16-alpine
+    container_name: pokewave-postgres
+    environment:
+      POSTGRES_USER: pokewave
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-pokewave_password}
+      POSTGRES_DB: pokewave_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pokewave -d pokewave_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - pokewave-network
+
+  # Backend API
+  backend:
+    build:
+      context: .
+      dockerfile: ./backend/Dockerfile
+    container_name: pokewave-backend
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      DISABLE_REDIS: "false"
+      USE_DATABASE: "true"
+      DATABASE_URL: postgresql://pokewave:${POSTGRES_PASSWORD:-pokewave_password}@postgres:5432/pokewave_db
+      JWT_SECRET: ${JWT_SECRET:-change-this-secret-in-production}
+      LOG_LEVEL: info
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    restart: unless-stopped
+    networks:
+      - pokewave-network
+      - shared-proxy-network
+    command: >
+      sh -c "
+        npx prisma migrate deploy &&
+        node dist/app.js
+      "
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=shared-proxy-network"
+      - "traefik.http.routers.shared-proxy.pokewave-api.rule=Host(`pokewave.fysho.dev`) && (PathPrefix(`/api`) || Path(`/health`))"
+      - "traefik.http.routers.shared-proxy.pokewave-api.entrypoints=websecure"
+      - "traefik.http.routers.shared-proxy.pokewave-api.tls=true"
+      - "traefik.http.routers.shared-proxy.pokewave-api.tls.certresolver=letsencrypt"
+      - "traefik.http.services.shared-proxy.pokewave-api.loadbalancer.server.port=4000"
+      - "traefik.http.routers.shared-proxy.pokewave-api.service=shared-proxy.pokewave-api"
+      - "traefik.http.routers.shared-proxy.pokewave-api.priority=2"
+
+  # Frontend
+  frontend:
+    build:
+      context: .
+      dockerfile: ./frontend/Dockerfile
+    container_name: pokewave-frontend
+    depends_on:
+      - backend
+    restart: unless-stopped
+    networks:
+      - pokewave-network
+      - shared-proxy-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=shared-proxy-network"
+      - "traefik.http.routers.shared-proxy.pokewave.rule=Host(`pokewave.fysho.dev`)"
+      - "traefik.http.routers.shared-proxy.pokewave.entrypoints=websecure"
+      - "traefik.http.routers.shared-proxy.pokewave.tls=true"
+      - "traefik.http.routers.shared-proxy.pokewave.tls.certresolver=letsencrypt"
+      - "traefik.http.services.shared-proxy.pokewave.loadbalancer.server.port=80"
+      - "traefik.http.routers.shared-proxy.pokewave.service=shared-proxy.pokewave"
+      - "traefik.http.routers.shared-proxy.pokewave.priority=1"
+
+networks:
+  pokewave-network:
+    driver: bridge
+  shared-proxy-network:
+    external: true
+
+volumes:
+  redis_data:
+  postgres_data:

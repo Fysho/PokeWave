@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Loader2, Zap, Trophy, Swords } from 'lucide-react';
-import { BATTLE_CONFIG } from '../../../../shared/config/battle.config';
+import { BATTLE_CONFIG } from '../../shared/config/battle.config';
 
 interface LoadingSpinnerProps {
   size?: 'sm' | 'md' | 'lg';

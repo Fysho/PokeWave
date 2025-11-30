@@ -232,7 +232,7 @@ const BattleSettingsContent: React.FC<{
                   setIsGenerating(true);
                   try {
                     // Use current battle Pokemon for simulation
-                    const response = await fetch('http://localhost:4000/api/battle/simulate-multiple', {
+                    const response = await fetch('/api/battle/simulate-multiple', {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
                       body: JSON.stringify({
