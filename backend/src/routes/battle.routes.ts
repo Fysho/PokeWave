@@ -174,6 +174,13 @@ router.post('/simulate-multiple', devOnly, async (req, res, next) => {
       battleCount: count
     });
 
+    // Also run a single detailed battle to show turn-by-turn breakdown
+    const sampleBattle = await pokemonShowdownService.simulateSingleBattleTester({
+      pokemon1: pokemon1Instance,
+      pokemon2: pokemon2Instance,
+      generation: generation
+    });
+
     const winRate = (result.pokemon1Wins / result.totalBattles) * 100;
 
     logger.info(`Simulated ${count} battles: ${pokemon1Instance.name} (${result.pokemon1Wins} wins, ${winRate.toFixed(1)}%) vs ${pokemon2Instance.name} (${result.pokemon2Wins} wins)`);
@@ -184,7 +191,10 @@ router.post('/simulate-multiple', devOnly, async (req, res, next) => {
       pokemon2Wins: result.pokemon2Wins,
       draws: result.draws,
       winRate: winRate,
-      executionTime: result.executionTime
+      executionTime: result.executionTime,
+      sampleBattle: sampleBattle,
+      pokemon1Instance: pokemon1Instance,
+      pokemon2Instance: pokemon2Instance
     });
   } catch (error) {
     logger.error('Error in simulate-multiple:', error);

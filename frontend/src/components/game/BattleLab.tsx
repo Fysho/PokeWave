@@ -19,13 +19,16 @@ import {
   Progress,
   RingProgress,
   useMantineColorScheme,
+  useMantineTheme,
   Tooltip,
   ActionIcon,
   Combobox,
   InputBase,
-  useCombobox
+  useCombobox,
+  Divider,
+  Accordion
 } from '@mantine/core';
-import { IconSearch, IconRefresh, IconPlayerPlay, IconX } from '@tabler/icons-react';
+import { IconSearch, IconRefresh, IconPlayerPlay, IconX, IconSwords, IconHeart, IconBolt, IconShield, IconTarget, IconSkull } from '@tabler/icons-react';
 import { getTypeColor } from '../../utils/typeColors';
 import ApiService from '../../services/api';
 import type { PokemonInstanceData } from '../../types/api';
@@ -37,6 +40,38 @@ interface PokemonData {
   sprite: string;
 }
 
+interface BattleTurn {
+  turn: number;
+  attacker: string;
+  defender: string;
+  move: string;
+  damage: number;
+  remainingHP: number;
+  critical: boolean;
+  effectiveness: 'super' | 'normal' | 'not very' | 'no';
+  missed?: boolean;
+  statusEffect?: string;
+  statusInflicted?: boolean;
+  healing?: number;
+  fainted?: boolean;
+  statChange?: {
+    stat: string;
+    stages: number;
+    type: 'boost' | 'unboost' | 'failed';
+  };
+}
+
+interface SampleBattle {
+  winner: string;
+  turns: BattleTurn[];
+  totalTurns: number;
+  finalHP1: number;
+  finalHP2: number;
+  executionTime: number;
+  pokemon1: { name: string; level: number };
+  pokemon2: { name: string; level: number };
+}
+
 interface SimulationResult {
   pokemon1Wins: number;
   pokemon2Wins: number;
@@ -44,10 +79,90 @@ interface SimulationResult {
   winRate: number;
   totalBattles: number;
   executionTime: number;
+  sampleBattle?: SampleBattle;
 }
 
 const BattleLab: React.FC = () => {
   const { colorScheme } = useMantineColorScheme();
+  const theme = useMantineTheme();
+
+  // Helper functions for battle display
+  const getEffectivenessIcon = (effectiveness: string) => {
+    switch (effectiveness) {
+      case 'super':
+        return <IconBolt size={12} color="var(--mantine-color-orange-6)" />;
+      case 'not very':
+        return <IconShield size={12} color="var(--mantine-color-gray-6)" />;
+      case 'no':
+        return <IconTarget size={12} color="var(--mantine-color-gray-4)" />;
+      default:
+        return null;
+    }
+  };
+
+  const getEffectivenessText = (effectiveness: string) => {
+    switch (effectiveness) {
+      case 'super': return 'Super effective!';
+      case 'not very': return 'Not very effective...';
+      case 'no': return 'No effect!';
+      default: return '';
+    }
+  };
+
+  const getStatusEffectText = (status: string) => {
+    switch (status) {
+      case 'brn': return 'burned';
+      case 'par': return 'paralyzed';
+      case 'psn': return 'poisoned';
+      case 'tox': return 'badly poisoned';
+      case 'slp': return 'fell asleep';
+      case 'frz': return 'frozen';
+      case 'confusion': return 'confused';
+      default: return status;
+    }
+  };
+
+  const getStatusEffectColor = (status: string) => {
+    switch (status) {
+      case 'brn': case 'burn': return 'red';
+      case 'par': return 'yellow';
+      case 'psn': case 'tox': case 'poison': return 'violet';
+      case 'slp': return 'indigo';
+      case 'frz': return 'cyan';
+      case 'confusion': return 'pink';
+      case 'sandstorm': return 'orange';
+      case 'hail': return 'blue';
+      case 'recoil': return 'red';
+      case 'Life Orb': return 'violet';
+      default: return 'gray';
+    }
+  };
+
+  const getStatName = (stat: string) => {
+    switch (stat) {
+      case 'atk': return 'Attack';
+      case 'def': return 'Defense';
+      case 'spa': return 'Special Attack';
+      case 'spd': return 'Special Defense';
+      case 'spe': return 'Speed';
+      case 'accuracy': return 'Accuracy';
+      case 'evasion': return 'Evasion';
+      default: return stat;
+    }
+  };
+
+  const getStatChangeText = (statChange: { stat: string; stages: number; type: string }) => {
+    if (statChange.type === 'failed') {
+      return statChange.stages > 0 ? "stats can't go any higher!" : "stats can't go any lower!";
+    }
+    const statName = getStatName(statChange.stat);
+    const stages = Math.abs(statChange.stages);
+    const direction = statChange.stages > 0 ? 'rose' : 'fell';
+    if (stages === 1) return `${statName} ${direction}!`;
+    if (stages === 2) return `${statName} ${direction} sharply!`;
+    if (stages >= 3) return `${statName} ${direction} drastically!`;
+    return `${statName} ${direction}!`;
+  };
 
   // Pokemon selection state
   const [allPokemon, setAllPokemon] = useState<PokemonData[]>([]);
@@ -257,7 +372,8 @@ const BattleLab: React.FC = () => {
         draws: result.draws,
         winRate: result.winRate,
         totalBattles: result.battleCount,
-        executionTime: result.executionTime
+        executionTime: result.executionTime,
+        sampleBattle: result.sampleBattle
       });
     } catch (error) {
       console.error('Simulation error:', error);
@@ -332,38 +448,84 @@ const BattleLab: React.FC = () => {
     return (
       <Card withBorder p="md">
         <Stack gap="md">
-          <Group justify="space-between">
-            <Text fw={600} size="lg">Pokemon {slot}</Text>
-            {selectedPokemon && (
-              <ActionIcon
-                variant="subtle"
-                color="gray"
-                onClick={onClear}
-              >
-                <IconX size={16} />
-              </ActionIcon>
-            )}
-          </Group>
+          <Text fw={600} size="lg">Pokemon {slot}</Text>
 
-          {selectedPokemon ? (
+          {/* Always show the combobox to allow changing selection */}
+          <Combobox
+            store={combobox}
+            onOptionSubmit={(val) => {
+              onSelect(parseInt(val));
+              combobox.closeDropdown();
+            }}
+          >
+            <Combobox.Target>
+              <InputBase
+                leftSection={<IconSearch size={16} />}
+                rightSection={
+                  selectedPokemon ? (
+                    <ActionIcon
+                      variant="subtle"
+                      color="gray"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onClear();
+                      }}
+                    >
+                      <IconX size={14} />
+                    </ActionIcon>
+                  ) : (
+                    <Combobox.Chevron />
+                  )
+                }
+                rightSectionPointerEvents={selectedPokemon ? "all" : "none"}
+                placeholder="Search Pokemon..."
+                value={searchValue}
+                onChange={(event) => {
+                  onSearchChange(event.currentTarget.value);
+                  combobox.openDropdown();
+                  combobox.updateSelectedOptionIndex();
+                }}
+                onClick={() => combobox.openDropdown()}
+                onFocus={() => combobox.openDropdown()}
+                onBlur={() => combobox.closeDropdown()}
+              />
+            </Combobox.Target>
+
+            <Combobox.Dropdown>
+              <Combobox.Options>
+                <ScrollArea.Autosize mah={300} type="scroll">
+                  {loading ? (
+                    <Center p="xl">
+                      <Loader size="sm" />
+                    </Center>
+                  ) : options.length === 0 ? (
+                    <Combobox.Empty>No Pokemon found</Combobox.Empty>
+                  ) : (
+                    options
+                  )}
+                </ScrollArea.Autosize>
+              </Combobox.Options>
+            </Combobox.Dropdown>
+          </Combobox>
+
+          {/* Show selected Pokemon preview */}
+          {selectedPokemon && (
             <Box ta="center">
               <Image
                 src={selectedPokemon.sprites.front}
                 alt={selectedPokemon.name}
-                w={120}
-                h={120}
+                w={100}
+                h={100}
                 fit="contain"
                 mx="auto"
                 style={{ imageRendering: 'pixelated' }}
               />
-              <Text fw={600} size="lg" tt="capitalize" mt="xs">
-                {selectedPokemon.name}
-              </Text>
-              <Text size="sm" c="dimmed">#{selectedPokemon.id}</Text>
               <Group justify="center" gap="xs" mt="xs">
                 {selectedPokemon.types.map((type: string) => (
                   <Badge
                     key={type}
+                    size="sm"
                     style={{ backgroundColor: getTypeColor(type) }}
                     tt="capitalize"
                   >
@@ -373,48 +535,6 @@ const BattleLab: React.FC = () => {
               </Group>
               <Text size="sm" c="dimmed" mt="xs">Level {level}</Text>
             </Box>
-          ) : (
-            <Combobox
-              store={combobox}
-              onOptionSubmit={(val) => {
-                onSelect(parseInt(val));
-                combobox.closeDropdown();
-              }}
-            >
-              <Combobox.Target>
-                <InputBase
-                  leftSection={<IconSearch size={16} />}
-                  rightSection={<Combobox.Chevron />}
-                  rightSectionPointerEvents="none"
-                  placeholder="Search Pokemon..."
-                  value={searchValue}
-                  onChange={(event) => {
-                    onSearchChange(event.currentTarget.value);
-                    combobox.openDropdown();
-                    combobox.updateSelectedOptionIndex();
-                  }}
-                  onClick={() => combobox.openDropdown()}
-                  onFocus={() => combobox.openDropdown()}
-                  onBlur={() => combobox.closeDropdown()}
-                />
-              </Combobox.Target>
-
-              <Combobox.Dropdown>
-                <Combobox.Options>
-                  <ScrollArea.Autosize mah={300} type="scroll">
-                    {loading ? (
-                      <Center p="xl">
-                        <Loader size="sm" />
-                      </Center>
-                    ) : options.length === 0 ? (
-                      <Combobox.Empty>No Pokemon found</Combobox.Empty>
-                    ) : (
-                      options
-                    )}
-                  </ScrollArea.Autosize>
-                </Combobox.Options>
-              </Combobox.Dropdown>
-            </Combobox>
           )}
         </Stack>
       </Card>
@@ -618,6 +738,146 @@ const BattleLab: React.FC = () => {
                   <Text size="xs" c="dimmed" ta="center">
                     {simulationResult.totalBattles} battles simulated in {simulationResult.executionTime}ms
                   </Text>
+
+                  {/* Sample Battle Breakdown */}
+                  {simulationResult.sampleBattle && (
+                    <>
+                      <Divider my="md" />
+                      <Accordion variant="contained">
+                        <Accordion.Item value="sample-battle">
+                          <Accordion.Control icon={<IconSwords size={16} />}>
+                            <Group gap="xs">
+                              <Text fw={600} size="sm">Sample Battle Breakdown</Text>
+                              <Badge
+                                size="sm"
+                                variant="filled"
+                                color={simulationResult.sampleBattle.winner === 'draw' ? 'gray' : (simulationResult.sampleBattle.winner === pokemon1?.name ? 'blue' : 'red')}
+                              >
+                                {simulationResult.sampleBattle.winner === 'draw' ? 'Draw' : `${simulationResult.sampleBattle.winner} wins`}
+                              </Badge>
+                            </Group>
+                          </Accordion.Control>
+                          <Accordion.Panel>
+                            <Stack gap="xs">
+                              <Group justify="space-between">
+                                <Text size="xs" c="dimmed">
+                                  {simulationResult.sampleBattle.turns?.length || 0} turns
+                                </Text>
+                                <Text size="xs" c="dimmed">
+                                  {simulationResult.sampleBattle.executionTime}ms
+                                </Text>
+                              </Group>
+
+                              <ScrollArea.Autosize mah={400} type="scroll">
+                                <Stack gap="xs">
+                                  {simulationResult.sampleBattle.turns?.map((turn: BattleTurn, index: number) => {
+                                    const isNewTurn = index === 0 || turn.turn !== simulationResult.sampleBattle!.turns[index - 1].turn;
+
+                                    return (
+                                      <Box key={index}>
+                                        {isNewTurn && index > 0 && (
+                                          <Divider size="xs" label={`Turn ${turn.turn}`} labelPosition="center" my="xs" />
+                                        )}
+                                        <Card withBorder p="sm" bg={colorScheme === 'dark' ? 'dark.6' : 'gray.0'}>
+                                          <Stack gap="xs">
+                                            <Group justify="space-between" align="center">
+                                              <Text size="xs" fw={600} c="dimmed">
+                                                Turn {turn.turn}
+                                              </Text>
+                                              {turn.critical && (
+                                                <Badge size="xs" variant="filled" color="orange">
+                                                  Critical!
+                                                </Badge>
+                                              )}
+                                            </Group>
+
+                                            <Box>
+                                              {turn.move === 'Stat Change' && turn.statChange ? (
+                                                <>
+                                                  <Text component="span" size="xs" fw={500} tt="capitalize">{turn.attacker}</Text>
+                                                  <Text component="span" size="xs">{"'s "}</Text>
+                                                  <Text component="span" size="xs" fw={500} c={turn.statChange.stages > 0 ? 'green.6' : 'red.6'}>
+                                                    {getStatChangeText(turn.statChange)}
+                                                  </Text>
+                                                </>
+                                              ) : ['confusion', 'poison', 'burn', 'sandstorm', 'hail', 'recoil', 'Life Orb'].includes(turn.attacker) ? (
+                                                <>
+                                                  <Text component="span" size="xs" fw={500} tt="capitalize">{turn.defender}</Text>
+                                                  <Text component="span" size="xs"> took </Text>
+                                                  <Text component="span" size="xs" fw={500} c={getStatusEffectColor(turn.attacker)}>{turn.damage} damage</Text>
+                                                  <Text component="span" size="xs"> from {turn.attacker}</Text>
+                                                </>
+                                              ) : turn.move.startsWith("Can't move") ? (
+                                                <>
+                                                  <Text component="span" size="xs" fw={500} tt="capitalize">{turn.attacker}</Text>
+                                                  <Text component="span" size="xs" c="dimmed" fs="italic">
+                                                    {' '}{turn.move.replace("Can't move", "couldn't move")}
+                                                  </Text>
+                                                </>
+                                              ) : (
+                                                <>
+                                                  <Text component="span" size="xs" fw={500} tt="capitalize">{turn.attacker}</Text>
+                                                  <Text component="span" size="xs"> used </Text>
+                                                  <Text component="span" size="xs" fw={500} tt="capitalize">{turn.move}</Text>
+                                                  {turn.missed && (
+                                                    <Text component="span" size="xs" c="dimmed" fs="italic"> but it missed!</Text>
+                                                  )}
+                                                </>
+                                              )}
+                                            </Box>
+
+                                            {!turn.missed && turn.move !== 'Stat Change' && !['confusion', 'poison', 'burn', 'sandstorm', 'hail', 'recoil', 'Life Orb'].includes(turn.attacker) && (
+                                              <Group gap="xs" align="center">
+                                                {turn.damage > 0 && (
+                                                  <Text size="xs" c="red.6">{turn.damage} damage</Text>
+                                                )}
+                                                {turn.effectiveness !== 'normal' && (
+                                                  <Group gap={2}>
+                                                    {getEffectivenessIcon(turn.effectiveness)}
+                                                    <Text size="xs" c="dimmed">{getEffectivenessText(turn.effectiveness)}</Text>
+                                                  </Group>
+                                                )}
+                                              </Group>
+                                            )}
+
+                                            {turn.statusInflicted && turn.statusEffect && (
+                                              <Group gap="xs" align="center">
+                                                <Badge size="xs" variant="filled" color={getStatusEffectColor(turn.statusEffect)}>
+                                                  Status
+                                                </Badge>
+                                                <Text size="xs" c="dimmed">
+                                                  {turn.defender} was {getStatusEffectText(turn.statusEffect)}!
+                                                </Text>
+                                              </Group>
+                                            )}
+
+                                            {turn.move !== 'Stat Change' && (
+                                              <Group gap="xs" align="center">
+                                                <IconHeart size={12} color="var(--mantine-color-red-6)" />
+                                                <Text size="xs" c="dimmed">
+                                                  {turn.defender}: {turn.remainingHP} HP
+                                                </Text>
+                                                {turn.remainingHP <= 0 && (
+                                                  <Group gap={2}>
+                                                    <IconSkull size={12} color="var(--mantine-color-gray-6)" />
+                                                    <Text size="xs" c="dimmed">Fainted!</Text>
+                                                  </Group>
+                                                )}
+                                              </Group>
+                                            )}
+                                          </Stack>
+                                        </Card>
+                                      </Box>
+                                    );
+                                  })}
+                                </Stack>
+                              </ScrollArea.Autosize>
+                            </Stack>
+                          </Accordion.Panel>
+                        </Accordion.Item>
+                      </Accordion>
+                    </>
+                  )}
                 </Stack>
               )}
             </Card>
