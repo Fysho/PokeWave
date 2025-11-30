@@ -40,6 +40,49 @@ interface PokemonData {
   sprite: string;
 }
 
+interface ItemData {
+  id: string;
+  name: string;
+  sprite: string;
+}
+
+// Battle-holdable items (common competitive items)
+const BATTLE_ITEMS: ItemData[] = [
+  { id: 'leftovers', name: 'Leftovers', sprite: '/sprites/items/leftovers.png' },
+  { id: 'choice-band', name: 'Choice Band', sprite: '/sprites/items/choice-band.png' },
+  { id: 'choice-scarf', name: 'Choice Scarf', sprite: '/sprites/items/choice-scarf.png' },
+  { id: 'choice-specs', name: 'Choice Specs', sprite: '/sprites/items/choice-specs.png' },
+  { id: 'life-orb', name: 'Life Orb', sprite: '/sprites/items/life-orb.png' },
+  { id: 'focus-sash', name: 'Focus Sash', sprite: '/sprites/items/focus-sash.png' },
+  { id: 'assault-vest', name: 'Assault Vest', sprite: '/sprites/items/assault-vest.png' },
+  { id: 'eviolite', name: 'Eviolite', sprite: '/sprites/items/eviolite.png' },
+  { id: 'black-sludge', name: 'Black Sludge', sprite: '/sprites/items/black-sludge.png' },
+  { id: 'rocky-helmet', name: 'Rocky Helmet', sprite: '/sprites/items/rocky-helmet.png' },
+  { id: 'light-clay', name: 'Light Clay', sprite: '/sprites/items/light-clay.png' },
+  { id: 'sitrus-berry', name: 'Sitrus Berry', sprite: '/sprites/items/sitrus-berry.png' },
+  { id: 'lum-berry', name: 'Lum Berry', sprite: '/sprites/items/lum-berry.png' },
+  { id: 'aguav-berry', name: 'Aguav Berry', sprite: '/sprites/items/aguav-berry.png' },
+  { id: 'figy-berry', name: 'Figy Berry', sprite: '/sprites/items/figy-berry.png' },
+  { id: 'expert-belt', name: 'Expert Belt', sprite: '/sprites/items/expert-belt.png' },
+  { id: 'muscle-band', name: 'Muscle Band', sprite: '/sprites/items/muscle-band.png' },
+  { id: 'wise-glasses', name: 'Wise Glasses', sprite: '/sprites/items/wise-glasses.png' },
+  { id: 'scope-lens', name: 'Scope Lens', sprite: '/sprites/items/scope-lens.png' },
+  { id: 'shell-bell', name: 'Shell Bell', sprite: '/sprites/items/shell-bell.png' },
+  { id: 'heavy-duty-boots', name: 'Heavy-Duty Boots', sprite: '/sprites/items/heavy-duty-boots.png' },
+  { id: 'weakness-policy', name: 'Weakness Policy', sprite: '/sprites/items/weakness-policy.png' },
+  { id: 'toxic-orb', name: 'Toxic Orb', sprite: '/sprites/items/toxic-orb.png' },
+  { id: 'flame-orb', name: 'Flame Orb', sprite: '/sprites/items/flame-orb.png' },
+  { id: 'air-balloon', name: 'Air Balloon', sprite: '/sprites/items/air-balloon.png' },
+  { id: 'bright-powder', name: 'Bright Powder', sprite: '/sprites/items/bright-powder.png' },
+  { id: 'mental-herb', name: 'Mental Herb', sprite: '/sprites/items/mental-herb.png' },
+  { id: 'power-herb', name: 'Power Herb', sprite: '/sprites/items/power-herb.png' },
+  { id: 'white-herb', name: 'White Herb', sprite: '/sprites/items/white-herb.png' },
+  { id: 'kings-rock', name: "King's Rock", sprite: '/sprites/items/kings-rock.png' },
+  { id: 'quick-claw', name: 'Quick Claw', sprite: '/sprites/items/quick-claw.png' },
+  { id: 'metronome', name: 'Metronome', sprite: '/sprites/items/metronome.png' },
+  { id: 'zoom-lens', name: 'Zoom Lens', sprite: '/sprites/items/zoom-lens.png' },
+];
+
 interface BattleTurn {
   turn: number;
   attacker: string;
@@ -174,10 +217,15 @@ const BattleLab: React.FC = () => {
   const [pokemon1Search, setPokemon1Search] = useState('');
   const [pokemon2Search, setPokemon2Search] = useState('');
 
+  // Item selection state
+  const [pokemon1Item, setPokemon1Item] = useState<ItemData | null>(null);
+  const [pokemon2Item, setPokemon2Item] = useState<ItemData | null>(null);
+  const [pokemon1ItemSearch, setPokemon1ItemSearch] = useState('');
+  const [pokemon2ItemSearch, setPokemon2ItemSearch] = useState('');
+
   // Battle settings
   const [generation, setGeneration] = useState<string>('9');
   const [level, setLevel] = useState<number>(50);
-  const [withItems, setWithItems] = useState(true);
   const [battleCount, setBattleCount] = useState<number>(100);
 
   // Simulation state
@@ -262,6 +310,23 @@ const BattleLab: React.FC = () => {
     return filtered.slice(0, 50);
   }, [allPokemon, generation, pokemon2Search]);
 
+  // Filter items based on search
+  const filteredItems1 = useMemo(() => {
+    if (!pokemon1ItemSearch) return BATTLE_ITEMS;
+    const searchLower = pokemon1ItemSearch.toLowerCase();
+    return BATTLE_ITEMS.filter(item =>
+      item.name.toLowerCase().includes(searchLower)
+    );
+  }, [pokemon1ItemSearch]);
+
+  const filteredItems2 = useMemo(() => {
+    if (!pokemon2ItemSearch) return BATTLE_ITEMS;
+    const searchLower = pokemon2ItemSearch.toLowerCase();
+    return BATTLE_ITEMS.filter(item =>
+      item.name.toLowerCase().includes(searchLower)
+    );
+  }, [pokemon2ItemSearch]);
+
   // Load a specific Pokemon with full instance data
   const loadPokemonInstance = async (pokemonId: number, slot: 1 | 2) => {
     try {
@@ -270,7 +335,7 @@ const BattleLab: React.FC = () => {
         generation: parseInt(generation),
         levelMode: 'fixed',
         level: level,
-        itemMode: withItems ? 'random' : 'none'
+        itemMode: 'none' // Items are now selected manually
       });
 
       // We got two Pokemon, but we only want one specific one
@@ -349,16 +414,18 @@ const BattleLab: React.FC = () => {
           pokemon1: {
             id: pokemon1.id,
             name: pokemon1.name,
-            level: level
+            level: level,
+            item: pokemon1Item?.name
           },
           pokemon2: {
             id: pokemon2.id,
             name: pokemon2.name,
-            level: level
+            level: level,
+            item: pokemon2Item?.name
           },
           generation: parseInt(generation),
           level: level,
-          withItems: withItems
+          withItems: true // Always true since we're manually selecting items
         })
       });
 
@@ -393,6 +460,10 @@ const BattleLab: React.FC = () => {
     setPokemon2(null);
     setPokemon1Search('');
     setPokemon2Search('');
+    setPokemon1Item(null);
+    setPokemon2Item(null);
+    setPokemon1ItemSearch('');
+    setPokemon2ItemSearch('');
     setSimulationResult(null);
     setSimulationError(null);
   };
@@ -405,7 +476,13 @@ const BattleLab: React.FC = () => {
     onSearchChange,
     filteredList,
     onSelect,
-    onClear
+    onClear,
+    selectedItem,
+    itemSearchValue,
+    onItemSearchChange,
+    filteredItems,
+    onItemSelect,
+    onItemClear
   }: {
     slot: 1 | 2;
     selectedPokemon: PokemonInstanceData | null;
@@ -414,9 +491,19 @@ const BattleLab: React.FC = () => {
     filteredList: PokemonData[];
     onSelect: (id: number) => void;
     onClear: () => void;
+    selectedItem: ItemData | null;
+    itemSearchValue: string;
+    onItemSearchChange: (value: string) => void;
+    filteredItems: ItemData[];
+    onItemSelect: (item: ItemData) => void;
+    onItemClear: () => void;
   }) => {
     const combobox = useCombobox({
       onDropdownClose: () => combobox.resetSelectedOption(),
+    });
+
+    const itemCombobox = useCombobox({
+      onDropdownClose: () => itemCombobox.resetSelectedOption(),
     });
 
     const options = filteredList.map((p) => (
@@ -445,6 +532,22 @@ const BattleLab: React.FC = () => {
               </Badge>
             ))}
           </Group>
+        </Group>
+      </Combobox.Option>
+    ));
+
+    const itemOptions = filteredItems.map((item) => (
+      <Combobox.Option value={item.id} key={item.id}>
+        <Group gap="sm">
+          <Image
+            src={item.sprite}
+            alt={item.name}
+            w={24}
+            h={24}
+            fit="contain"
+            style={{ imageRendering: 'pixelated' }}
+          />
+          <Text size="sm">{item.name}</Text>
         </Group>
       </Combobox.Option>
     ));
@@ -513,18 +616,47 @@ const BattleLab: React.FC = () => {
             </Combobox.Dropdown>
           </Combobox>
 
-          {/* Show selected Pokemon preview */}
+          {/* Show selected Pokemon preview with item icon */}
           {selectedPokemon && (
-            <Box ta="center">
-              <Image
-                src={selectedPokemon.sprites.front}
-                alt={selectedPokemon.name}
-                w={100}
-                h={100}
-                fit="contain"
-                mx="auto"
-                style={{ imageRendering: 'pixelated' }}
-              />
+            <Box ta="center" pos="relative">
+              <Box pos="relative" display="inline-block">
+                <Image
+                  src={selectedPokemon.sprites.front}
+                  alt={selectedPokemon.name}
+                  w={100}
+                  h={100}
+                  fit="contain"
+                  mx="auto"
+                  style={{ imageRendering: 'pixelated' }}
+                />
+                {/* Item icon in top right */}
+                {selectedItem && (
+                  <Tooltip label={selectedItem.name} position="top">
+                    <Box
+                      pos="absolute"
+                      top={0}
+                      right={0}
+                      style={{
+                        transform: 'translate(25%, -25%)',
+                        background: colorScheme === 'dark' ? 'var(--mantine-color-dark-6)' : 'white',
+                        borderRadius: '50%',
+                        padding: 4,
+                        border: `2px solid ${colorScheme === 'dark' ? 'var(--mantine-color-dark-4)' : 'var(--mantine-color-gray-3)'}`,
+                        boxShadow: 'var(--mantine-shadow-sm)'
+                      }}
+                    >
+                      <Image
+                        src={selectedItem.sprite}
+                        alt={selectedItem.name}
+                        w={28}
+                        h={28}
+                        fit="contain"
+                        style={{ imageRendering: 'pixelated' }}
+                      />
+                    </Box>
+                  </Tooltip>
+                )}
+              </Box>
               <Group justify="center" gap="xs" mt="xs">
                 {selectedPokemon.types.map((type: string) => (
                   <Badge
@@ -539,6 +671,76 @@ const BattleLab: React.FC = () => {
               </Group>
               <Text size="sm" c="dimmed" mt="xs">Level {level}</Text>
             </Box>
+          )}
+
+          {/* Item selection dropdown */}
+          {selectedPokemon && (
+            <Combobox
+              store={itemCombobox}
+              onOptionSubmit={(val) => {
+                const item = BATTLE_ITEMS.find(i => i.id === val);
+                if (item) onItemSelect(item);
+                itemCombobox.closeDropdown();
+              }}
+            >
+              <Combobox.Target>
+                <InputBase
+                  label="Held Item"
+                  leftSection={
+                    selectedItem ? (
+                      <Image
+                        src={selectedItem.sprite}
+                        alt={selectedItem.name}
+                        w={20}
+                        h={20}
+                        fit="contain"
+                        style={{ imageRendering: 'pixelated' }}
+                      />
+                    ) : null
+                  }
+                  rightSection={
+                    selectedItem ? (
+                      <ActionIcon
+                        variant="subtle"
+                        color="gray"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onItemClear();
+                        }}
+                      >
+                        <IconX size={14} />
+                      </ActionIcon>
+                    ) : (
+                      <Combobox.Chevron />
+                    )
+                  }
+                  rightSectionPointerEvents={selectedItem ? "all" : "none"}
+                  placeholder="No item (click to select)"
+                  value={selectedItem ? selectedItem.name : itemSearchValue}
+                  onChange={(event) => {
+                    onItemSearchChange(event.currentTarget.value);
+                    itemCombobox.openDropdown();
+                    itemCombobox.updateSelectedOptionIndex();
+                  }}
+                  onClick={() => itemCombobox.openDropdown()}
+                  onFocus={() => itemCombobox.openDropdown()}
+                  onBlur={() => itemCombobox.closeDropdown()}
+                />
+              </Combobox.Target>
+
+              <Combobox.Dropdown>
+                <Combobox.Options>
+                  <ScrollArea.Autosize mah={200} type="scroll">
+                    {itemOptions.length === 0 ? (
+                      <Combobox.Empty>No items found</Combobox.Empty>
+                    ) : (
+                      itemOptions
+                    )}
+                  </ScrollArea.Autosize>
+                </Combobox.Options>
+              </Combobox.Dropdown>
+            </Combobox>
           )}
         </Stack>
       </Card>
@@ -586,6 +788,20 @@ const BattleLab: React.FC = () => {
                   onClear={() => {
                     setPokemon1(null);
                     setPokemon1Search('');
+                    setPokemon1Item(null);
+                    setPokemon1ItemSearch('');
+                  }}
+                  selectedItem={pokemon1Item}
+                  itemSearchValue={pokemon1ItemSearch}
+                  onItemSearchChange={setPokemon1ItemSearch}
+                  filteredItems={filteredItems1}
+                  onItemSelect={(item) => {
+                    setPokemon1Item(item);
+                    setPokemon1ItemSearch('');
+                  }}
+                  onItemClear={() => {
+                    setPokemon1Item(null);
+                    setPokemon1ItemSearch('');
                   }}
                 />
               </Grid.Col>
@@ -630,6 +846,20 @@ const BattleLab: React.FC = () => {
                   onClear={() => {
                     setPokemon2(null);
                     setPokemon2Search('');
+                    setPokemon2Item(null);
+                    setPokemon2ItemSearch('');
+                  }}
+                  selectedItem={pokemon2Item}
+                  itemSearchValue={pokemon2ItemSearch}
+                  onItemSearchChange={setPokemon2ItemSearch}
+                  filteredItems={filteredItems2}
+                  onItemSelect={(item) => {
+                    setPokemon2Item(item);
+                    setPokemon2ItemSearch('');
+                  }}
+                  onItemClear={() => {
+                    setPokemon2Item(null);
+                    setPokemon2ItemSearch('');
                   }}
                 />
               </Grid.Col>
@@ -967,13 +1197,6 @@ const BattleLab: React.FC = () => {
                   step={10}
                 />
 
-                <Switch
-                  label="Use Held Items"
-                  description={withItems ? 'Pokemon will hold random items' : 'No held items'}
-                  checked={withItems}
-                  onChange={(e) => setWithItems(e.currentTarget.checked)}
-                  color="teal"
-                />
               </Stack>
             </Card>
 

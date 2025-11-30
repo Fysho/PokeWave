@@ -129,7 +129,7 @@ router.post('/simulate-test', devOnly, async (req, res, next) => {
 // Simulate multiple battles with provided Pokemon (development only)
 router.post('/simulate-multiple', devOnly, async (req, res, next) => {
   try {
-    const { count = 100, pokemon1, pokemon2, generation = 9, level = 50, withItems = true } = req.body;
+    const { count = 100, pokemon1, pokemon2, generation = 9, level = 50 } = req.body;
 
     // Validate input
     if (!pokemon1 || !pokemon2) {
@@ -154,14 +154,24 @@ router.post('/simulate-multiple', devOnly, async (req, res, next) => {
     const { pokemonInstanceStore } = require('../services/pokemon-instance-store.service');
 
     // Generate full Pokemon instances from IDs
-    const itemMode = withItems ? 'random' : 'none';
+    // Use 'none' for itemMode since we'll override with specific items if provided
     const pokemon1Level = pokemon1.level || level;
     const pokemon2Level = pokemon2.level || level;
 
     const [pokemon1Instance, pokemon2Instance] = await Promise.all([
-      pokemonShowdownService.createPokemonInstance(pokemon1.id, pokemon1Level, generation, itemMode),
-      pokemonShowdownService.createPokemonInstance(pokemon2.id, pokemon2Level, generation, itemMode)
+      pokemonShowdownService.createPokemonInstance(pokemon1.id, pokemon1Level, generation, 'none'),
+      pokemonShowdownService.createPokemonInstance(pokemon2.id, pokemon2Level, generation, 'none')
     ]);
+
+    // Override items if specific items were provided
+    if (pokemon1.item) {
+      pokemon1Instance.item = pokemon1.item;
+      logger.info(`Pokemon 1 holding: ${pokemon1.item}`);
+    }
+    if (pokemon2.item) {
+      pokemon2Instance.item = pokemon2.item;
+      logger.info(`Pokemon 2 holding: ${pokemon2.item}`);
+    }
 
     // Store the Pokemon instances with generation
     pokemonInstanceStore.storeInstances(pokemon1Instance, pokemon2Instance, generation);
