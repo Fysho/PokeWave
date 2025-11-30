@@ -6,7 +6,6 @@ import {
   Stack,
   Grid,
   Card,
-  TextInput,
   Select,
   Group,
   Badge,
@@ -18,18 +17,17 @@ import {
   NumberInput,
   Switch,
   Progress,
-  Divider,
-  Paper,
   RingProgress,
   useMantineColorScheme,
-  useMantineTheme,
   Tooltip,
-  ActionIcon
+  ActionIcon,
+  Combobox,
+  InputBase,
+  useCombobox
 } from '@mantine/core';
-import { IconSearch, IconRefresh, IconPlayerPlay, IconX, IconChevronDown } from '@tabler/icons-react';
+import { IconSearch, IconRefresh, IconPlayerPlay, IconX } from '@tabler/icons-react';
 import { getTypeColor } from '../../utils/typeColors';
 import ApiService from '../../services/api';
-import { pokemonNames, getPokemonName } from '../../data/pokemonNames';
 import type { PokemonInstanceData } from '../../types/api';
 
 interface PokemonData {
@@ -50,7 +48,6 @@ interface SimulationResult {
 
 const BattleLab: React.FC = () => {
   const { colorScheme } = useMantineColorScheme();
-  const theme = useMantineTheme();
 
   // Pokemon selection state
   const [allPokemon, setAllPokemon] = useState<PokemonData[]>([]);
@@ -59,8 +56,6 @@ const BattleLab: React.FC = () => {
   const [pokemon2, setPokemon2] = useState<PokemonInstanceData | null>(null);
   const [pokemon1Search, setPokemon1Search] = useState('');
   const [pokemon2Search, setPokemon2Search] = useState('');
-  const [showPokemon1Dropdown, setShowPokemon1Dropdown] = useState(false);
-  const [showPokemon2Dropdown, setShowPokemon2Dropdown] = useState(false);
 
   // Battle settings
   const [generation, setGeneration] = useState<string>('9');
@@ -208,11 +203,9 @@ const BattleLab: React.FC = () => {
       if (slot === 1) {
         setPokemon1(instance);
         setPokemon1Search(pokemonData.name);
-        setShowPokemon1Dropdown(false);
       } else {
         setPokemon2(instance);
         setPokemon2Search(pokemonData.name);
-        setShowPokemon2Dropdown(false);
       }
     } catch (error) {
       console.error('Error loading Pokemon instance:', error);
@@ -286,181 +279,149 @@ const BattleLab: React.FC = () => {
     setSimulationError(null);
   };
 
-  // Pokemon selector component
-  const PokemonSelector = ({
+  // Pokemon Combobox Selector Component
+  const PokemonComboboxSelector = ({
     slot,
     selectedPokemon,
     searchValue,
     onSearchChange,
-    showDropdown,
-    setShowDropdown,
     filteredList,
-    onSelect
+    onSelect,
+    onClear
   }: {
     slot: 1 | 2;
     selectedPokemon: PokemonInstanceData | null;
     searchValue: string;
     onSearchChange: (value: string) => void;
-    showDropdown: boolean;
-    setShowDropdown: (show: boolean) => void;
     filteredList: PokemonData[];
     onSelect: (id: number) => void;
-  }) => (
-    <Card withBorder p="md" style={{ position: 'relative' }}>
-      <Stack gap="md">
-        <Group justify="space-between">
-          <Text fw={600} size="lg">Pokemon {slot}</Text>
-          {selectedPokemon && (
-            <ActionIcon
-              variant="subtle"
-              color="gray"
-              onClick={() => {
-                if (slot === 1) {
-                  setPokemon1(null);
-                  setPokemon1Search('');
-                } else {
-                  setPokemon2(null);
-                  setPokemon2Search('');
-                }
+    onClear: () => void;
+  }) => {
+    const combobox = useCombobox({
+      onDropdownClose: () => combobox.resetSelectedOption(),
+    });
+
+    const options = filteredList.map((p) => (
+      <Combobox.Option value={p.id.toString()} key={p.id}>
+        <Group gap="sm">
+          <Image
+            src={p.sprite || `/sprites/pokemon/${p.id}.png`}
+            alt={p.name}
+            w={40}
+            h={40}
+            fit="contain"
+            style={{ imageRendering: 'pixelated' }}
+          />
+          <Box>
+            <Text size="sm" fw={500} tt="capitalize">{p.name}</Text>
+            <Text size="xs" c="dimmed">#{p.id}</Text>
+          </Box>
+          <Group gap={4} ml="auto">
+            {p.types.map((type) => (
+              <Badge
+                key={type}
+                size="xs"
+                style={{ backgroundColor: getTypeColor(type) }}
+              >
+                {type}
+              </Badge>
+            ))}
+          </Group>
+        </Group>
+      </Combobox.Option>
+    ));
+
+    return (
+      <Card withBorder p="md">
+        <Stack gap="md">
+          <Group justify="space-between">
+            <Text fw={600} size="lg">Pokemon {slot}</Text>
+            {selectedPokemon && (
+              <ActionIcon
+                variant="subtle"
+                color="gray"
+                onClick={onClear}
+              >
+                <IconX size={16} />
+              </ActionIcon>
+            )}
+          </Group>
+
+          {selectedPokemon ? (
+            <Box ta="center">
+              <Image
+                src={selectedPokemon.sprites.front}
+                alt={selectedPokemon.name}
+                w={120}
+                h={120}
+                fit="contain"
+                mx="auto"
+                style={{ imageRendering: 'pixelated' }}
+              />
+              <Text fw={600} size="lg" tt="capitalize" mt="xs">
+                {selectedPokemon.name}
+              </Text>
+              <Text size="sm" c="dimmed">#{selectedPokemon.id}</Text>
+              <Group justify="center" gap="xs" mt="xs">
+                {selectedPokemon.types.map((type: string) => (
+                  <Badge
+                    key={type}
+                    style={{ backgroundColor: getTypeColor(type) }}
+                    tt="capitalize"
+                  >
+                    {type}
+                  </Badge>
+                ))}
+              </Group>
+              <Text size="sm" c="dimmed" mt="xs">Level {level}</Text>
+            </Box>
+          ) : (
+            <Combobox
+              store={combobox}
+              onOptionSubmit={(val) => {
+                onSelect(parseInt(val));
+                combobox.closeDropdown();
               }}
             >
-              <IconX size={16} />
-            </ActionIcon>
+              <Combobox.Target>
+                <InputBase
+                  leftSection={<IconSearch size={16} />}
+                  rightSection={<Combobox.Chevron />}
+                  rightSectionPointerEvents="none"
+                  placeholder="Search Pokemon..."
+                  value={searchValue}
+                  onChange={(event) => {
+                    onSearchChange(event.currentTarget.value);
+                    combobox.openDropdown();
+                    combobox.updateSelectedOptionIndex();
+                  }}
+                  onClick={() => combobox.openDropdown()}
+                  onFocus={() => combobox.openDropdown()}
+                  onBlur={() => combobox.closeDropdown()}
+                />
+              </Combobox.Target>
+
+              <Combobox.Dropdown>
+                <Combobox.Options>
+                  <ScrollArea.Autosize mah={300} type="scroll">
+                    {loading ? (
+                      <Center p="xl">
+                        <Loader size="sm" />
+                      </Center>
+                    ) : options.length === 0 ? (
+                      <Combobox.Empty>No Pokemon found</Combobox.Empty>
+                    ) : (
+                      options
+                    )}
+                  </ScrollArea.Autosize>
+                </Combobox.Options>
+              </Combobox.Dropdown>
+            </Combobox>
           )}
-        </Group>
-
-        {selectedPokemon ? (
-          <Box ta="center">
-            <Image
-              src={selectedPokemon.sprites.front}
-              alt={selectedPokemon.name}
-              w={120}
-              h={120}
-              fit="contain"
-              mx="auto"
-              style={{ imageRendering: 'pixelated' }}
-            />
-            <Text fw={600} size="lg" tt="capitalize" mt="xs">
-              {selectedPokemon.name}
-            </Text>
-            <Text size="sm" c="dimmed">#{selectedPokemon.id}</Text>
-            <Group justify="center" gap="xs" mt="xs">
-              {selectedPokemon.types.map((type: string) => (
-                <Badge
-                  key={type}
-                  style={{ backgroundColor: getTypeColor(type) }}
-                  tt="capitalize"
-                >
-                  {type}
-                </Badge>
-              ))}
-            </Group>
-            <Text size="sm" c="dimmed" mt="xs">Level {level}</Text>
-          </Box>
-        ) : (
-          <Box>
-            <TextInput
-              placeholder="Search Pokemon..."
-              value={searchValue}
-              onChange={(e) => {
-                onSearchChange(e.currentTarget.value);
-                setShowDropdown(true);
-              }}
-              onFocus={() => setShowDropdown(true)}
-              leftSection={<IconSearch size={16} />}
-              rightSection={
-                <ActionIcon variant="subtle" onClick={() => setShowDropdown(!showDropdown)}>
-                  <IconChevronDown size={16} />
-                </ActionIcon>
-              }
-            />
-
-            {showDropdown && (
-              <Paper
-                shadow="md"
-                p={0}
-                style={{
-                  position: 'absolute',
-                  left: 12,
-                  right: 12,
-                  top: 'calc(100% - 10px)',
-                  zIndex: 1000,
-                  maxHeight: 300,
-                  overflow: 'hidden'
-                }}
-              >
-                <ScrollArea h={300}>
-                  {loading ? (
-                    <Center p="xl">
-                      <Loader size="sm" />
-                    </Center>
-                  ) : filteredList.length === 0 ? (
-                    <Center p="xl">
-                      <Text c="dimmed">No Pokemon found</Text>
-                    </Center>
-                  ) : (
-                    <Stack gap={0}>
-                      {filteredList.map((p) => (
-                        <Box
-                          key={p.id}
-                          p="xs"
-                          style={{
-                            cursor: 'pointer',
-                            '&:hover': { backgroundColor: colorScheme === 'dark' ? theme.colors.dark[6] : theme.colors.gray[1] }
-                          }}
-                          onClick={() => onSelect(p.id)}
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.backgroundColor = colorScheme === 'dark' ? theme.colors.dark[6] : theme.colors.gray[1];
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.backgroundColor = 'transparent';
-                          }}
-                        >
-                          <Group gap="sm">
-                            <Image
-                              src={p.sprite || `/sprites/pokemon/${p.id}.png`}
-                              alt={p.name}
-                              w={40}
-                              h={40}
-                              fit="contain"
-                              style={{ imageRendering: 'pixelated' }}
-                            />
-                            <Box>
-                              <Text size="sm" fw={500} tt="capitalize">{p.name}</Text>
-                              <Text size="xs" c="dimmed">#{p.id}</Text>
-                            </Box>
-                            <Group gap={4} ml="auto">
-                              {p.types.map((type) => (
-                                <Badge
-                                  key={type}
-                                  size="xs"
-                                  style={{ backgroundColor: getTypeColor(type) }}
-                                >
-                                  {type}
-                                </Badge>
-                              ))}
-                            </Group>
-                          </Group>
-                        </Box>
-                      ))}
-                    </Stack>
-                  )}
-                </ScrollArea>
-              </Paper>
-            )}
-
-            {!showDropdown && !selectedPokemon && (
-              <Center py="xl">
-                <Stack align="center" gap="xs">
-                  <Text c="dimmed">Click to search and select a Pokemon</Text>
-                </Stack>
-              </Center>
-            )}
-          </Box>
-        )}
-      </Stack>
-    </Card>
-  );
+        </Stack>
+      </Card>
+    );
+  };
 
   return (
     <Box maw={1400} mx="auto">
@@ -491,15 +452,17 @@ const BattleLab: React.FC = () => {
           <Grid gutter="md">
             {/* Pokemon 1 Selector */}
             <Grid.Col span={{ base: 12, sm: 6 }}>
-              <PokemonSelector
+              <PokemonComboboxSelector
                 slot={1}
                 selectedPokemon={pokemon1}
                 searchValue={pokemon1Search}
                 onSearchChange={setPokemon1Search}
-                showDropdown={showPokemon1Dropdown}
-                setShowDropdown={setShowPokemon1Dropdown}
                 filteredList={filteredPokemon1}
                 onSelect={(id) => loadPokemonInstance(id, 1)}
+                onClear={() => {
+                  setPokemon1(null);
+                  setPokemon1Search('');
+                }}
               />
             </Grid.Col>
 
@@ -512,15 +475,17 @@ const BattleLab: React.FC = () => {
 
             {/* Pokemon 2 Selector */}
             <Grid.Col span={{ base: 12, sm: 6 }}>
-              <PokemonSelector
+              <PokemonComboboxSelector
                 slot={2}
                 selectedPokemon={pokemon2}
                 searchValue={pokemon2Search}
                 onSearchChange={setPokemon2Search}
-                showDropdown={showPokemon2Dropdown}
-                setShowDropdown={setShowPokemon2Dropdown}
                 filteredList={filteredPokemon2}
                 onSelect={(id) => loadPokemonInstance(id, 2)}
+                onClear={() => {
+                  setPokemon2(null);
+                  setPokemon2Search('');
+                }}
               />
             </Grid.Col>
           </Grid>
