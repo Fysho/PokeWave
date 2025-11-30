@@ -449,46 +449,75 @@ const BattleLab: React.FC = () => {
       <Grid gutter="lg">
         {/* Left Column - Pokemon Selection */}
         <Grid.Col span={{ base: 12, md: 8 }}>
-          <Grid gutter="md">
-            {/* Pokemon 1 Selector */}
-            <Grid.Col span={{ base: 12, sm: 6 }}>
-              <PokemonComboboxSelector
-                slot={1}
-                selectedPokemon={pokemon1}
-                searchValue={pokemon1Search}
-                onSearchChange={setPokemon1Search}
-                filteredList={filteredPokemon1}
-                onSelect={(id) => loadPokemonInstance(id, 1)}
-                onClear={() => {
-                  setPokemon1(null);
-                  setPokemon1Search('');
-                }}
-              />
-            </Grid.Col>
+          {/* Pokemon Selection - Side by Side */}
+          <Box pos="relative">
+            <Grid gutter={{ base: 'md', md: 'xl' }} align="flex-start" justify="center">
+              {/* Pokemon 1 Selector */}
+              <Grid.Col span={{ base: 12, sm: 6 }}>
+                <PokemonComboboxSelector
+                  slot={1}
+                  selectedPokemon={pokemon1}
+                  searchValue={pokemon1Search}
+                  onSearchChange={setPokemon1Search}
+                  filteredList={filteredPokemon1}
+                  onSelect={(id) => loadPokemonInstance(id, 1)}
+                  onClear={() => {
+                    setPokemon1(null);
+                    setPokemon1Search('');
+                  }}
+                />
+              </Grid.Col>
 
-            {/* VS Divider */}
-            <Grid.Col span={12}>
-              <Center>
-                <Badge size="xl" variant="filled" color="gray" radius="xl">VS</Badge>
-              </Center>
-            </Grid.Col>
-
-            {/* Pokemon 2 Selector */}
-            <Grid.Col span={{ base: 12, sm: 6 }}>
-              <PokemonComboboxSelector
-                slot={2}
-                selectedPokemon={pokemon2}
-                searchValue={pokemon2Search}
-                onSearchChange={setPokemon2Search}
-                filteredList={filteredPokemon2}
-                onSelect={(id) => loadPokemonInstance(id, 2)}
-                onClear={() => {
-                  setPokemon2(null);
-                  setPokemon2Search('');
+              {/* VS Badge - Positioned absolutely on larger screens */}
+              <Box
+                pos="absolute"
+                top="50%"
+                left="50%"
+                style={{
+                  transform: 'translate(-50%, -50%)',
+                  zIndex: 10
                 }}
-              />
-            </Grid.Col>
-          </Grid>
+                visibleFrom="sm"
+              >
+                <Box
+                  w={64}
+                  h={64}
+                  style={{
+                    background: 'linear-gradient(135deg, var(--mantine-color-violet-6), var(--mantine-color-cyan-6))',
+                    borderRadius: '50%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    boxShadow: 'var(--mantine-shadow-xl)',
+                    border: '3px solid white'
+                  }}
+                >
+                  <Text size="lg" fw={700} c="white">VS</Text>
+                </Box>
+              </Box>
+
+              {/* Pokemon 2 Selector */}
+              <Grid.Col span={{ base: 12, sm: 6 }}>
+                <PokemonComboboxSelector
+                  slot={2}
+                  selectedPokemon={pokemon2}
+                  searchValue={pokemon2Search}
+                  onSearchChange={setPokemon2Search}
+                  filteredList={filteredPokemon2}
+                  onSelect={(id) => loadPokemonInstance(id, 2)}
+                  onClear={() => {
+                    setPokemon2(null);
+                    setPokemon2Search('');
+                  }}
+                />
+              </Grid.Col>
+            </Grid>
+
+            {/* VS Badge for Mobile - shown below cards */}
+            <Center mt="md" hiddenFrom="sm">
+              <Badge size="xl" variant="filled" color="gray" radius="xl">VS</Badge>
+            </Center>
+          </Box>
 
           {/* Results Section */}
           {(simulationResult || isSimulating || simulationError) && (
