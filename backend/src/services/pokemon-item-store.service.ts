@@ -161,21 +161,28 @@ class PokemonItemStoreService {
   }
   
   /**
+   * Get local sprite path for an item
+   */
+  private getLocalSpritePath(itemName: string): string {
+    return `/sprites/items/${itemName}.png`;
+  }
+
+  /**
    * Fetch detailed item data from PokeAPI
    */
   private async fetchItemDetail(url: string): Promise<ItemDetail | null> {
     try {
       const response = await axios.get(url);
       const data = response.data;
-      
+
       // Extract effect entries in English
       const effectEntry = data.effect_entries.find((entry: any) => entry.language.name === 'en');
       const effect = effectEntry ? effectEntry.effect : '';
       const shortEffect = effectEntry ? effectEntry.short_effect : '';
-      
+
       // Get attributes
       const attributes = data.attributes.map((attr: any) => attr.name);
-      
+
       return {
         id: data.id,
         name: data.name,
@@ -183,7 +190,7 @@ class PokemonItemStoreService {
         cost: data.cost,
         effect,
         shortEffect,
-        sprite: data.sprites.default || '',
+        sprite: this.getLocalSpritePath(data.name), // Use local sprite path
         attributes
       };
     } catch (error) {
@@ -248,20 +255,25 @@ class PokemonItemStoreService {
   private async loadFromFile(): Promise<ItemDetail[] | null> {
     try {
       const fileExists = await fs.access(this.ITEMS_FILE).then(() => true).catch(() => false);
-      
+
       if (!fileExists) {
         logger.info('No JSON file found for Pokemon items');
         return null;
       }
-      
+
       const fileContent = await fs.readFile(this.ITEMS_FILE, 'utf-8');
       const data = JSON.parse(fileContent);
-      
+
       if (data.items && Array.isArray(data.items)) {
         logger.info(`Found JSON file with ${data.items.length} items (last updated: ${data.lastUpdated})`);
-        return data.items;
+        // Convert any external URLs to local paths
+        const items = data.items.map((item: ItemDetail) => ({
+          ...item,
+          sprite: item.sprite.startsWith('http') ? this.getLocalSpritePath(item.name) : item.sprite
+        }));
+        return items;
       }
-      
+
       return null;
     } catch (error) {
       logger.error('Failed to load items from file:', error);

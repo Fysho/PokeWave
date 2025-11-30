@@ -45,7 +45,7 @@ class UserService {
       password: data.password,
       createdAt: new Date().toISOString(),
       avatarPokemonId: 25, // Default to Pikachu
-      avatarSprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/25.png',
+      avatarSprite: '/sprites/front/25.png', // Local Pikachu sprite
       pokedex: {
         unlockedPokemon: [],
         unlockedShinyPokemon: [],
@@ -202,7 +202,7 @@ class UserService {
       password: 'temp-password-hash', // This won't be used for auth
       createdAt: new Date().toISOString(),
       avatarPokemonId: 25, // Default to Pikachu
-      avatarSprite: 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/25.png',
+      avatarSprite: '/sprites/front/25.png', // Local Pikachu sprite
       pokedex: {
         unlockedPokemon: [],
         unlockedShinyPokemon: [],
