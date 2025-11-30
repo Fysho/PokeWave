@@ -209,6 +209,8 @@ For comprehensive database documentation, see [DATABASE_ARCHITECTURE.md](./DATAB
   - Stores complete Pokemon instance data for reuse across battles
   - Maintains instance IDs for consistent Pokemon in daily challenges
   - Enables backend-driven battle scenarios
+  - **Stores generation alongside Pokemon instances** for correct battle mechanics
+  - Generation is passed to showdownService for battle simulation
 - **Daily Challenge Service** (`daily-challenge.service.ts`):
   - Generates daily challenges with 6 unique Pokemon battles
   - Uses date-based seeding for consistent challenge generation
@@ -685,6 +687,32 @@ curl -X POST http://localhost:4000/api/battle/simulate \
 7. **Don't give Pokemon invalid moves** - all moves must come from their learnset
 8. **Watch for Promise.race TypeScript issues** - may need type assertions with BattleStreams
 9. **Shared config imports** - backend tsconfig doesn't include ../shared by default
+10. **Always pass generation to pokemonInstanceStore.storeInstances()** - battle mechanics depend on it
+
+### Generation System
+Pokemon Showdown uses different mechanics based on the selected generation. The generation setting affects:
+
+**What changes per generation:**
+| Feature | Gen 1 | Gen 2 | Gen 3+ |
+|---------|-------|-------|--------|
+| Items | ❌ No | ✅ Yes | ✅ Yes |
+| Abilities | ❌ No | ❌ No | ✅ Yes |
+| Natures | ❌ No | ❌ No | ✅ Yes |
+| EV/IV System | DVs | DVs | Modern |
+| Shiny | ❌ No | ✅ Yes | ✅ Yes |
+| Move Pool | Limited | Expanded | Full |
+
+**Implementation details:**
+- `pokemonInstanceStore.storeInstances(p1, p2, generation)` - stores generation alongside Pokemon
+- `showdownService` reads generation from the store for battle simulation
+- `battle-cache.service.ts` uses `BATTLE_CONFIG.DEFAULT_GENERATION` from game-constants.ts
+- Battle format uses `gen${generation}singles` for correct mechanics
+- Pokemon creation via `createPokemonInstance()` uses `Dex.forGen(generation)` for accurate data
+- Frontend passes `battleSettings.generation` with battle requests
+
+**Max Pokemon IDs by generation:**
+- Gen 1: 151, Gen 2: 251, Gen 3: 386, Gen 4: 493
+- Gen 5: 649, Gen 6: 721, Gen 7: 809, Gen 8: 905, Gen 9: 1025
 
 ### Recent Updates (Phase 8 - Pokedex & Daily Challenges)
 - **Pokedex Implementation**:

@@ -99,38 +99,50 @@ class BattleCacheService {
   private async generateAndCacheBattle(): Promise<CachedBattle> {
     try {
       logger.info('Generating new battle for cache...');
-      
-      // Generate random Pokemon IDs (Gen 1-4, up to Pokemon #493)
-      const pokemon1Id = Math.floor(Math.random() * 493) + 1;
-      let pokemon2Id = Math.floor(Math.random() * 493) + 1;
-      
+
+      // Use the default generation from config
+      const generation = BATTLE_CONFIG.DEFAULT_GENERATION;
+
+      // Generate random Pokemon IDs based on generation
+      // Gen 1: 1-151, Gen 2: 1-251, Gen 3: 1-386, Gen 4: 1-493, Gen 5: 1-649, Gen 6: 1-721, Gen 7: 1-809, Gen 8: 1-905, Gen 9: 1-1025
+      const maxPokemonByGen: { [key: number]: number } = {
+        1: 151, 2: 251, 3: 386, 4: 493, 5: 649, 6: 721, 7: 809, 8: 905, 9: 1025
+      };
+      const maxPokemon = maxPokemonByGen[generation] || 1025;
+
+      const pokemon1Id = Math.floor(Math.random() * maxPokemon) + 1;
+      let pokemon2Id = Math.floor(Math.random() * maxPokemon) + 1;
+
       // Ensure they're different
       while (pokemon2Id === pokemon1Id) {
-        pokemon2Id = Math.floor(Math.random() * 493) + 1;
+        pokemon2Id = Math.floor(Math.random() * maxPokemon) + 1;
       }
-      
+
       // Generate random levels
       const level1 = Math.floor(Math.random() * 51) + 50; // 50-100
       const level2 = Math.floor(Math.random() * 51) + 50; // 50-100
-      
-      // Create Pokemon instances
+
+      // Determine item mode based on generation (items don't exist in Gen 1)
+      const itemMode = generation >= 2 ? (Math.random() < 0.5 ? 'random' : 'none') : 'none';
+
+      // Create Pokemon instances with correct generation
       const pokemon1 = await pokemonShowdownService.createPokemonInstance(
-        pokemon1Id, 
-        level1, 
-        9, // Gen 9
-        Math.random() < 0.5 ? 'random' : 'none' // 50% chance of item
+        pokemon1Id,
+        level1,
+        generation,
+        itemMode
       );
-      
+
       const pokemon2 = await pokemonShowdownService.createPokemonInstance(
-        pokemon2Id, 
-        level2, 
-        9, // Gen 9
-        Math.random() < 0.5 ? 'random' : 'none' // 50% chance of item
+        pokemon2Id,
+        level2,
+        generation,
+        itemMode
       );
-      
-      // Store instances for battle simulation
-      pokemonInstanceStore.storeInstances(pokemon1, pokemon2);
-      
+
+      // Store instances for battle simulation with generation
+      pokemonInstanceStore.storeInstances(pokemon1, pokemon2, generation);
+
       // Use showdown service to simulate a full battle
       const battleResult = await showdownService.simulateBattle();
       

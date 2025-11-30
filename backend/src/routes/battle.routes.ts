@@ -129,28 +129,28 @@ router.post('/simulate-test', devOnly, async (req, res, next) => {
 // Simulate multiple battles with provided Pokemon (development only)
 router.post('/simulate-multiple', devOnly, async (req, res, next) => {
   try {
-    const { count = 100, pokemon1, pokemon2 } = req.body;
-    
+    const { count = 100, pokemon1, pokemon2, generation = 9 } = req.body;
+
     // Validate input
     if (!pokemon1 || !pokemon2) {
       res.status(400).json({ error: 'Both pokemon1 and pokemon2 are required' });
       return;
     }
-    
+
     if (count < 1 || count > 1000) {
       res.status(400).json({ error: 'Count must be between 1 and 1000' });
       return;
     }
-    
-    logger.info(`Simulating ${count} battles: ${pokemon1.name} vs ${pokemon2.name}`);
-    
+
+    logger.info(`Simulating ${count} battles: ${pokemon1.name} vs ${pokemon2.name} (Gen ${generation})`);
+
     // Import required services
     const { showdownService } = require('../services/showdown.service');
     const { pokemonInstanceStore } = require('../services/pokemon-instance-store.service');
-    
-    // Store the Pokemon instances
-    pokemonInstanceStore.storeInstances(pokemon1, pokemon2);
-    
+
+    // Store the Pokemon instances with generation
+    pokemonInstanceStore.storeInstances(pokemon1, pokemon2, generation);
+
     // Simulate the battles
     const result = await showdownService.simulateBattle(count);
     
@@ -174,27 +174,30 @@ router.post('/simulate-multiple', devOnly, async (req, res, next) => {
 router.post('/simulate-random', devOnly, async (req, res, next) => {
   try {
     const { count = 100, options = {} } = req.body;
-    
+
     // Validate count
     if (count < 1 || count > 1000) {
       res.status(400).json({ error: 'Count must be between 1 and 1000' });
       return;
     }
-    
-    logger.info(`Simulating ${count} random battles with options:`, options);
-    
+
+    // Get generation from options or default to 9
+    const generation = options.generation || 9;
+
+    logger.info(`Simulating ${count} random battles with options (Gen ${generation}):`, options);
+
     // Import required services
     const { pokemonService } = require('../services/pokemon.service');
     const { showdownService } = require('../services/showdown.service');
     const { pokemonInstanceStore } = require('../services/pokemon-instance-store.service');
-    
+
     // Get two random Pokemon with instances
     const pokemon1Data = await pokemonService.getRandomPokemonWithInstances(options);
     const pokemon2Data = await pokemonService.getRandomPokemonWithInstances(options);
-    
-    // Store instances for battle simulation
-    pokemonInstanceStore.storeInstances(pokemon1Data.pokemon1, pokemon2Data.pokemon1);
-    
+
+    // Store instances for battle simulation with generation
+    pokemonInstanceStore.storeInstances(pokemon1Data.pokemon1, pokemon2Data.pokemon1, generation);
+
     // Simulate the battles
     const result = await showdownService.simulateBattle(count);
     

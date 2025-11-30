@@ -92,16 +92,18 @@ const MainLayout: React.FC<MainLayoutProps> = ({
           pokemon2={currentBattle?.pokemon2}
           onSimulateBattle={async () => {
             if (!currentBattle?.pokemon1 || !currentBattle?.pokemon2) return;
-            
+
             setIsBattleTesterSimulating(true);
             try {
               // Send the current Pokemon data to the backend for battle testing
+              // Include generation from battle settings for correct battle mechanics
               const response = await fetch('/api/battle/simulate-single', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                   pokemon1: currentBattle.pokemon1,
-                  pokemon2: currentBattle.pokemon2
+                  pokemon2: currentBattle.pokemon2,
+                  generation: battleSettings.generation || 9
                 })
               });
               

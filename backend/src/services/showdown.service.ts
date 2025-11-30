@@ -22,18 +22,18 @@ export interface ShowdownBattleResult {
 }
 
 class ShowdownService {
-  //private storedPokemon1: PokemonInstanceData | null = null;
-  //private storedPokemon2: PokemonInstanceData | null = null;
-  private storedGeneration: number = 1;
-
   async simulateBattle(): Promise<ShowdownBattleResult> {
     if (!pokemonInstanceStore.pokemonInstance1 || !pokemonInstanceStore.pokemonInstance2) {
       throw new Error('No Pokemon stored for battle. Call storeInstances on pokemonInstanceStore first.');
     }
+
+    const generation = pokemonInstanceStore.generation;
+    logger.info(`Simulating battle with Gen ${generation} mechanics`);
+
     return pokemonShowdownService.simulateMultipleBattles({
       pokemon1: pokemonInstanceStore.pokemonInstance1,
       pokemon2: pokemonInstanceStore.pokemonInstance2,
-      generation: this.storedGeneration
+      generation: generation
     });
   }
 
@@ -41,13 +41,16 @@ class ShowdownService {
     if (!pokemonInstanceStore.pokemonInstance1 || !pokemonInstanceStore.pokemonInstance2) {
       throw new Error('No Pokemon stored for battle. Call storeInstances on pokemonInstanceStore first.');
     }
-    logger.info("Test")
+
+    const generation = pokemonInstanceStore.generation;
+    logger.info(`Simulating single battle tester with Gen ${generation} mechanics`);
 
     return pokemonShowdownService.simulateSingleBattleTester({
       pokemon1: pokemonInstanceStore.pokemonInstance1,
       pokemon2: pokemonInstanceStore.pokemonInstance2,
-      generation: this.storedGeneration
-    });  }
+      generation: generation
+    });
+  }
 
 }
 

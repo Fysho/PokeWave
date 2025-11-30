@@ -240,21 +240,25 @@ export const simulateSingleBattle = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const { pokemon1, pokemon2 } = req.body;
+    const { pokemon1, pokemon2, generation } = req.body;
 
     // Validate input
     if (!pokemon1 || !pokemon2) {
       throw new ApiError(400, 'Both pokemon1 and pokemon2 are required');
     }
 
+    // Use provided generation or default to Gen 9
+    const battleGeneration = generation || 9;
+
     logger.info('/simulate SINGLE FOR BATTLE TEST endpoint reached', {
       pokemon1: pokemon1?.name,
       pokemon2: pokemon2?.name,
+      generation: battleGeneration,
       timestamp: new Date().toISOString()
     });
 
-    // Store the Pokemon instances temporarily for the battle
-    pokemonInstanceStore.storeInstances(pokemon1, pokemon2);
+    // Store the Pokemon instances temporarily for the battle with generation
+    pokemonInstanceStore.storeInstances(pokemon1, pokemon2, battleGeneration);
 
     // Run the battle simulation
     const result = await showdownService.simulateSingleBattle();
