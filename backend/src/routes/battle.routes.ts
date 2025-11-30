@@ -129,11 +129,16 @@ router.post('/simulate-test', devOnly, async (req, res, next) => {
 // Simulate multiple battles with provided Pokemon (development only)
 router.post('/simulate-multiple', devOnly, async (req, res, next) => {
   try {
-    const { count = 100, pokemon1, pokemon2, generation = 9 } = req.body;
+    const { count = 100, pokemon1, pokemon2, generation = 9, level = 50, withItems = true } = req.body;
 
     // Validate input
     if (!pokemon1 || !pokemon2) {
       res.status(400).json({ error: 'Both pokemon1 and pokemon2 are required' });
+      return;
+    }
+
+    if (!pokemon1.id || !pokemon2.id) {
+      res.status(400).json({ error: 'Both pokemon1 and pokemon2 must have an id' });
       return;
     }
 
@@ -142,20 +147,30 @@ router.post('/simulate-multiple', devOnly, async (req, res, next) => {
       return;
     }
 
-    logger.info(`Simulating ${count} battles: ${pokemon1.name} vs ${pokemon2.name} (Gen ${generation})`);
+    logger.info(`Simulating ${count} battles: ${pokemon1.name || pokemon1.id} vs ${pokemon2.name || pokemon2.id} (Gen ${generation})`);
 
     // Import required services
-    const { showdownService } = require('../services/showdown.service');
+    const { pokemonShowdownService } = require('../services/pokemon-showdown.service');
     const { pokemonInstanceStore } = require('../services/pokemon-instance-store.service');
 
+    // Generate full Pokemon instances from IDs
+    const itemMode = withItems ? 'random' : 'none';
+    const pokemon1Level = pokemon1.level || level;
+    const pokemon2Level = pokemon2.level || level;
+
+    const [pokemon1Instance, pokemon2Instance] = await Promise.all([
+      pokemonShowdownService.createPokemonInstance(pokemon1.id, pokemon1Level, generation, itemMode),
+      pokemonShowdownService.createPokemonInstance(pokemon2.id, pokemon2Level, generation, itemMode)
+    ]);
+
     // Store the Pokemon instances with generation
-    pokemonInstanceStore.storeInstances(pokemon1, pokemon2, generation);
+    pokemonInstanceStore.storeInstances(pokemon1Instance, pokemon2Instance, generation);
 
     // Simulate the battles
-    const result = await showdownService.simulateBattle(count);
-    
-    logger.info(`Simulated ${count} battles: ${pokemon1.name} (${result.pokemon1Wins} wins) vs ${pokemon2.name} (${result.pokemon2Wins} wins)`);
-    
+    const result = await pokemonShowdownService.simulateBattle(count);
+
+    logger.info(`Simulated ${count} battles: ${pokemon1Instance.name} (${result.pokemon1Wins} wins) vs ${pokemon2Instance.name} (${result.pokemon2Wins} wins)`);
+
     res.json({
       battleCount: count,
       pokemon1Wins: result.pokemon1Wins,

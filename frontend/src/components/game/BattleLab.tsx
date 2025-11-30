@@ -232,18 +232,16 @@ const BattleLab: React.FC = () => {
           pokemon1: {
             id: pokemon1.id,
             name: pokemon1.name,
-            species: pokemon1.name,
-            level: level,
-            types: pokemon1.types
+            level: level
           },
           pokemon2: {
             id: pokemon2.id,
             name: pokemon2.name,
-            species: pokemon2.name,
-            level: level,
-            types: pokemon2.types
+            level: level
           },
-          generation: parseInt(generation)
+          generation: parseInt(generation),
+          level: level,
+          withItems: withItems
         })
       });
 

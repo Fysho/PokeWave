@@ -557,12 +557,12 @@ class PokemonShowdownService {
     }
 
     // Shiny (Gen 2+)
-    if (generation >= 2 && pokemon.sprites.shiny) {
+    if (generation >= 2 && pokemon.sprites?.shiny) {
       lines.push(`Shiny: Yes`);
     }
 
     // EVs (Gen 3+)
-    if (generation >= 3) {
+    if (generation >= 3 && pokemon.evs) {
       const evParts: string[] = [];
       for (const [stat, value] of Object.entries(pokemon.evs)) {
         if (value > 0) {
@@ -581,7 +581,7 @@ class PokemonShowdownService {
     }
 
     // IVs (Gen 3+)
-    if (generation >= 3) {
+    if (generation >= 3 && pokemon.ivs) {
       const ivParts: string[] = [];
       for (const [stat, value] of Object.entries(pokemon.ivs)) {
         if (value < 31) {
@@ -595,9 +595,11 @@ class PokemonShowdownService {
     }
 
     // Moves - keep the display names as they are
-    pokemon.moves.forEach(move => {
-      lines.push(`- ${move}`);
-    });
+    if (pokemon.moves && pokemon.moves.length > 0) {
+      pokemon.moves.forEach(move => {
+        lines.push(`- ${move}`);
+      });
+    }
 
     return lines.join("\n");
   }
