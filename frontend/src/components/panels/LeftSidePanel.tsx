@@ -16,16 +16,19 @@ import {
   Divider,
   Button
 } from '@mantine/core';
-import { 
-  IconChevronLeft, 
-  IconChevronRight, 
-  IconSettings,
+import {
+  PixelChevronLeft,
+  PixelChevronRight,
+  PixelSettings,
+  PixelSwords,
+  PixelPokeball,
+  PixelStar
+} from '../ui/PixelIcons';
+import {
   IconDice,
   IconEqual,
-  IconPokeball,
   IconPackage,
-  IconBug,
-  IconSwords
+  IconBug
 } from '@tabler/icons-react';
 import { useGameStore } from '../../store/gameStore';
 
@@ -89,11 +92,11 @@ const LeftSidePanel: React.FC<LeftSidePanelProps> = ({
                 zIndex: 1001
               }}
             >
-              {isExpanded ? <IconChevronLeft size={20} /> : <IconChevronRight size={20} />}
+              {isExpanded ? <PixelChevronLeft size={16} /> : <PixelChevronRight size={16} />}
             </ActionIcon>
             <Collapse in={isExpanded} transitionDuration={200}>
               <Group gap="sm">
-                <IconSettings size={20} color="var(--mantine-color-blue-6)" />
+                <PixelSettings size={18} color="var(--mantine-color-blue-6)" />
                 <Title order={4} c="blue.6">
                   Battle Settings
                 </Title>
@@ -120,7 +123,7 @@ const LeftSidePanel: React.FC<LeftSidePanelProps> = ({
               size="lg"
               color="blue"
             >
-              <IconSettings size={20} />
+              <PixelSettings size={18} />
             </ActionIcon>
           </Box>
         )}
@@ -186,7 +189,7 @@ const BattleSettingsContent: React.FC<{
             size="md"
             variant="gradient"
             gradient={{ from: 'blue', to: 'grape', deg: 135 }}
-            leftSection={<IconSwords size={20} />}
+            leftSection={<PixelSwords size={16} />}
             onClick={() => generateTestBattle(settings)}
           >
             Generate Test Battle
@@ -196,7 +199,7 @@ const BattleSettingsContent: React.FC<{
           <Card withBorder p="md">
             <Stack gap="md">
               <Group gap="sm">
-                <IconSwords size={18} color="var(--mantine-color-blue-6)" />
+                <PixelSwords size={16} color="var(--mantine-color-blue-6)" />
                 <Text fw={600} size="sm">
                   Test Battle Generation
                 </Text>
@@ -210,7 +213,7 @@ const BattleSettingsContent: React.FC<{
                 min={10}
                 max={1000}
                 step={10}
-                leftSection={<IconSwords size={16} />}
+                leftSection={<PixelSwords size={14} />}
               />
               
               <Button
@@ -331,7 +334,7 @@ const BattleSettingsContent: React.FC<{
           <Card withBorder p="md">
             <Stack gap="md">
               <Group gap="sm">
-                <IconPokeball size={18} color="var(--mantine-color-red-6)" />
+                <PixelPokeball size={16} />
                 <Text fw={600} size="sm">
                   Pokemon Generation
                 </Text>
@@ -354,7 +357,7 @@ const BattleSettingsContent: React.FC<{
                   { value: '9', label: 'Generation 9 (Scarlet/Violet)' }
                 ]}
                 size="sm"
-                leftSection={<IconPokeball size={16} />}
+                leftSection={<PixelPokeball size={14} />}
                 styles={{
                   dropdown: {
                     zIndex: 2000

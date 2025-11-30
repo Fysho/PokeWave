@@ -27,11 +27,26 @@ const pokeGrape = [
   '#5f3dc4'
 ] as const;
 
+// Pokemon-style yellow for accents
+const pokeYellow = [
+  '#fff9db',
+  '#fff3bf',
+  '#ffec99',
+  '#ffe066',
+  '#ffd43b',
+  '#fcc419',
+  '#fab005',
+  '#f59f00',
+  '#f08c00',
+  '#e67700'
+] as const;
+
 export const theme = createTheme({
   primaryColor: 'pokeBlue',
   colors: {
     pokeBlue,
     pokeGrape,
+    pokeYellow,
   },
   defaultRadius: 'md',
   components: {

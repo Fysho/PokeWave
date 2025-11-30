@@ -49,7 +49,14 @@ interface AvailableChallenge {
 
 const DailyMode: React.FC = () => {
   const { currentBattle, isLoading, generateNewBattle } = useGameStore();
-  const { saveScore, getBestScore } = useDailyChallengeStore();
+  const {
+    saveScore,
+    getBestScore,
+    markCompleted,
+    hasCompletedDate,
+    getCompletion,
+    getTodayDateString
+  } = useDailyChallengeStore();
   const [dailyBattles, setDailyBattles] = useState<DailyBattle[]>([]);
   const [loadingBattles, setLoadingBattles] = useState(true);
   const [guesses, setGuesses] = useState<number[]>([50, 50, 50, 50, 50, 50]);
@@ -61,6 +68,7 @@ const DailyMode: React.FC = () => {
   const [loadingChallenges, setLoadingChallenges] = useState(false);
   const [selectedDate, setSelectedDate] = useState<string>('');
   const [currentScore, setCurrentScore] = useState<number | null>(null);
+  const [alreadyCompleted, setAlreadyCompleted] = useState(false);
 
   // Fetch today's challenge on mount
   useEffect(() => {
@@ -71,7 +79,7 @@ const DailyMode: React.FC = () => {
   const fetchTodaysChallenge = async () => {
     setLoadingBattles(true);
     setError(null);
-    
+
     try {
       const response = await ApiService.getTodaysChallenge();
       const battles: DailyBattle[] = response.challenge.battles.map((battle, index) => ({
@@ -83,10 +91,24 @@ const DailyMode: React.FC = () => {
         totalBattles: battle.totalBattles,
         executionTime: battle.executionTime
       }));
-      
+
       setDailyBattles(battles);
       setChallengeDate(response.challenge.date);
       setSelectedDate(response.challenge.date);
+
+      // Check if this challenge was already completed
+      const completion = getCompletion(response.challenge.date);
+      if (completion) {
+        setAlreadyCompleted(true);
+        setSubmitted(true);
+        setGuesses(completion.guesses);
+        setCurrentScore(completion.score);
+      } else {
+        setAlreadyCompleted(false);
+        setSubmitted(false);
+        setGuesses([50, 50, 50, 50, 50, 50]);
+        setCurrentScore(null);
+      }
     } catch (err) {
       console.error('Failed to fetch daily challenge:', err);
       setError('Failed to load today\'s challenge. Please try again later.');
@@ -110,10 +132,7 @@ const DailyMode: React.FC = () => {
   const fetchChallengeByDate = async (date: string) => {
     setLoadingBattles(true);
     setError(null);
-    setSubmitted(false);
-    setGuesses([50, 50, 50, 50, 50, 50]);
-    setCurrentScore(null);
-    
+
     try {
       const response = await ApiService.getChallengeByDate(date);
       const battles: DailyBattle[] = response.challenge.battles.map((battle, index) => ({
@@ -125,11 +144,25 @@ const DailyMode: React.FC = () => {
         totalBattles: battle.totalBattles,
         executionTime: battle.executionTime
       }));
-      
+
       setDailyBattles(battles);
       setChallengeDate(response.challenge.date);
       setSelectedDate(date);
       setIsPanelOpen(false);
+
+      // Check if this challenge was already completed
+      const completion = getCompletion(date);
+      if (completion) {
+        setAlreadyCompleted(true);
+        setSubmitted(true);
+        setGuesses(completion.guesses);
+        setCurrentScore(completion.score);
+      } else {
+        setAlreadyCompleted(false);
+        setSubmitted(false);
+        setGuesses([50, 50, 50, 50, 50, 50]);
+        setCurrentScore(null);
+      }
     } catch (err) {
       console.error('Failed to fetch challenge:', err);
       setError('Failed to load challenge. Please try again later.');
@@ -147,32 +180,29 @@ const DailyMode: React.FC = () => {
   const handleSubmit = () => {
     // Calculate score: sum of absolute difference between guess and actual win percentage
     let totalScore = 0;
-    
+    const actualWinRates: number[] = [];
+
     dailyBattles.forEach((battle, index) => {
       const actualWinPercentage = battle.winRate * 100;
+      actualWinRates.push(actualWinPercentage);
       const guessPercentage = guesses[index];
       const difference = Math.abs(actualWinPercentage - guessPercentage);
       totalScore += difference;
     });
-    
+
     // Round to 2 decimal places
     totalScore = Math.round(totalScore * 100) / 100;
-    
-    // Save the score
+
+    // Mark as completed (this also saves the score)
     if (challengeDate) {
-      saveScore(challengeDate, totalScore, guesses);
+      markCompleted(challengeDate, totalScore, guesses, actualWinRates);
     }
-    
+
     setCurrentScore(totalScore);
     setSubmitted(true);
+    setAlreadyCompleted(true);
   };
 
-  const handleReset = () => {
-    setSubmitted(false);
-    setGuesses([50, 50, 50, 50, 50, 50]);
-    setCurrentScore(null);
-    fetchTodaysChallenge();
-  };
 
   if (loadingBattles) {
     return (
@@ -293,11 +323,14 @@ const DailyMode: React.FC = () => {
                         {challenge.isToday && (
                           <Badge size="xs" color="green">Today</Badge>
                         )}
+                        {hasCompletedDate(challenge.date) && (
+                          <Badge size="xs" color="teal" variant="light">Done</Badge>
+                        )}
                         {(() => {
-                          const bestScore = getBestScore(challenge.date);
-                          return bestScore ? (
+                          const completion = getCompletion(challenge.date);
+                          return completion ? (
                             <Text size="xs" fw={600} c="blue">
-                              Best: {bestScore.score}
+                              Score: {completion.score}
                             </Text>
                           ) : null;
                         })()}
@@ -422,8 +455,18 @@ const DailyMode: React.FC = () => {
           {/* Submit/Reset Button */}
           <Stack align="center" gap="md" mt="lg">
             {submitted && currentScore !== null && (
-              <Card withBorder p="md">
+              <Card withBorder p="md" maw={400}>
                 <Stack align="center" gap="xs">
+                  {alreadyCompleted && selectedDate === getTodayDateString() && (
+                    <Badge color="green" size="lg" mb="xs">
+                      Already Completed Today
+                    </Badge>
+                  )}
+                  {alreadyCompleted && selectedDate !== getTodayDateString() && (
+                    <Badge color="blue" size="lg" mb="xs">
+                      Previously Completed
+                    </Badge>
+                  )}
                   <Text size="lg" fw={600}>Your Score</Text>
                   <Text size="2xl" fw={700} c="blue">
                     {currentScore}
@@ -431,38 +474,38 @@ const DailyMode: React.FC = () => {
                   <Text size="sm" c="dimmed">
                     Lower is better - {currentScore < 100 ? 'Great job!' : currentScore < 200 ? 'Good try!' : 'Keep practicing!'}
                   </Text>
-                  {(() => {
-                    const bestScore = getBestScore(challengeDate);
-                    if (bestScore && bestScore.score < currentScore) {
-                      return (
-                        <Text size="sm" c="dimmed">
-                          Your best: {bestScore.score}
-                        </Text>
-                      );
-                    }
-                    return null;
-                  })()}
+                  {alreadyCompleted && selectedDate === getTodayDateString() && (
+                    <Text size="xs" c="dimmed" ta="center" mt="xs">
+                      Come back tomorrow for a new challenge!
+                    </Text>
+                  )}
                 </Stack>
               </Card>
             )}
-            
+
             <Group justify="center">
               {!submitted ? (
-                <Button 
-                  size="lg" 
+                <Button
+                  size="lg"
                   onClick={handleSubmit}
                   leftSection={<IconSwords size={20} />}
                 >
                   Submit All Guesses
                 </Button>
               ) : (
-                <Button 
-                  size="lg" 
-                  variant="outline"
-                  onClick={handleReset}
-                >
-                  Try New Daily Challenge
-                </Button>
+                <Stack align="center" gap="sm">
+                  {/* Only show "Try Past Challenge" if there are other challenges available */}
+                  {availableChallenges.length > 1 && (
+                    <Button
+                      size="md"
+                      variant="outline"
+                      onClick={() => setIsPanelOpen(true)}
+                      leftSection={<IconHistory size={18} />}
+                    >
+                      Try a Past Challenge
+                    </Button>
+                  )}
+                </Stack>
               )}
             </Group>
           </Stack>

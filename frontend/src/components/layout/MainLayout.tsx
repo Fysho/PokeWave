@@ -1,19 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { AppShell, Container, Group, Button, Badge, ActionIcon, useMantineColorScheme, Box, useMantineTheme, Text, Menu, Avatar } from '@mantine/core';
-import { 
-  IconHistory, 
-  IconDeviceGamepad2,
-  IconCalendar,
-  IconCrown,
-  IconUsers,
-  IconSun,
-  IconMoon,
-  IconInfoCircle,
-  IconInfinity,
-  IconPokeball,
-  IconLogout,
-  IconUser
-} from '@tabler/icons-react';
+import {
+  PixelHistory,
+  PixelSwords,
+  PixelCalendar,
+  PixelCrown,
+  PixelUsers,
+  PixelSun,
+  PixelMoon,
+  PixelInfo,
+  PixelInfinity,
+  PixelPokeball,
+  PixelLogout,
+  PixelUser
+} from '../ui/PixelIcons';
 import LeftSidePanel from '../panels/LeftSidePanel';
 import RightSidePanel from '../panels/RightSidePanel';
 import { useSettingsStore } from '../../store/settingsStore';
@@ -62,13 +62,13 @@ const MainLayout: React.FC<MainLayoutProps> = ({
   }, [token, checkAuth]);
 
   const navigationItems = [
-    { id: 'battle', label: 'Battle', icon: IconDeviceGamepad2, description: 'Predict Pokemon battles' },
-    { id: 'history', label: 'History', icon: IconHistory, description: 'View your battle history', badge: battleCount },
-    { id: 'leaderboard', label: 'Leaderboard', icon: IconCrown, description: 'Global rankings' },
-    { id: 'daily', label: 'Daily', icon: IconCalendar, description: 'Daily challenges' },
-    { id: 'endless', label: 'Endless', icon: IconInfinity, description: 'Survival mode' },
-    { id: 'pokedex', label: 'Pokédex', icon: IconPokeball, description: 'Browse all Pokémon' },
-    { id: 'pokeinfo', label: 'PokeInfo', icon: IconInfoCircle, description: 'Pokemon debug information' },
+    { id: 'battle', label: 'Battle', icon: PixelSwords, description: 'Predict Pokemon battles' },
+    { id: 'history', label: 'History', icon: PixelHistory, description: 'View your battle history', badge: battleCount },
+    { id: 'leaderboard', label: 'Leaderboard', icon: PixelCrown, description: 'Global rankings' },
+    { id: 'daily', label: 'Daily', icon: PixelCalendar, description: 'Daily challenges' },
+    { id: 'endless', label: 'Endless', icon: PixelInfinity, description: 'Survival mode' },
+    { id: 'pokedex', label: 'Pokédex', icon: PixelPokeball, description: 'Browse all Pokémon' },
+    { id: 'pokeinfo', label: 'PokeInfo', icon: PixelInfo, description: 'Pokemon debug information' },
   ];
 
   return (
@@ -176,7 +176,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({
                       onClick={() => onTabChange(item.id)}
                       variant={activeTab === item.id ? "filled" : "subtle"}
                       size="sm"
-                      leftSection={<Icon size={16} />}
+                      leftSection={<Icon size={14} />}
                       rightSection={
                         item.badge && item.badge > 0 ? (
                           <Badge size="xs" variant="light">
@@ -193,12 +193,12 @@ const MainLayout: React.FC<MainLayoutProps> = ({
             </Group>
             
             <Group>
-              <ActionIcon 
+              <ActionIcon
                 onClick={() => toggleColorScheme()}
                 variant="default"
                 size="lg"
               >
-                {colorScheme === 'dark' ? <IconSun size={20} /> : <IconMoon size={20} />}
+                {colorScheme === 'dark' ? <PixelSun size={18} /> : <PixelMoon size={18} />}
               </ActionIcon>
               
               {isAuthenticated ? (
@@ -239,7 +239,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({
                     <Menu.Divider />
                     <Menu.Item
                       color="red"
-                      leftSection={<IconLogout size={14} />}
+                      leftSection={<PixelLogout size={14} />}
                       onClick={signOut}
                     >
                       Sign Out
@@ -247,10 +247,10 @@ const MainLayout: React.FC<MainLayoutProps> = ({
                   </Menu.Dropdown>
                 </Menu>
               ) : (
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  leftSection={<IconUsers size={16} />}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  leftSection={<PixelUsers size={14} />}
                   onClick={() => setSignInModalOpened(true)}
                 >
                   Sign In
@@ -269,7 +269,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({
                   onClick={() => onTabChange(item.id)}
                   variant={activeTab === item.id ? "filled" : "subtle"}
                   size="xs"
-                  leftSection={<Icon size={14} />}
+                  leftSection={<Icon size={12} />}
                   rightSection={
                     item.badge && item.badge > 0 ? (
                       <Badge size="xs" variant="light">
