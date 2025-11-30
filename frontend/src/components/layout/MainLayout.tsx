@@ -12,7 +12,8 @@ import {
   PixelInfinity,
   PixelPokeball,
   PixelLogout,
-  PixelUser
+  PixelUser,
+  PixelFlask
 } from '../ui/PixelIcons';
 import LeftSidePanel from '../panels/LeftSidePanel';
 import RightSidePanel from '../panels/RightSidePanel';
@@ -67,6 +68,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({
     { id: 'leaderboard', label: 'Leaderboard', icon: PixelCrown, description: 'Global rankings' },
     { id: 'daily', label: 'Daily', icon: PixelCalendar, description: 'Daily challenges' },
     { id: 'endless', label: 'Endless', icon: PixelInfinity, description: 'Survival mode' },
+    { id: 'battlelab', label: 'Battle Lab', icon: PixelFlask, description: 'Test custom battles' },
     { id: 'pokedex', label: 'Pokédex', icon: PixelPokeball, description: 'Browse all Pokémon' },
     { id: 'pokeinfo', label: 'PokeInfo', icon: PixelInfo, description: 'Pokemon debug information' },
   ];

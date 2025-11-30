@@ -5,6 +5,7 @@ import PokeInfo from '../debug/PokeInfo';
 import EndlessMode from './EndlessMode';
 import Pokedex from '../pokedex/Pokedex';
 import DailyMode from './DailyMode';
+import BattleLab from './BattleLab';
 import Profile from '../profile/Profile';
 import { useGameStore } from '../../store/gameStore';
 import { useAuthStore } from '../../store/authStore';
@@ -261,10 +262,13 @@ const GameDashboard: React.FC = () => {
       
       case 'pokedex':
         return <Pokedex />;
-      
+
+      case 'battlelab':
+        return <BattleLab />;
+
       case 'profile':
         return <Profile />;
-      
+
       default:
         return null; // Prevent duplicate rendering
     }

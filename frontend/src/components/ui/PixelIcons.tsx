@@ -711,6 +711,44 @@ export const PixelBolt: React.FC<PixelIconProps> = ({
   </svg>
 );
 
+export const PixelFlask: React.FC<PixelIconProps> = ({
+  size = 16,
+  color = 'currentColor',
+  className,
+  style
+}) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 16 16"
+    fill={color}
+    className={className}
+    style={{ ...baseStyle, ...style }}
+  >
+    {/* Flask neck */}
+    <rect x="6" y="0" width="4" height="1" />
+    <rect x="5" y="1" width="6" height="1" />
+    <rect x="6" y="2" width="4" height="3" />
+    {/* Flask body */}
+    <rect x="4" y="5" width="2" height="1" />
+    <rect x="10" y="5" width="2" height="1" />
+    <rect x="3" y="6" width="2" height="1" />
+    <rect x="11" y="6" width="2" height="1" />
+    <rect x="2" y="7" width="2" height="2" />
+    <rect x="12" y="7" width="2" height="2" />
+    <rect x="1" y="9" width="2" height="3" />
+    <rect x="13" y="9" width="2" height="3" />
+    <rect x="1" y="12" width="14" height="1" />
+    <rect x="2" y="13" width="12" height="1" />
+    <rect x="3" y="14" width="10" height="1" />
+    <rect x="4" y="15" width="8" height="1" />
+    {/* Bubbles inside */}
+    <rect x="5" y="10" width="2" height="2" fill="#3b82f6" />
+    <rect x="8" y="11" width="2" height="2" fill="#3b82f6" />
+    <rect x="10" y="9" width="2" height="2" fill="#3b82f6" />
+  </svg>
+);
+
 // Export all icons as a collection for easy mapping
 export const PixelIcons = {
   pokeball: PixelPokeball,
@@ -736,4 +774,5 @@ export const PixelIcons = {
   shield: PixelShield,
   heart: PixelHeart,
   bolt: PixelBolt,
+  flask: PixelFlask,
 };
