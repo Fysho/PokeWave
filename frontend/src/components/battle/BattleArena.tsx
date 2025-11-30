@@ -418,9 +418,19 @@ export const PokemonBattleCard: React.FC<PokemonBattleCardProps> = ({
                       variant="outline"
                       size="md"
                       color="teal"
-                      leftSection={<IconStar size={14} />}
+                      leftSection={
+                        pokemon.itemDetail.sprite ? (
+                          <img
+                            src={pokemon.itemDetail.sprite}
+                            alt={pokemon.itemDetail.name}
+                            style={{ width: 16, height: 16, imageRendering: 'pixelated' }}
+                          />
+                        ) : (
+                          <IconStar size={14} />
+                        )
+                      }
                       tt="capitalize"
-                      style={{ 
+                      style={{
                         ...badgeStyle,
                         fontWeight: 500,
                         cursor: 'help'
@@ -436,7 +446,7 @@ export const PokemonBattleCard: React.FC<PokemonBattleCardProps> = ({
                     color="teal"
                     leftSection={<IconStar size={14} />}
                     tt="capitalize"
-                    style={{ 
+                    style={{
                       ...badgeStyle,
                       fontWeight: 500
                     }}
@@ -450,7 +460,7 @@ export const PokemonBattleCard: React.FC<PokemonBattleCardProps> = ({
                   size="md"
                   color="gray"
                   leftSection={<IconStar size={14} />}
-                  style={{ 
+                  style={{
                     ...badgeStyle,
                     fontWeight: 500
                   }}

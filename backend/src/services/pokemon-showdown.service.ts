@@ -286,7 +286,7 @@ class PokemonShowdownService {
 
     let winner: 0 | 1 | 2 = 1;
     let turnCount = 0;
-    const maxTurns = 50;
+    const maxTurns = 100;
     
     // Track HP for both Pokemon
     let p1CurrentHP = 0;
@@ -502,12 +502,10 @@ class PokemonShowdownService {
       }
 
       if (turnCount >= maxTurns) {
-        // Decide winner based on base stat totals
-        const bst1 = Object.values(pokemon1.baseStats).reduce((a, b) => a + b, 0);
-        const bst2 = Object.values(pokemon2.baseStats).reduce((a, b) => a + b, 0);
-        winner = bst1 >= bst2 ? 1 : 2;
+        // Call it a draw if max turns exceeded
+        winner = 0;
         if (enableLogging) {
-          logger.info(`🎮 Battle Tester: MAX TURN COUNT EXCEEDED - Winner: ${winner === 1 ? pokemon1.name : pokemon2.name}`);
+          logger.info(`🎮 Battle Tester: MAX TURN COUNT EXCEEDED (${maxTurns} turns) - Result: DRAW`);
         }
         break;
       }
@@ -1066,24 +1064,68 @@ class PokemonShowdownService {
     return match ? match[1] : pokemonStr;
   }
 
-  private calculateStats(species: Species, level: number): any {
+  // Nature stat modifiers: [increased stat, decreased stat]
+  // Neutral natures (Hardy, Docile, Serious, Bashful, Quirky) have no modifiers
+  private static readonly NATURE_MODIFIERS: Record<string, { increase?: string; decrease?: string }> = {
+    // Neutral natures
+    Hardy: {},
+    Docile: {},
+    Serious: {},
+    Bashful: {},
+    Quirky: {},
+    // Attack boosting
+    Lonely: { increase: 'attack', decrease: 'defense' },
+    Brave: { increase: 'attack', decrease: 'speed' },
+    Adamant: { increase: 'attack', decrease: 'specialAttack' },
+    Naughty: { increase: 'attack', decrease: 'specialDefense' },
+    // Defense boosting
+    Bold: { increase: 'defense', decrease: 'attack' },
+    Relaxed: { increase: 'defense', decrease: 'speed' },
+    Impish: { increase: 'defense', decrease: 'specialAttack' },
+    Lax: { increase: 'defense', decrease: 'specialDefense' },
+    // Speed boosting
+    Timid: { increase: 'speed', decrease: 'attack' },
+    Hasty: { increase: 'speed', decrease: 'defense' },
+    Jolly: { increase: 'speed', decrease: 'specialAttack' },
+    Naive: { increase: 'speed', decrease: 'specialDefense' },
+    // Special Attack boosting
+    Modest: { increase: 'specialAttack', decrease: 'attack' },
+    Mild: { increase: 'specialAttack', decrease: 'defense' },
+    Quiet: { increase: 'specialAttack', decrease: 'speed' },
+    Rash: { increase: 'specialAttack', decrease: 'specialDefense' },
+    // Special Defense boosting
+    Calm: { increase: 'specialDefense', decrease: 'attack' },
+    Gentle: { increase: 'specialDefense', decrease: 'defense' },
+    Sassy: { increase: 'specialDefense', decrease: 'speed' },
+    Careful: { increase: 'specialDefense', decrease: 'specialAttack' },
+  };
+
+  private calculateStats(species: Species, level: number, nature: string = 'Hardy'): any {
     const IV = 31;
     const EV = 0;
-    
-    const calculateStat = (baseStat: number, isHP: boolean = false) => {
-      if (isHP) {
-        return Math.floor(((2 * baseStat + IV + (EV / 4)) * level / 100) + level + 10);
-      }
-      return Math.floor(((2 * baseStat + IV + (EV / 4)) * level / 100) + 5);
+
+    const getNatureModifier = (statName: string): number => {
+      const modifier = PokemonShowdownService.NATURE_MODIFIERS[nature];
+      if (!modifier) return 1.0;
+      if (modifier.increase === statName) return 1.1;
+      if (modifier.decrease === statName) return 0.9;
+      return 1.0;
     };
-    
+
+    const calculateStat = (baseStat: number, statName: string, isHP: boolean = false) => {
+      const baseStat_calc = Math.floor(((2 * baseStat + IV + (EV / 4)) * level / 100) + (isHP ? level + 10 : 5));
+      // Nature doesn't affect HP
+      if (isHP) return baseStat_calc;
+      return Math.floor(baseStat_calc * getNatureModifier(statName));
+    };
+
     return {
-      hp: calculateStat(species.baseStats.hp, true),
-      attack: calculateStat(species.baseStats.atk),
-      defense: calculateStat(species.baseStats.def),
-      specialAttack: calculateStat(species.baseStats.spa),
-      specialDefense: calculateStat(species.baseStats.spd),
-      speed: calculateStat(species.baseStats.spe)
+      hp: calculateStat(species.baseStats.hp, 'hp', true),
+      attack: calculateStat(species.baseStats.atk, 'attack'),
+      defense: calculateStat(species.baseStats.def, 'defense'),
+      specialAttack: calculateStat(species.baseStats.spa, 'specialAttack'),
+      specialDefense: calculateStat(species.baseStats.spd, 'specialDefense'),
+      speed: calculateStat(species.baseStats.spe, 'speed')
     };
   }
 
@@ -1365,8 +1407,15 @@ class PokemonShowdownService {
       // Get sprites
       const sprites = await pokemonService.getPokemonSprites(pokemonId);
 
-      // Calculate stats with default IVs (31) and EVs (0)
-      const stats = this.calculateStats(species, level);
+      // Get random nature FIRST (needed for stat calculation)
+      const natures = ['Hardy', 'Lonely', 'Brave', 'Adamant', 'Naughty', 'Bold',
+                      'Docile', 'Relaxed', 'Impish', 'Lax', 'Timid', 'Hasty',
+                      'Serious', 'Jolly', 'Naive', 'Modest', 'Mild', 'Quiet',
+                      'Bashful', 'Rash', 'Calm', 'Gentle', 'Sassy', 'Careful', 'Quirky'];
+      const nature = natures[Math.floor(Math.random() * natures.length)];
+
+      // Calculate stats with nature modifier, default IVs (31) and EVs (0)
+      const stats = this.calculateStats(species, level, nature);
 
       // Get types
       const types = species.types.map(t => t.toLowerCase());
@@ -1448,14 +1497,7 @@ class PokemonShowdownService {
         }
       }
 
-      // Get random nature
-      const natures = ['Hardy', 'Lonely', 'Brave', 'Adamant', 'Naughty', 'Bold', 
-                      'Docile', 'Relaxed', 'Impish', 'Lax', 'Timid', 'Hasty',
-                      'Serious', 'Jolly', 'Naive', 'Modest', 'Mild', 'Quiet',
-                      'Bashful', 'Rash', 'Calm', 'Gentle', 'Sassy', 'Careful', 'Quirky'];
-      const nature = natures[Math.floor(Math.random() * natures.length)];
-
-      // Default IVs and EVs
+      // Default IVs and EVs (nature already selected above for stat calculation)
       const ivs = { hp: 31, attack: 31, defense: 31, specialAttack: 31, specialDefense: 31, speed: 31 };
       const evs = { hp: 0, attack: 0, defense: 0, specialAttack: 0, specialDefense: 0, speed: 0 };
 
