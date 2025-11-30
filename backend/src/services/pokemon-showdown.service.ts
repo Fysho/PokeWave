@@ -851,6 +851,8 @@ class PokemonShowdownService {
                       if (lastTurn.defender === pokemonName && damage > 0) {
                         lastTurn.damage = damage;
                         lastTurn.remainingHP = current;
+                        // Update lastHP so subsequent damage (like Life Orb) calculates correctly
+                        pokemonHP[pokemonName].lastHP = current;
                       }
                     }
                   }
@@ -861,6 +863,8 @@ class PokemonShowdownService {
                     if (lastTurn.defender === pokemonName && damage > 0) {
                       lastTurn.damage = damage;
                       lastTurn.remainingHP = current;
+                      // Update lastHP so subsequent damage (like Life Orb) calculates correctly
+                      pokemonHP[pokemonName].lastHP = current;
                     }
                   }
                 }
