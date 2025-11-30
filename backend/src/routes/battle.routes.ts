@@ -167,16 +167,23 @@ router.post('/simulate-multiple', devOnly, async (req, res, next) => {
     pokemonInstanceStore.storeInstances(pokemon1Instance, pokemon2Instance, generation);
 
     // Simulate the battles
-    const result = await pokemonShowdownService.simulateBattle(count);
+    const result = await pokemonShowdownService.simulateMultipleBattles({
+      pokemon1: pokemon1Instance,
+      pokemon2: pokemon2Instance,
+      generation: generation,
+      battleCount: count
+    });
 
-    logger.info(`Simulated ${count} battles: ${pokemon1Instance.name} (${result.pokemon1Wins} wins) vs ${pokemon2Instance.name} (${result.pokemon2Wins} wins)`);
+    const winRate = (result.pokemon1Wins / result.totalBattles) * 100;
+
+    logger.info(`Simulated ${count} battles: ${pokemon1Instance.name} (${result.pokemon1Wins} wins, ${winRate.toFixed(1)}%) vs ${pokemon2Instance.name} (${result.pokemon2Wins} wins)`);
 
     res.json({
-      battleCount: count,
+      battleCount: result.totalBattles,
       pokemon1Wins: result.pokemon1Wins,
       pokemon2Wins: result.pokemon2Wins,
       draws: result.draws,
-      winRate: result.winRate,
+      winRate: winRate,
       executionTime: result.executionTime
     });
   } catch (error) {

@@ -18,6 +18,7 @@ export interface ShowdownBattleConfig {
   pokemon1: PokemonInstanceData;
   pokemon2: PokemonInstanceData;
   generation: number;
+  battleCount?: number; // Optional custom battle count, defaults to TOTAL_BATTLES
 }
 
 export interface ShowdownBattleResult {
@@ -85,6 +86,7 @@ class PokemonShowdownService {
 
   async simulateMultipleBattles(config: ShowdownBattleConfig): Promise<ShowdownBattleResult> {
     const startTime = Date.now();
+    const numBattles = config.battleCount || this.NUM_BATTLES;
 
     try {
       // Generate cache key disabled
@@ -102,9 +104,9 @@ class PokemonShowdownService {
       let pokemon2Wins = 0;
       let draws = 0;
 
-      logger.info(`Beginning simulation: ${config.pokemon1.name} vs ${config.pokemon2.name}`, {skipFormat: true});
+      logger.info(`Beginning simulation: ${config.pokemon1.name} vs ${config.pokemon2.name} (${numBattles} battles)`, {skipFormat: true});
 
-      for (let i = 0; i < this.NUM_BATTLES; i++) {
+      for (let i = 0; i < numBattles; i++) {
         const winner = await this.runSingleShowdownBattle(
             config.pokemon1,
             config.pokemon2,
@@ -133,7 +135,7 @@ class PokemonShowdownService {
         pokemon1Wins: pokemon1Wins,
         pokemon2Wins: pokemon2Wins,
         draws: draws,
-        totalBattles: this.NUM_BATTLES,
+        totalBattles: numBattles,
         executionTime: executionTime,
       };
 
