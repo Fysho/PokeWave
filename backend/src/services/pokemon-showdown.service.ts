@@ -381,21 +381,23 @@ class PokemonShowdownService {
       // Check for win first
       if (chunk.includes('|win|')) {
         const declaredWinner = chunk.includes('Player 1') ? 1 : 2;
-        
-        // Only check for 0 HP draw if we've actually tracked HP values
-        // (to avoid false draws when a Pokemon wins in 1 hit before HP is tracked)
-        if (hpInitialized && ((declaredWinner === 1 && p1CurrentHP === 0) || (declaredWinner === 2 && p2CurrentHP === 0))) {
-          winner = 0; // Draw
+
+        // Only count as a draw if BOTH Pokemon are at 0 HP (true simultaneous KO)
+        // A Pokemon can win even if they faint from recoil/poison/etc - that's not a draw
+        if (hpInitialized && p1CurrentHP === 0 && p2CurrentHP === 0) {
+          winner = 0; // Draw - both Pokemon KO'd
           if (enableLogging) {
-            logger.info(`🎮 Battle Tester: Battle ended in a DRAW! (Winner had 0 HP)`);
+            logger.info(`🎮 Battle Tester: Battle ended in a DRAW! (Both Pokemon at 0 HP)`);
             logger.info(`🎮 Battle Tester: P1 HP: ${p1CurrentHP}/${p1MaxHP}, P2 HP: ${p2CurrentHP}/${p2MaxHP}`);
           } else {
-            logger.debug(`Battle ended in DRAW - winner had 0 HP. P1: ${p1CurrentHP}/${p1MaxHP}, P2: ${p2CurrentHP}/${p2MaxHP}`);
+            logger.debug(`Battle ended in DRAW - both Pokemon at 0 HP`);
           }
         } else {
+          // Trust Pokemon Showdown's declared winner
           winner = declaredWinner;
           if (enableLogging) {
             logger.info(`🎮 Battle Tester: Battle ended! Winner: ${winner === 1 ? pokemon1.name : pokemon2.name}`);
+            logger.info(`🎮 Battle Tester: P1 HP: ${p1CurrentHP}/${p1MaxHP}, P2 HP: ${p2CurrentHP}/${p2MaxHP}`);
           }
         }
         break;
