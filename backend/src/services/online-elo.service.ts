@@ -70,34 +70,55 @@ class OnlineEloService {
   }
 
   /**
-   * Calculate rank score (0-100) based on position among players
-   * Higher score = better rank
+   * Calculate zero-sum Elo changes for all players
+   * Elo is transferred from worse performers to better performers
+   * Total Elo change across all players = 0
    */
-  calculateRankScore(position: number, totalPlayers: number): number {
-    if (totalPlayers <= 1) return 50; // Neutral if alone
-    const playersBeat = totalPlayers - position;
-    return (playersBeat / (totalPlayers - 1)) * 100;
-  }
+  calculateZeroSumEloChanges(
+    guessesWithScores: Array<{ oderId: string; accuracyScore: number; rankPosition: number }>
+  ): Map<string, number> {
+    const n = guessesWithScores.length;
+    const eloChanges = new Map<string, number>();
 
-  /**
-   * Calculate Elo change using hybrid accuracy + rank system
-   */
-  calculateEloChange(accuracyScore: number, rankScore: number): number {
-    // Normalize scores to -1 to +1 range
-    // 50 = neutral (0), 100 = best (+1), 0 = worst (-1)
-    const accuracyFactor = (accuracyScore - 50) / 50;
-    const rankFactor = (rankScore - 50) / 50;
+    if (n < 2) {
+      // No Elo changes with less than 2 players
+      guessesWithScores.forEach(g => eloChanges.set(g.oderId, 0));
+      return eloChanges;
+    }
 
-    // Weighted combination
-    const combinedFactor = (
-      ONLINE_CONFIG.ACCURACY_WEIGHT * accuracyFactor +
-      ONLINE_CONFIG.RANK_WEIGHT * rankFactor
-    );
+    // Sort by rank position (1st place first)
+    const sorted = [...guessesWithScores].sort((a, b) => a.rankPosition - b.rankPosition);
 
-    // Scale by base change amount
-    const change = ONLINE_CONFIG.BASE_ELO_CHANGE * combinedFactor;
+    // Calculate Elo changes based on position
+    // Use a system where each player's change depends on their relative position
+    // Top half gains, bottom half loses, middle (if odd) gets 0
+    const baseChange = ONLINE_CONFIG.BASE_ELO_CHANGE;
 
-    return Math.round(change);
+    // To ensure perfect zero-sum, we calculate changes and then adjust for rounding
+    const changes: number[] = [];
+    for (let i = 0; i < n; i++) {
+      // Position factor: ranges from +1 (1st place) to -1 (last place)
+      // Formula: (n - 1 - 2*i) / (n - 1)
+      // For 2 players: 1st gets +1, 2nd gets -1
+      // For 3 players: 1st gets +1, 2nd gets 0, 3rd gets -1
+      // For 4 players: 1st gets +1, 2nd gets +0.33, 3rd gets -0.33, 4th gets -1
+      const positionFactor = (n - 1 - 2 * i) / (n - 1);
+      changes.push(Math.round(baseChange * positionFactor));
+    }
+
+    // Adjust for rounding errors to ensure zero-sum
+    const total = changes.reduce((sum, c) => sum + c, 0);
+    if (total !== 0) {
+      // Distribute the rounding error to middle players
+      const midIndex = Math.floor(n / 2);
+      changes[midIndex] -= total;
+    }
+
+    for (let i = 0; i < n; i++) {
+      eloChanges.set(sorted[i].oderId, changes[i]);
+    }
+
+    return eloChanges;
   }
 
   /**
@@ -133,6 +154,15 @@ class OnlineEloService {
     // Determine if Elo changes should apply (need 2+ players)
     const applyEloChanges = guesses.length >= ONLINE_CONFIG.MIN_PLAYERS_FOR_ELO;
 
+    // Calculate zero-sum Elo changes for all players
+    const eloChangesMap = this.calculateZeroSumEloChanges(
+      guessesWithScores.map(g => ({
+        oderId: g.userId,
+        accuracyScore: g.accuracyScore,
+        rankPosition: (g as any).rankPosition
+      }))
+    );
+
     const results: OnlineGuessResult[] = [];
 
     // Process each guess
@@ -140,15 +170,9 @@ class OnlineEloService {
       // Get current Elo
       const { elo: currentElo } = await this.getOrCreateElo(guess.userId);
 
-      // Calculate rank score
-      const rankScore = this.calculateRankScore(
-        (guess as any).rankPosition,
-        guesses.length
-      );
-
-      // Calculate Elo change (only if 2+ players)
+      // Get zero-sum Elo change from pre-calculated map
       const eloChange = applyEloChanges
-        ? this.calculateEloChange(guess.accuracyScore, rankScore)
+        ? (eloChangesMap.get(guess.userId) || 0)
         : 0;
 
       const newElo = Math.max(0, currentElo + eloChange); // Never go below 0
