@@ -15,7 +15,8 @@ import {
   PixelUser,
   PixelFlask,
   PixelAdmin,
-  PixelCards
+  PixelCards,
+  PixelGlobe
 } from '../ui/PixelIcons';
 import LeftSidePanel from '../panels/LeftSidePanel';
 import RightSidePanel from '../panels/RightSidePanel';
@@ -66,6 +67,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({
 
   const navigationItems = [
     { id: 'battle', label: 'Battle', icon: PixelSwords, description: 'Predict Pokemon battles' },
+    { id: 'online', label: 'Online', icon: PixelGlobe, description: 'Compete globally in real-time' },
     { id: 'history', label: 'History', icon: PixelHistory, description: 'View your battle history', badge: battleCount },
     { id: 'leaderboard', label: 'Leaderboard', icon: PixelCrown, description: 'Global rankings' },
     { id: 'daily', label: 'Daily', icon: PixelCalendar, description: 'Daily challenges' },

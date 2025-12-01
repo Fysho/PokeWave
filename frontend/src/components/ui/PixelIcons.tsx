@@ -816,6 +816,51 @@ export const PixelCards: React.FC<PixelIconProps> = ({
   </svg>
 );
 
+export const PixelGlobe: React.FC<PixelIconProps> = ({
+  size = 16,
+  color = 'currentColor',
+  className,
+  style
+}) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 16 16"
+    fill={color}
+    className={className}
+    style={{ ...baseStyle, ...style }}
+  >
+    {/* Globe outline */}
+    <rect x="5" y="0" width="6" height="1" />
+    <rect x="3" y="1" width="2" height="1" />
+    <rect x="11" y="1" width="2" height="1" />
+    <rect x="2" y="2" width="1" height="1" />
+    <rect x="13" y="2" width="1" height="1" />
+    <rect x="1" y="3" width="1" height="3" />
+    <rect x="14" y="3" width="1" height="3" />
+    <rect x="0" y="6" width="1" height="4" />
+    <rect x="15" y="6" width="1" height="4" />
+    <rect x="1" y="10" width="1" height="3" />
+    <rect x="14" y="10" width="1" height="3" />
+    <rect x="2" y="13" width="1" height="1" />
+    <rect x="13" y="13" width="1" height="1" />
+    <rect x="3" y="14" width="2" height="1" />
+    <rect x="11" y="14" width="2" height="1" />
+    <rect x="5" y="15" width="6" height="1" />
+    {/* Horizontal line */}
+    <rect x="1" y="7" width="14" height="1" />
+    <rect x="1" y="8" width="14" height="1" />
+    {/* Vertical meridian */}
+    <rect x="7" y="1" width="2" height="5" />
+    <rect x="7" y="9" width="2" height="5" />
+    {/* Connection dots */}
+    <rect x="4" y="4" width="1" height="1" />
+    <rect x="11" y="4" width="1" height="1" />
+    <rect x="4" y="11" width="1" height="1" />
+    <rect x="11" y="11" width="1" height="1" />
+  </svg>
+);
+
 // Export all icons as a collection for easy mapping
 export const PixelIcons = {
   pokeball: PixelPokeball,
@@ -844,4 +889,5 @@ export const PixelIcons = {
   flask: PixelFlask,
   admin: PixelAdmin,
   cards: PixelCards,
+  globe: PixelGlobe,
 };

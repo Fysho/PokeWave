@@ -28,6 +28,7 @@ model User {
   gameStats         GameStats?
   endlessScores     EndlessScore[]
   dailyChallengeScores DailyChallengeScore[]
+  onlineElo         OnlineElo?
 
   @@index([username])
 }
@@ -183,4 +184,99 @@ model Battle {
   @@unique([pokemon1Id, pokemon2Id]) // Prevent duplicate battles
   @@index([pokemon1Id, pokemon2Id])
   @@index([totalGuesses]) // For finding popular battles
+}
+
+// ==========================================
+// ONLINE MODE MODELS
+// ==========================================
+
+// Online Mode Elo rating for users
+model OnlineElo {
+  id              String   @id @default(uuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  elo             Int      @default(1000)
+  rank            String   @default("bronze") // bronze, silver, gold, platinum, diamond, master
+  gamesPlayed     Int      @default(0)
+  wins            Int      @default(0)  // Rounds where player ranked top 50%
+
+  // Best/worst performance
+  highestElo      Int      @default(1000)
+  lowestElo       Int      @default(1000)
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([elo(sort: Desc)])
+  @@index([rank])
+}
+
+// Online Mode round data - stores pre-generated battle matchups
+model OnlineRound {
+  id              String   @id @default(uuid())
+  roundNumber     Int      @unique
+
+  // Battle configuration (stored as JSON for flexibility)
+  pokemon1Data    Json     // Full Pokemon instance data
+  pokemon2Data    Json     // Full Pokemon instance data
+
+  // Simulation result
+  actualWinPercent Float   // 0-100, result of 1000 simulations
+
+  // Round timing
+  startTime       DateTime
+  endTime         DateTime
+
+  // Stats
+  totalParticipants Int    @default(0)
+
+  createdAt       DateTime @default(now())
+
+  // Relations
+  guesses         OnlineGuess[]
+
+  @@index([roundNumber])
+  @@index([startTime])
+}
+
+// Individual player guesses for online rounds
+model OnlineGuess {
+  id              String   @id @default(uuid())
+
+  roundId         String
+  round           OnlineRound @relation(fields: [roundId], references: [id], onDelete: Cascade)
+
+  userId          String
+
+  guess           Float    // 0-100 percentage
+  submittedAt     DateTime @default(now())
+
+  // Calculated after round ends
+  accuracyScore   Float?   // 0-100, how close to actual
+  rankPosition    Int?     // 1st, 2nd, 3rd, etc.
+  eloChange       Int?     // +/- points
+  eloBefore       Int?     // Elo before this round
+  eloAfter        Int?     // Elo after this round
+
+  @@unique([roundId, userId])
+  @@index([roundId])
+  @@index([userId])
+  @@index([submittedAt])
+}
+
+// Online player presence (for real-time tracking)
+model OnlinePresence {
+  id              String   @id @default(uuid())
+  userId          String   @unique
+
+  socketId        String?  // WebSocket connection ID
+  lastSeen        DateTime @default(now())
+  currentRound    Int?     // Which round they're viewing
+  hasSubmitted    Boolean  @default(false) // Submitted this round?
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([lastSeen])
 }

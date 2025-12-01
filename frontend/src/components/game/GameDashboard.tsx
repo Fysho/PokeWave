@@ -3,6 +3,7 @@ import BattleArena from '../battle/BattleArena';
 import MainLayout from '../layout/MainLayout';
 import PokeInfo from '../debug/PokeInfo';
 import EndlessMode from './EndlessMode';
+import OnlineMode from './OnlineMode';
 import Pokedex from '../pokedex/Pokedex';
 import DailyMode from './DailyMode';
 import BattleLab from './BattleLab';
@@ -262,7 +263,10 @@ const GameDashboard: React.FC = () => {
       
       case 'endless':
         return <EndlessMode />;
-      
+
+      case 'online':
+        return <OnlineMode />;
+
       case 'pokedex':
         return <Pokedex />;
 

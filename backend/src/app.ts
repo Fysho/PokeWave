@@ -1,4 +1,5 @@
 import express, { Application, Request, Response } from 'express';
+import { createServer } from 'http';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { errorMiddleware } from './middleware/error.middleware';
@@ -10,6 +11,8 @@ import { pokemonItemStoreService } from './services/pokemon-item-store.service';
 import { pokemonAbilityStoreService } from './services/pokemon-ability-store.service';
 import { dailyChallengeService } from './services/daily-challenge.service';
 import { battleCacheService } from './services/battle-cache.service';
+import { onlineRoundService } from './services/online-round.service';
+import { onlineWebSocketGateway } from './websocket/online.gateway';
 import { initializeServices, shutdownServices } from './services/service-factory';
 
 // Load environment variables
@@ -17,6 +20,9 @@ dotenv.config();
 
 // Create Express app
 const app: Application = express();
+
+// Create HTTP server for both Express and WebSocket
+const httpServer = createServer(app);
 
 // Middleware
 app.use(cors());
@@ -41,9 +47,12 @@ app.use((req: Request, res: Response) => {
 // Error handling middleware (must be last)
 app.use(errorMiddleware);
 
+// Initialize WebSocket gateway
+onlineWebSocketGateway.initialize(httpServer);
+
 // Start server
 const PORT = process.env.PORT || 4000;
-const server = app.listen(PORT, async () => {
+const server = httpServer.listen(PORT, async () => {
   logger.info(`Server running on port ${PORT}`);
   
   // Initialize services (database connection if enabled)
@@ -90,15 +99,28 @@ const server = app.listen(PORT, async () => {
   } catch (error) {
     logger.error('Failed to initialize battle cache:', error);
   }
+
+  // Initialize Online Mode round generation
+  logger.info('Initializing Online Mode...');
+  try {
+    await onlineRoundService.startRoundLoop();
+    logger.info('Online Mode initialization complete');
+  } catch (error) {
+    logger.error('Failed to initialize Online Mode:', error);
+  }
 });
 
 // Graceful shutdown
 process.on('SIGTERM', async () => {
   logger.info('SIGTERM signal received: closing HTTP server');
-  
+
+  // Stop Online Mode
+  onlineRoundService.stopRoundLoop();
+  onlineWebSocketGateway.shutdown();
+
   // Shutdown services (database connection if enabled)
   await shutdownServices();
-  
+
   server.close(() => {
     logger.info('HTTP server closed');
   });
@@ -106,10 +128,14 @@ process.on('SIGTERM', async () => {
 
 process.on('SIGINT', async () => {
   logger.info('SIGINT signal received: closing HTTP server');
-  
+
+  // Stop Online Mode
+  onlineRoundService.stopRoundLoop();
+  onlineWebSocketGateway.shutdown();
+
   // Shutdown services (database connection if enabled)
   await shutdownServices();
-  
+
   server.close(() => {
     logger.info('HTTP server closed');
     process.exit(0);
