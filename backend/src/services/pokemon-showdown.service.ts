@@ -635,13 +635,13 @@ class PokemonShowdownService {
         if (line.includes('|switch|') || line.includes('|drag|') || line.includes('|player|')) {
           const parts = line.split('|');
           
-          // Check for switch/drag format
-          if ((line.includes('|switch|') || line.includes('|drag|')) && parts.length >= 6) {
-            const pokemonName = this.extractPokemonName(parts[3]);
-            const hpInfo = parts[5];
+          // Check for switch/drag format: |switch|p1a: Pokemon|Species, L50|HP/MaxHP
+          if ((line.includes('|switch|') || line.includes('|drag|')) && parts.length >= 5) {
+            const pokemonName = this.extractPokemonName(parts[2]);
+            const hpInfo = parts[4];
             if (hpInfo && hpInfo.includes('/')) {
               const [current, max] = hpInfo.split('/').map(h => parseInt(h) || 0);
-              pokemonHP[pokemonName] = { current, max };
+              pokemonHP[pokemonName] = { current, max, lastHP: current };
               logger.info(`Battle Tester: Initialized HP for ${pokemonName}: ${current}/${max}`);
             }
           }
