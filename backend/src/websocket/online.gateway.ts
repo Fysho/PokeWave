@@ -29,7 +29,6 @@ class OnlineWebSocketGateway {
   private io: SocketIOServer | null = null;
   private tickInterval: NodeJS.Timeout | null = null;
   private lastPhase: OnlinePhase = 'guessing';
-  private lastRound: number = 0;
   private isRunning: boolean = false;
 
   /**
@@ -218,7 +217,6 @@ class OnlineWebSocketGateway {
     if (this.tickInterval || this.isRunning) return;
 
     this.isRunning = true;
-    this.lastRound = onlineRoundService.getCurrentRoundNumber();
     this.lastPhase = onlineRoundService.getCurrentPhase();
 
     this.tickInterval = setInterval(async () => {
@@ -240,27 +238,30 @@ class OnlineWebSocketGateway {
 
     const currentRound = onlineRoundService.getCurrentRoundNumber();
     const currentPhase = onlineRoundService.getCurrentPhase();
-    const timeRemaining = onlineRoundService.getTimeRemaining();
 
-    // Check for phase transition
-    if (this.lastRound !== currentRound || this.lastPhase !== currentPhase) {
+    // Check if round has ended - need to start new round
+    if (onlineRoundService.isRoundEnded()) {
+      // Process results for current round first
+      await this.handlePhaseTransitionToResults(currentRound);
+
+      // Increment to next round
+      const newRound = await onlineRoundService.incrementRoundNumber();
+      await this.handleNewRound(newRound);
+
+      this.lastPhase = 'guessing';
+    } else if (this.lastPhase !== currentPhase) {
+      // Phase changed within same round (guessing -> results)
       if (currentPhase === 'results' && this.lastPhase === 'guessing') {
-        // Guessing phase just ended - process results
-        await this.handlePhaseTransitionToResults(this.lastRound);
-      } else if (currentPhase === 'guessing' && this.lastPhase === 'results') {
-        // New round started
-        await this.handleNewRound(currentRound);
+        await this.handlePhaseTransitionToResults(currentRound);
       }
-
-      this.lastRound = currentRound;
       this.lastPhase = currentPhase;
     }
 
     // Broadcast tick update to all connected clients
     this.io.to('online-room').emit('tick', {
-      roundNumber: currentRound,
-      phase: currentPhase,
-      timeRemaining
+      roundNumber: onlineRoundService.getCurrentRoundNumber(),
+      phase: onlineRoundService.getCurrentPhase(),
+      timeRemaining: onlineRoundService.getTimeRemaining()
     });
   }
 

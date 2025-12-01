@@ -15,26 +15,69 @@ class OnlineRoundService {
   private roundCache: Map<number, OnlineRoundData> = new Map();
   private intervalId: NodeJS.Timeout | null = null;
   private isInitialized: boolean = false;
+  private currentRoundNumber: number = 1;
+  private roundStartTime: number = 0;
 
   constructor() {
     this.prisma = new PrismaClient();
   }
 
   /**
-   * Calculate current round number based on Unix timestamp
-   * Round N starts at: epoch + (N * ROUND_DURATION seconds)
+   * Get current round number from memory (loaded from DB on init)
    */
   getCurrentRoundNumber(): number {
-    const now = Math.floor(Date.now() / 1000);
-    return Math.floor(now / ONLINE_CONFIG.ROUND_DURATION);
+    return this.currentRoundNumber;
+  }
+
+  /**
+   * Increment round number and persist to database
+   */
+  async incrementRoundNumber(): Promise<number> {
+    this.currentRoundNumber++;
+    this.roundStartTime = Date.now();
+
+    await this.prisma.onlineGameState.upsert({
+      where: { id: 'singleton' },
+      create: { id: 'singleton', currentRound: this.currentRoundNumber, roundStartedAt: new Date() },
+      update: { currentRound: this.currentRoundNumber, roundStartedAt: new Date() }
+    });
+
+    return this.currentRoundNumber;
+  }
+
+  /**
+   * Load current round number from database on startup
+   */
+  async loadRoundNumber(): Promise<void> {
+    const gameState = await this.prisma.onlineGameState.findUnique({
+      where: { id: 'singleton' }
+    });
+
+    if (gameState) {
+      this.currentRoundNumber = gameState.currentRound;
+      this.roundStartTime = gameState.roundStartedAt.getTime();
+    } else {
+      // Create initial state
+      await this.prisma.onlineGameState.create({
+        data: { id: 'singleton', currentRound: 1 }
+      });
+      this.currentRoundNumber = 1;
+      this.roundStartTime = Date.now();
+    }
+  }
+
+  /**
+   * Get seconds elapsed since round started
+   */
+  getSecondsIntoRound(): number {
+    return Math.floor((Date.now() - this.roundStartTime) / 1000);
   }
 
   /**
    * Get current phase (guessing or results)
    */
   getCurrentPhase(): OnlinePhase {
-    const now = Math.floor(Date.now() / 1000);
-    const secondsIntoRound = now % ONLINE_CONFIG.ROUND_DURATION;
+    const secondsIntoRound = this.getSecondsIntoRound();
     return secondsIntoRound < ONLINE_CONFIG.GUESS_DURATION ? 'guessing' : 'results';
   }
 
@@ -42,8 +85,7 @@ class OnlineRoundService {
    * Get time remaining in current phase
    */
   getTimeRemaining(): number {
-    const now = Math.floor(Date.now() / 1000);
-    const secondsIntoRound = now % ONLINE_CONFIG.ROUND_DURATION;
+    const secondsIntoRound = this.getSecondsIntoRound();
 
     if (secondsIntoRound < ONLINE_CONFIG.GUESS_DURATION) {
       return ONLINE_CONFIG.GUESS_DURATION - secondsIntoRound;
@@ -52,17 +94,24 @@ class OnlineRoundService {
   }
 
   /**
-   * Get the start time for a specific round
+   * Check if round has ended (time exceeded total duration)
    */
-  getRoundStartTime(roundNumber: number): Date {
-    return new Date(roundNumber * ONLINE_CONFIG.ROUND_DURATION * 1000);
+  isRoundEnded(): boolean {
+    return this.getSecondsIntoRound() >= ONLINE_CONFIG.ROUND_DURATION;
   }
 
   /**
-   * Get the end time for a specific round
+   * Get the start time for the current round
    */
-  getRoundEndTime(roundNumber: number): Date {
-    return new Date((roundNumber + 1) * ONLINE_CONFIG.ROUND_DURATION * 1000);
+  getRoundStartTime(_roundNumber?: number): Date {
+    return new Date(this.roundStartTime);
+  }
+
+  /**
+   * Get the end time for the current round
+   */
+  getRoundEndTime(_roundNumber?: number): Date {
+    return new Date(this.roundStartTime + ONLINE_CONFIG.ROUND_DURATION * 1000);
   }
 
   /**
@@ -228,22 +277,17 @@ class OnlineRoundService {
     this.isInitialized = true;
     logger.info('Starting Online Mode round generation loop...');
 
-    // Generate initial rounds
-    try {
-      await this.preGenerateRounds(10);
-      logger.info('Initial rounds pre-generated');
-    } catch (error) {
-      logger.error('Failed to pre-generate initial rounds:', error);
-    }
+    // Load current round number from database
+    await this.loadRoundNumber();
+    logger.info(`Loaded round number: ${this.currentRoundNumber}`);
 
-    // Check every 10 seconds for new rounds needed
-    this.intervalId = setInterval(async () => {
-      try {
-        await this.preGenerateRounds(5);
-      } catch (error) {
-        logger.error('Error in round generation loop:', error);
-      }
-    }, 10000);
+    // Generate initial round if needed
+    try {
+      await this.getOrCreateRound(this.currentRoundNumber);
+      logger.info('Initial round ready');
+    } catch (error) {
+      logger.error('Failed to generate initial round:', error);
+    }
 
     logger.info('Online round generation loop started');
   }

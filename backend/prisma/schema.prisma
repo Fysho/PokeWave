@@ -281,3 +281,11 @@ model OnlinePresence {
 
   @@index([lastSeen])
 }
+
+// Online game state - singleton for tracking current round number
+model OnlineGameState {
+  id              String   @id @default("singleton")
+  currentRound    Int      @default(1)
+  roundStartedAt  DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
