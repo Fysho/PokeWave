@@ -104,7 +104,7 @@ class PokemonShowdownService {
       let pokemon2Wins = 0;
       let draws = 0;
 
-      logger.info(`Beginning simulation: ${config.pokemon1.name} vs ${config.pokemon2.name} (${numBattles} battles)`, {skipFormat: true});
+      // Reduced logging - only log at end
 
       for (let i = 0; i < numBattles; i++) {
         const winner = await this.runSingleShowdownBattle(
@@ -142,8 +142,12 @@ class PokemonShowdownService {
       // Cache the result disabled
       // await cacheService.set(`showdown:${cacheKey}`, result, 3600);
 
-      // Log detailed result including draw count
-      logger.info(`Simulation complete: ${config.pokemon1.name} won ${pokemon1Wins}, ${config.pokemon2.name} won ${pokemon2Wins}, Draws: ${draws}`, {skipFormat: true});
+      // Alert if we got exactly 50% - this is suspicious, otherwise minimal logging
+      const winRate = (pokemon1Wins / numBattles) * 100;
+      if (winRate === 50) {
+        logger.error(`⚠️ 50% RESULT: ${config.pokemon1.name} (L${config.pokemon1.level}) vs ${config.pokemon2.name} (L${config.pokemon2.level}) | Wins: ${pokemon1Wins}/${pokemon2Wins}, Draws: ${draws} | P1 Moves: ${config.pokemon1.moves?.join(', ')} | P2 Moves: ${config.pokemon2.moves?.join(', ')}`, {skipFormat: true});
+      }
+
       return result;
     } catch (error) {
       logger.error('Failed to simulate battle with Pokemon Showdown:', {
@@ -810,7 +814,14 @@ class PokemonShowdownService {
                   // Recoil might come as "[from] Recoil" or just "Recoil"
                   if ((source && (source.includes('[from]') || source.includes('confusion') || source.toLowerCase().includes('recoil') || source.includes('Recoil'))) || mightBeRecoil) {
                     let damageType = 'unknown';
-                    
+                    let damageSource = '';
+
+                    // Extract the move name from [from] move: MoveName format
+                    const moveMatch = source.match(/\[from\]\s*move:\s*(.+)/i);
+                    if (moveMatch) {
+                      damageSource = moveMatch[1].trim();
+                    }
+
                     if (source.includes('confusion')) {
                       damageType = 'confusion';
                     } else if (source.includes('psn') || source.includes('tox')) {
@@ -827,21 +838,41 @@ class PokemonShowdownService {
                       damageType = 'Life Orb';
                     } else if (mightBeRecoil) {
                       damageType = 'recoil';
+                    } else if (source.includes('Leech Seed')) {
+                      damageType = 'Leech Seed';
+                    } else if (source.includes('Curse')) {
+                      damageType = 'Curse';
+                    } else if (source.includes('Nightmare')) {
+                      damageType = 'Nightmare';
+                    } else if (source.includes('Salt Cure')) {
+                      damageType = 'Salt Cure';
+                    } else if (source.includes('Stealth Rock')) {
+                      damageType = 'Stealth Rock';
+                    } else if (source.includes('Spikes')) {
+                      damageType = 'Spikes';
+                    } else if (damageSource) {
+                      // Trapping moves like Fire Spin, Wrap, Bind, Whirlpool, Infestation, Magma Storm, Sand Tomb, etc.
+                      damageType = damageSource;
                     }
-                    
+
                     // Log when we have unknown damage type
                     if (damageType === 'unknown') {
                       logger.warn(`Battle Tester: Unknown damage type - source: "${source}"`);
                     }
-                    
+
+                    // Format the display name
+                    const displayName = damageType;
+
                     turnEvents.push({
                       turn: currentTurn,
                       attacker: damageType,
                       defender: pokemonName,
-                      move: damageType === 'confusion' ? 'Confusion damage' : 
+                      move: damageType === 'confusion' ? 'Confusion damage' :
                             damageType === 'recoil' ? 'Recoil damage' :
                             damageType === 'Life Orb' ? 'Life Orb damage' :
-                            `${damageType} damage`,
+                            damageType === 'poison' ? 'poison damage' :
+                            damageType === 'burn' ? 'burn damage' :
+                            `${displayName} damage`,
                       damage: damage,
                       remainingHP: current,
                       critical: false,

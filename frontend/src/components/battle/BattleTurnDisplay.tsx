@@ -96,6 +96,28 @@ export const getStatusEffectText = (status: string) => {
   }
 };
 
+// Trapping moves that deal residual damage over multiple turns
+const TRAPPING_MOVES = [
+  'Fire Spin', 'Wrap', 'Bind', 'Whirlpool', 'Infestation',
+  'Magma Storm', 'Sand Tomb', 'Clamp', 'Snap Trap', 'Thunder Cage'
+];
+
+// Other moves that deal residual damage
+const RESIDUAL_DAMAGE_MOVES = [
+  'Leech Seed', 'Curse', 'Nightmare', 'Salt Cure',
+  'Stealth Rock', 'Spikes', 'G-Max Cannonade', 'G-Max Volcalith', 'G-Max Vine Lash', 'G-Max Wildfire'
+];
+
+// Check if the attacker is a residual damage source (not a Pokemon name)
+export const isResidualDamage = (attacker: string): boolean => {
+  const knownResidualSources = [
+    'confusion', 'poison', 'burn', 'sandstorm', 'hail', 'recoil', 'Life Orb',
+    ...TRAPPING_MOVES,
+    ...RESIDUAL_DAMAGE_MOVES
+  ];
+  return knownResidualSources.includes(attacker);
+};
+
 export const getStatusEffectColor = (status: string) => {
   switch (status) {
     case 'brn':
@@ -121,6 +143,38 @@ export const getStatusEffectColor = (status: string) => {
       return 'red';
     case 'Life Orb':
       return 'violet';
+    // Trapping moves
+    case 'Fire Spin':
+    case 'Magma Storm':
+    case 'G-Max Wildfire':
+    case 'G-Max Volcalith':
+      return 'orange';
+    case 'Wrap':
+    case 'Bind':
+    case 'Clamp':
+    case 'Snap Trap':
+    case 'Infestation':
+    case 'G-Max Vine Lash':
+      return 'green';
+    case 'Whirlpool':
+    case 'G-Max Cannonade':
+      return 'blue';
+    case 'Sand Tomb':
+      return 'yellow';
+    case 'Thunder Cage':
+      return 'yellow';
+    // Other residual damage
+    case 'Leech Seed':
+      return 'green';
+    case 'Curse':
+    case 'Nightmare':
+      return 'grape';
+    case 'Salt Cure':
+      return 'gray';
+    case 'Stealth Rock':
+      return 'gray';
+    case 'Spikes':
+      return 'gray';
     default:
       return 'gray';
   }
@@ -259,7 +313,7 @@ const BattleTurnDisplay: React.FC<BattleTurnDisplayProps> = ({
                         {getStatChangeText(turn.statChange)}
                       </Text>
                     </>
-                  ) : ['confusion', 'poison', 'burn', 'sandstorm', 'hail', 'recoil', 'Life Orb'].includes(turn.attacker) ? (
+                  ) : isResidualDamage(turn.attacker) ? (
                     <>
                       <Text component="span" size="xs" fw={500} tt="capitalize">
                         {turn.defender}
@@ -269,11 +323,8 @@ const BattleTurnDisplay: React.FC<BattleTurnDisplayProps> = ({
                         {turn.damage} damage
                       </Text>
                       <Text component="span" size="xs">{' '}from{' '}</Text>
-                      <Text component="span" size="xs" fw={500}>
-                        {turn.attacker === 'confusion' ? 'confusion' :
-                          turn.attacker === 'recoil' ? 'recoil' :
-                            turn.attacker === 'Life Orb' ? 'Life Orb' :
-                              turn.attacker}
+                      <Text component="span" size="xs" fw={500} c={getStatusEffectColor(turn.attacker)}>
+                        {turn.attacker}
                       </Text>
                       <Text component="span" size="xs">{turn.attacker === 'confusion' && '!'}</Text>
                     </>
@@ -305,7 +356,7 @@ const BattleTurnDisplay: React.FC<BattleTurnDisplayProps> = ({
                 </Box>
 
                 {/* Damage display - show "[defender] took X damage" for regular moves */}
-                {!turn.missed && turn.move !== 'Stat Change' && !['confusion', 'poison', 'burn', 'sandstorm', 'hail', 'recoil', 'Life Orb'].includes(turn.attacker) && (
+                {!turn.missed && turn.move !== 'Stat Change' && !isResidualDamage(turn.attacker) && (
                   <Group gap="xs" align="center">
                     {turn.damage > 0 && (
                       <Text size="xs" c="red.6">
