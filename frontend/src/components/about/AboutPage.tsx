@@ -166,7 +166,8 @@ const AboutPage: React.FC = () => {
             }>
               <Text fw={500}>View the Matchup</Text>
               <Text size="sm" c="dimmed">
-                Two Pokemon will appear on screen. Study their types, stats, and abilities.
+                Two Pokemon will appear on screen. Study their types, stats, abilities, and movesets.
+                Each Pokemon has 4 moves they can use during battle.
               </Text>
             </List.Item>
 
@@ -175,10 +176,11 @@ const AboutPage: React.FC = () => {
                 <Text size="xs" fw={700}>2</Text>
               </ThemeIcon>
             }>
-              <Text fw={500}>Make Your Prediction</Text>
+              <Text fw={500}>Understand the Simulation</Text>
               <Text size="sm" c="dimmed">
-                Click on the Pokemon you think will win the battle. Consider type matchups,
-                base stats, and potential movesets.
+                The battle is simulated <strong>hundreds of times</strong> using Pokemon Showdown's engine.
+                In each simulation, Pokemon choose their moves <strong>randomly</strong> from their moveset.
+                The win rate is calculated from all these simulations.
               </Text>
             </List.Item>
 
@@ -187,10 +189,11 @@ const AboutPage: React.FC = () => {
                 <Text size="xs" fw={700}>3</Text>
               </ThemeIcon>
             }>
-              <Text fw={500}>Watch the Battle</Text>
+              <Text fw={500}>Make Your Prediction</Text>
               <Text size="sm" c="dimmed">
-                The battle is simulated using Pokemon Showdown's engine. See the turn-by-turn
-                breakdown of what happened!
+                Predict the <strong>win percentage</strong> for each Pokemon as closely as possible.
+                Use the slider to set how often you think each Pokemon will win (e.g., 65% vs 35%).
+                The closer your prediction is to the actual win rate, the more points you earn!
               </Text>
             </List.Item>
 
@@ -199,10 +202,23 @@ const AboutPage: React.FC = () => {
                 <Text size="xs" fw={700}>4</Text>
               </ThemeIcon>
             }>
+              <Text fw={500}>See the Results</Text>
+              <Text size="sm" c="dimmed">
+                After submitting, you'll see the actual win percentages and a sample battle log
+                showing turn-by-turn action. Compare your prediction to the real results!
+              </Text>
+            </List.Item>
+
+            <List.Item icon={
+              <ThemeIcon color="blue" size={24} radius="xl">
+                <Text size="xs" fw={700}>5</Text>
+              </ThemeIcon>
+            }>
               <Text fw={500}>Learn and Improve</Text>
               <Text size="sm" c="dimmed">
-                Review the battle log to understand why certain Pokemon win. Use Battle Lab
-                to experiment with different matchups!
+                Review the battle log to understand why certain Pokemon win more often.
+                Consider type matchups, speed tiers, and move coverage. Use Battle Lab
+                to experiment with specific matchups!
               </Text>
             </List.Item>
           </List>
