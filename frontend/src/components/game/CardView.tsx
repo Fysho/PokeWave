@@ -16,7 +16,7 @@ import {
 } from '@mantine/core';
 import { IconRefresh, IconCards } from '@tabler/icons-react';
 import { FadeIn } from '../ui/transitions';
-import { FullCard, CompactCard, MiniCard, MovesOnlyCard, HoverDetailCard } from '../pokemon-cards';
+import { FullCard, CompactCard, MiniCard, MicroCard, MovesOnlyCard, HoverDetailCard } from '../pokemon-cards';
 import ApiService from '../../services/api';
 
 /**
@@ -202,9 +202,30 @@ const CardView: React.FC = () => {
                     <MiniCard pokemon={pokemon1} />
                     <MiniCard pokemon={pokemon2} />
                     <MiniCard pokemon={pokemon1} showLevel={false} />
-                    <MiniCard pokemon={pokemon2} showTypes={false} />
-                    <MiniCard pokemon={pokemon1} spriteSize={64} />
-                    <MiniCard pokemon={pokemon2} enableHoverDetail={false} />
+                    <MiniCard pokemon={pokemon2} spriteSize={64} />
+                  </Group>
+                </Stack>
+              </Card>
+
+              {/* MicroCard Section */}
+              <Card withBorder p="lg">
+                <Stack gap="md">
+                  <Group justify="space-between" align="center">
+                    <Box>
+                      <Title order={3}>MicroCard</Title>
+                      <Text size="sm" c="dimmed">
+                        Ultra-minimal display without types (hover for full details)
+                      </Text>
+                    </Box>
+                    <Badge color="pink" size="lg">Thumbnails / Dense Lists</Badge>
+                  </Group>
+                  <Divider />
+                  <Group gap="md" wrap="wrap">
+                    <MicroCard pokemon={pokemon1} />
+                    <MicroCard pokemon={pokemon2} />
+                    <MicroCard pokemon={pokemon1} spriteSize={48} />
+                    <MicroCard pokemon={pokemon2} showLevel={false} />
+                    <MicroCard pokemon={pokemon1} enableHoverDetail={false} />
                   </Group>
                 </Stack>
               </Card>
@@ -273,13 +294,16 @@ const CardView: React.FC = () => {
                           <strong>CompactCard:</strong> Grid layouts like Daily Mode where space is limited but hover details are available
                         </Text>
                         <Text size="sm">
-                          <strong>MiniCard:</strong> Lists, search results, or any compact display where hover provides full info
+                          <strong>MiniCard:</strong> Lists, search results, or any compact display with type badges
+                        </Text>
+                        <Text size="sm">
+                          <strong>MicroCard:</strong> Thumbnails, dense lists, or anywhere space is very limited (no types)
                         </Text>
                         <Text size="sm">
                           <strong>MovesOnlyCard:</strong> When analyzing or comparing move sets
                         </Text>
                         <Text size="sm">
-                          <strong>HoverDetailCard:</strong> Used automatically by MiniCard; can also be used for custom tooltips
+                          <strong>HoverDetailCard:</strong> Used automatically by MiniCard/MicroCard; can also be used for custom tooltips
                         </Text>
                       </Stack>
                     </Grid.Col>
@@ -288,7 +312,7 @@ const CardView: React.FC = () => {
                         <Text fw={600}>Import from:</Text>
                         <Card withBorder p="sm" bg={colorScheme === 'dark' ? 'dark.7' : 'white'}>
                           <Text size="sm" ff="monospace">
-                            {`import { FullCard, CompactCard, MiniCard, MovesOnlyCard, HoverDetailCard } from '../pokemon-cards';`}
+                            {`import { FullCard, CompactCard, MiniCard, MicroCard, MovesOnlyCard, HoverDetailCard } from '../pokemon-cards';`}
                           </Text>
                         </Card>
                         <Text size="sm" c="dimmed" mt="xs">

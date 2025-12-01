@@ -1,24 +1,21 @@
 import React from 'react';
-import { Card, Badge, Text, Box, Stack, Group, Tooltip, useMantineColorScheme } from '@mantine/core';
-import { getTypeColor } from '../../utils/typeColors';
+import { Card, Badge, Text, Box, Stack, Tooltip, useMantineColorScheme } from '@mantine/core';
 import { HoverDetailCard } from './HoverDetailCard';
 
 /**
- * MiniCard - Minimal Pokemon display for lists and compact views
+ * MicroCard - Ultra-minimal Pokemon display
  *
- * Used in: Lists, search results, compact grids
- * Shows: Small sprite (64-96px), name, level, types as small badges
+ * Used in: Dense lists, thumbnails, selection grids
+ * Shows: Small sprite (48-64px), name, level only (no types)
  * Hover shows HoverDetailCard with all information
  */
 
-export interface MiniCardProps {
+export interface MicroCardProps {
   pokemon: any;
   /** Size of the sprite */
   spriteSize?: number;
   /** Whether to show the level */
   showLevel?: boolean;
-  /** Whether to show type badges */
-  showTypes?: boolean;
   /** Whether to show shiny indicator */
   showShiny?: boolean;
   /** Whether to enable hover tooltip with full details */
@@ -27,11 +24,10 @@ export interface MiniCardProps {
   onClick?: () => void;
 }
 
-export const MiniCard: React.FC<MiniCardProps> = ({
+export const MicroCard: React.FC<MicroCardProps> = ({
   pokemon,
-  spriteSize = 80,
+  spriteSize = 64,
   showLevel = true,
-  showTypes = true,
   showShiny = true,
   enableHoverDetail = true,
   onClick
@@ -40,13 +36,13 @@ export const MiniCard: React.FC<MiniCardProps> = ({
 
   const cardContent = (
     <Card
-      p="xs"
+      p={6}
       withBorder
       shadow="sm"
       className="transition-all duration-200"
       style={{
         cursor: onClick ? 'pointer' : enableHoverDetail ? 'help' : 'default',
-        minWidth: '120px',
+        minWidth: '80px',
         backgroundColor: colorScheme === 'dark' ? 'var(--mantine-color-dark-6)' : 'var(--mantine-color-white)'
       }}
       onClick={onClick}
@@ -59,7 +55,7 @@ export const MiniCard: React.FC<MiniCardProps> = ({
         e.currentTarget.style.boxShadow = '';
       }}
     >
-      <Stack gap={4} align="center">
+      <Stack gap={2} align="center">
         {/* Shiny indicator */}
         {showShiny && pokemon.shiny && (
           <Badge size="xs" variant="dot" color="yellow" style={{ alignSelf: 'flex-start' }}>
@@ -106,7 +102,7 @@ export const MiniCard: React.FC<MiniCardProps> = ({
         </Box>
 
         {/* Name */}
-        <Text size="sm" fw={600} tt="capitalize" ta="center" lineClamp={1}>
+        <Text size="xs" fw={600} tt="capitalize" ta="center" lineClamp={1}>
           {pokemon.name}
         </Text>
 
@@ -115,23 +111,6 @@ export const MiniCard: React.FC<MiniCardProps> = ({
           <Text size="xs" c="dimmed">
             Lv.{pokemon.level}
           </Text>
-        )}
-
-        {/* Types */}
-        {showTypes && pokemon.types && pokemon.types.length > 0 && (
-          <Group gap={2} justify="center">
-            {pokemon.types.map((type: string) => (
-              <Badge
-                key={type}
-                size="xs"
-                variant="filled"
-                color={getTypeColor(type)}
-                tt="capitalize"
-              >
-                {type}
-              </Badge>
-            ))}
-          </Group>
         )}
       </Stack>
     </Card>
@@ -164,4 +143,4 @@ export const MiniCard: React.FC<MiniCardProps> = ({
   return cardContent;
 };
 
-export default MiniCard;
+export default MicroCard;

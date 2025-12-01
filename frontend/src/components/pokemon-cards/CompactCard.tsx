@@ -60,7 +60,12 @@ export const CompactCard: React.FC<CompactCardProps> = ({
     <Card
       h="100%"
       p="sm"
+      withBorder
+      shadow="sm"
       className="relative transition-all duration-300"
+      style={{
+        backgroundColor: colorScheme === 'dark' ? 'var(--mantine-color-dark-6)' : 'var(--mantine-color-white)'
+      }}
     >
       <Stack gap="xs" h="100%">
         {/* Header with shiny badge */}

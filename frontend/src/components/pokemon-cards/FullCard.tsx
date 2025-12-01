@@ -117,10 +117,15 @@ export const FullCard: React.FC<FullCardProps> = ({
 
   const cardContent = (
     <Card
+      withBorder
+      shadow="sm"
       className={`
         relative transition-all duration-300 group h-full
         ${showResults && pokemon.wins > 500 ? 'ring-2 ring-green-500' : ''}
       `}
+      style={{
+        backgroundColor: colorScheme === 'dark' ? 'var(--mantine-color-dark-6)' : 'var(--mantine-color-white)'
+      }}
     >
       <Card.Section p="lg" pos="relative">
         <Group
