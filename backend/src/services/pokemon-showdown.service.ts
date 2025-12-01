@@ -761,14 +761,17 @@ class PokemonShowdownService {
               
               if (hpInfo === '0 fnt') {
                 // Pokemon fainted
+                const previousHP = pokemonHP[pokemonName]?.lastHP || pokemonHP[pokemonName]?.current || pokemonHP[pokemonName]?.max || 0;
                 if (pokemonHP[pokemonName]) {
                   pokemonHP[pokemonName].current = 0;
                 }
                 if (turnEvents.length > 0) {
                   const lastTurn = turnEvents[turnEvents.length - 1];
                   if (lastTurn.defender === pokemonName) {
-                    lastTurn.damage = pokemonHP[pokemonName]?.lastHP || pokemonHP[pokemonName]?.max || 0;
+                    // Calculate damage from previous HP to 0
+                    lastTurn.damage = previousHP;
                     lastTurn.remainingHP = 0;
+                    logger.info(`Battle Tester: ${pokemonName} fainted! Took ${previousHP} damage (was at ${previousHP} HP)`);
                   }
                 }
               } else if (hpInfo && hpInfo.includes('/')) {
@@ -801,14 +804,18 @@ class PokemonShowdownService {
                   }
                   
                   // Also check if this might be recoil by looking at the last move
+                  // IMPORTANT: Only consider it recoil if the pokemon taking damage is the ATTACKER of the last move
+                  // If it's the defender, it's just normal move damage
                   let mightBeRecoil = false;
                   if (!source && turnEvents.length > 0) {
-                    const lastMove = turnEvents[turnEvents.length - 1].move;
+                    const lastTurn = turnEvents[turnEvents.length - 1];
+                    const lastMove = lastTurn.move;
                     // Common recoil moves
                     const recoilMoves = ['Double-Edge', 'Submission', 'Take Down', 'Brave Bird', 'Flare Blitz', 'Head Smash', 'Wild Charge', 'Volt Tackle', 'Wood Hammer'];
-                    if (recoilMoves.some(move => lastMove.toLowerCase() === move.toLowerCase())) {
+                    // Only mark as recoil if this pokemon is the attacker (not the defender)
+                    if (recoilMoves.some(move => lastMove.toLowerCase() === move.toLowerCase()) && lastTurn.attacker === pokemonName) {
                       mightBeRecoil = true;
-                      logger.info(`Battle Tester: Possible recoil from move: ${lastMove}`);
+                      logger.info(`Battle Tester: Recoil damage to ${pokemonName} from move: ${lastMove}`);
                     }
                   }
                   
