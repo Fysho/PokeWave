@@ -15,26 +15,43 @@ PokeWave is a web-based Pokemon battle prediction game where users predict the w
   - 40-second round cycles (30s guessing + 10s results)
   - WebSocket-based communication for live updates
   - Players compete to predict win percentages closest to actual simulation
+  - Full Pokemon cards (FullCard component) showing complete battle details
+- **Spectator/Player Mode System**:
+  - Players default to spectating mode when joining
+  - "Join Next Round" button to enter playing mode (effective next round)
+  - "Leave Game" button to return to spectating (after current round)
+  - Players list separated into "Playing" and "Spectating" tabs
+  - Mode transitions occur at round boundaries for fairness
 - **Elo Rating System**:
-  - Hybrid scoring: 60% accuracy weight + 40% rank weight
-  - Base Elo change of ±15 points per round
+  - Expected rank-based Elo calculation using standard Elo formula
+  - Zero-sum system: total Elo gained = total Elo lost across all players
+  - High Elo beating low Elo = small gain (expected outcome)
+  - Low Elo beating high Elo = big gain (upset victory)
+  - Base Elo change of ±15 points per round maximum
   - Rank tiers: Bronze (0-1199), Silver (1200-1399), Gold (1400-1599), Platinum (1600-1799), Diamond (1800-1999), Master (2000+)
   - Solo players can practice without Elo changes (minimum 2 players required)
+- **Results Phase Features**:
+  - All player guesses shown on slider with Pokemon sprite avatars
+  - Hover tooltips show player username, guess, and Elo
+  - Current user's guess highlighted with higher z-index
 - **Real-time Features**:
   - Live player list showing online users with submission status
-  - Round timer with phase indicators (guessing/results)
+  - Smooth animated timer ring using requestAnimationFrame
   - Instant results broadcast with accuracy scores and Elo changes
-  - Automatic round generation based on Unix timestamp
+  - Simple incrementing round counter (starts at 1, persisted in database)
 - **Backend Infrastructure**:
   - Socket.IO WebSocket gateway for real-time communication
-  - `OnlineRound`, `OnlineElo`, `OnlineGuess`, `OnlinePresence` Prisma models
+  - `OnlineRound`, `OnlineElo`, `OnlineGuess`, `OnlinePresence`, `OnlineGameState` Prisma models
   - Deterministic Pokemon pairing using seeded random from round number
   - 1000 battle simulations per round for accuracy
 - **Frontend Components**:
-  - `OnlineMode.tsx` main component with battle display
+  - `OnlineMode.tsx` main component with FullCard battle display
+  - `PlayerModeControl` component for Join/Leave buttons
+  - `OnlinePlayersList` with Playing/Spectating tabs
+  - `RoundTimer` with smooth CSS animation
   - Zustand store for Online Mode state management
   - `useOnlineSocket` hook for WebSocket connection handling
-  - Player cards with rank badges and avatar sprites
+  - `TypeColorSlider` with player guess markers for results phase
 
 ### ✅ Phase 9 - User Authentication & Leaderboards (Complete)
 **Status**: Fully functional with user accounts and competitive leaderboards
@@ -247,12 +264,15 @@ For comprehensive database documentation, see [DATABASE_ARCHITECTURE.md](./DATAB
   - Each battle simulated 100 times for accurate win rates
   - Automatic cleanup of old challenges
 - **Online Round Service** (`online-round.service.ts`):
-  - Manages synchronized global rounds based on Unix timestamp
-  - Generates deterministic Pokemon pairs using seeded random
-  - Pre-generates upcoming rounds every 10 seconds
+  - Manages synchronized global rounds with simple incrementing counter
+  - Round number persisted in `OnlineGameState` database table
+  - Generates deterministic Pokemon pairs using seeded random from round number
+  - Tracks round start time for phase calculations
   - Cleans up rounds older than 24 hours
 - **Online Elo Service** (`online-elo.service.ts`):
-  - Calculates hybrid Elo changes (60% accuracy + 40% rank)
+  - Expected rank-based Elo calculation using standard Elo formula
+  - Zero-sum system ensuring total gains = total losses
+  - High Elo vs low Elo matchups yield appropriate rewards
   - Manages rank tiers from Bronze to Master
   - Processes round results and updates player Elo
   - Provides leaderboard and user stats
@@ -589,6 +609,7 @@ WebSocket Path: /ws/online
 authenticate: { token: string }
 heartbeat: {}
 guess-submitted: {}
+set-mode: { mode: 'spectating' | 'playing' }
 
 # Server → Client
 authenticated: { success: boolean, userId?: string, error?: string }
@@ -596,7 +617,7 @@ round-state: OnlineRoundState
 tick: { roundNumber, phase, timeRemaining }
 new-round: OnlineRoundState
 round-results: { roundNumber, actualWinPercent, results: OnlineGuessResult[] }
-players-update: OnlinePlayer[]
+players-update: OnlinePlayer[]  # Includes mode field for each player
 ```
 
 ## Scoring System
@@ -659,10 +680,13 @@ The game is now fully functional with all features working as intended. Recent a
   - Real-time synchronized battles for all players worldwide
   - 40-second round cycles (30s guessing + 10s results)
   - WebSocket-based live updates (Socket.IO)
-  - Hybrid Elo system (60% accuracy + 40% rank weight)
+  - Expected rank-based zero-sum Elo system
   - Rank tiers: Bronze, Silver, Gold, Platinum, Diamond, Master
-  - Live player list with submission status indicators
-  - Automatic round generation based on Unix timestamp
+  - Spectator/Player mode system with round-boundary transitions
+  - Live player list with Playing/Spectating tabs
+  - Player guess markers on slider during results phase
+  - Smooth animated timer ring with requestAnimationFrame
+  - Simple incrementing round counter (persisted in database)
   - Solo practice mode (no Elo change with single player)
   - Global leaderboard with rank badges
 - ✅ Enhanced UI components:
