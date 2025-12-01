@@ -3,9 +3,38 @@
 ## Project Overview
 PokeWave is a web-based Pokemon battle prediction game where users predict the winner of simulated battles between randomly selected Pokemon. The system uses Pokemon Showdown's battle engine to simulate battles between two Pokemon and challenges users to correctly identify which Pokemon will win.
 
-**Current Status**: The game is fully functional with additional features including Pokedex, Daily Challenges, User Authentication, and Leaderboards.
+**Current Status**: The game is fully functional with additional features including Pokedex, Daily Challenges, User Authentication, Leaderboards, and Online Mode.
 
 ## Implementation Status
+
+### ✅ Phase 10 - Online Mode (Complete)
+**Status**: Fully functional real-time multiplayer mode
+**Recent Features**:
+- **Online Mode System**:
+  - Real-time synchronized battles visible to all players worldwide
+  - 40-second round cycles (30s guessing + 10s results)
+  - WebSocket-based communication for live updates
+  - Players compete to predict win percentages closest to actual simulation
+- **Elo Rating System**:
+  - Hybrid scoring: 60% accuracy weight + 40% rank weight
+  - Base Elo change of ±15 points per round
+  - Rank tiers: Bronze (0-1199), Silver (1200-1399), Gold (1400-1599), Platinum (1600-1799), Diamond (1800-1999), Master (2000+)
+  - Solo players can practice without Elo changes (minimum 2 players required)
+- **Real-time Features**:
+  - Live player list showing online users with submission status
+  - Round timer with phase indicators (guessing/results)
+  - Instant results broadcast with accuracy scores and Elo changes
+  - Automatic round generation based on Unix timestamp
+- **Backend Infrastructure**:
+  - Socket.IO WebSocket gateway for real-time communication
+  - `OnlineRound`, `OnlineElo`, `OnlineGuess`, `OnlinePresence` Prisma models
+  - Deterministic Pokemon pairing using seeded random from round number
+  - 1000 battle simulations per round for accuracy
+- **Frontend Components**:
+  - `OnlineMode.tsx` main component with battle display
+  - Zustand store for Online Mode state management
+  - `useOnlineSocket` hook for WebSocket connection handling
+  - Player cards with rank badges and avatar sprites
 
 ### ✅ Phase 9 - User Authentication & Leaderboards (Complete)
 **Status**: Fully functional with user accounts and competitive leaderboards
@@ -217,6 +246,21 @@ For comprehensive database documentation, see [DATABASE_ARCHITECTURE.md](./DATAB
   - Stores challenges for past 7 days + today + next 2 days
   - Each battle simulated 100 times for accurate win rates
   - Automatic cleanup of old challenges
+- **Online Round Service** (`online-round.service.ts`):
+  - Manages synchronized global rounds based on Unix timestamp
+  - Generates deterministic Pokemon pairs using seeded random
+  - Pre-generates upcoming rounds every 10 seconds
+  - Cleans up rounds older than 24 hours
+- **Online Elo Service** (`online-elo.service.ts`):
+  - Calculates hybrid Elo changes (60% accuracy + 40% rank)
+  - Manages rank tiers from Bronze to Master
+  - Processes round results and updates player Elo
+  - Provides leaderboard and user stats
+- **Online WebSocket Gateway** (`websocket/online.gateway.ts`):
+  - Socket.IO server for real-time communication
+  - JWT-based authentication for connected clients
+  - Tick loop broadcasts time updates every second
+  - Handles phase transitions and result broadcasting
 - **Showdown Service** (`showdown.service.ts`): 
   - Simple wrapper that delegates to pokemon-showdown.service.ts
 - **Cache Service**: Redis caching with graceful fallback to in-memory
@@ -481,6 +525,80 @@ GET /api/daily-challenge/2025-07-22
 POST /api/daily-challenge/refresh
 ```
 
+### Online Mode Endpoints
+```bash
+# Get current round state
+GET /api/online/round/current
+
+Response:
+{
+  "roundNumber": 12345678,
+  "phase": "guessing",  # or "results"
+  "timeRemaining": 25,
+  "pokemon1": { /* full Pokemon instance data */ },
+  "pokemon2": { /* full Pokemon instance data */ },
+  "actualWinPercent": 65.2,  # Only in results phase
+  "totalParticipants": 5
+}
+
+# Submit a guess (authenticated)
+POST /api/online/guess
+Content-Type: application/json
+Authorization: Bearer <token>
+
+{
+  "roundNumber": 12345678,
+  "guess": 65  # 0-100 percentage
+}
+
+Response:
+{
+  "success": true,
+  "guessId": "uuid",
+  "roundNumber": 12345678,
+  "guess": 65
+}
+
+# Get round results
+GET /api/online/round/:roundNumber/results
+
+# Get global leaderboard
+GET /api/online/leaderboard?limit=100
+
+# Get user's online stats (authenticated)
+GET /api/online/stats
+
+# Get currently online players
+GET /api/online/players
+
+# Join online mode (authenticated)
+POST /api/online/join
+
+# Leave online mode (authenticated)
+POST /api/online/leave
+
+# Heartbeat for presence (authenticated)
+POST /api/online/heartbeat
+```
+
+### Online Mode WebSocket Events
+```
+WebSocket Path: /ws/online
+
+# Client → Server
+authenticate: { token: string }
+heartbeat: {}
+guess-submitted: {}
+
+# Server → Client
+authenticated: { success: boolean, userId?: string, error?: string }
+round-state: OnlineRoundState
+tick: { roundNumber, phase, timeRemaining }
+new-round: OnlineRoundState
+round-results: { roundNumber, actualWinPercent, results: OnlineGuessResult[] }
+players-update: OnlinePlayer[]
+```
+
 ## Scoring System
 - **Base Points**: 20 points for correct guess (within 10% accuracy)
 - **Accuracy Bonus**: Additional points based on prediction accuracy
@@ -490,7 +608,7 @@ POST /api/daily-challenge/refresh
 
 ## Current System State
 
-The game is now fully functional with all features working as intended. Recent additions include a complete Pokedex system with shiny Pokemon tracking and a daily challenge mode with persistent scoring.
+The game is now fully functional with all features working as intended. Recent additions include Online Mode for real-time multiplayer battles with Elo ranking, a complete Pokedex system with shiny Pokemon tracking, and a daily challenge mode with persistent scoring.
 
 ## Known Working Features
 - ✅ Real Pokemon battle simulation with 100 battles per simulation
@@ -537,6 +655,16 @@ The game is now fully functional with all features working as intended. Recent a
   - Best score tracking and persistence
   - Expandable challenge selection panel
   - Red arrow indicators showing correct answers
+- ✅ Online Mode with:
+  - Real-time synchronized battles for all players worldwide
+  - 40-second round cycles (30s guessing + 10s results)
+  - WebSocket-based live updates (Socket.IO)
+  - Hybrid Elo system (60% accuracy + 40% rank weight)
+  - Rank tiers: Bronze, Silver, Gold, Platinum, Diamond, Master
+  - Live player list with submission status indicators
+  - Automatic round generation based on Unix timestamp
+  - Solo practice mode (no Elo change with single player)
+  - Global leaderboard with rank badges
 - ✅ Enhanced UI components:
   - Type-colored sliders for battle predictions
   - Compact battle cards with dynamic sprite sizing
@@ -665,8 +793,18 @@ curl -X POST http://localhost:4000/api/battle/simulate \
 - `frontend/src/store/gameStore.ts` - Persistent game state management
 - `frontend/src/store/pokedexStore.ts` - Pokedex unlock and collection tracking
 - `frontend/src/store/dailyChallengeStore.ts` - Daily challenge score persistence
+- `frontend/src/store/onlineStore.ts` - Online Mode state management with Zustand
+- `frontend/src/hooks/useOnlineSocket.ts` - WebSocket connection hook for Online Mode
+- `frontend/src/components/game/OnlineMode.tsx` - Online Mode main component
 - `frontend/src/services/api.ts` - API client with 15-second timeout for battle simulations
+- `frontend/src/services/online.ts` - Online Mode API service
+- `frontend/src/types/online.ts` - Online Mode TypeScript types
 - `frontend/src/utils/typeColors.ts` - Pokemon type color mappings
+- `backend/src/services/online-round.service.ts` - Online round management
+- `backend/src/services/online-elo.service.ts` - Elo calculation service
+- `backend/src/websocket/online.gateway.ts` - Socket.IO WebSocket gateway
+- `backend/src/controllers/online.controller.ts` - Online Mode REST endpoints
+- `backend/src/types/online.types.ts` - Online Mode backend types
 
 ### Common Tasks
 - **Adding new Pokemon generations**: Update `GENERATION_RANGES` in pokemon.service.ts
