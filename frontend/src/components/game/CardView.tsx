@@ -157,28 +157,16 @@ const CardView: React.FC = () => {
                   </Group>
                   <Divider />
                   <Grid gutter="md">
-                    <Grid.Col span={{ base: 12, sm: 6, md: 4 }}>
+                    <Grid.Col span={{ base: 12, sm: 6 }}>
                       <CompactCard
                         pokemon={pokemon1}
-                        showResults={false}
                         position="left"
-                        guessPercentage={50}
                       />
                     </Grid.Col>
-                    <Grid.Col span={{ base: 12, sm: 6, md: 4 }}>
+                    <Grid.Col span={{ base: 12, sm: 6 }}>
                       <CompactCard
                         pokemon={pokemon2}
-                        showResults={false}
                         position="right"
-                        guessPercentage={50}
-                      />
-                    </Grid.Col>
-                    <Grid.Col span={{ base: 12, sm: 6, md: 4 }}>
-                      <CompactCard
-                        pokemon={pokemon1}
-                        showResults={true}
-                        position="left"
-                        winPercentage={65}
                       />
                     </Grid.Col>
                   </Grid>
@@ -201,8 +189,6 @@ const CardView: React.FC = () => {
                   <Group gap="md" wrap="wrap">
                     <MiniCard pokemon={pokemon1} />
                     <MiniCard pokemon={pokemon2} />
-                    <MiniCard pokemon={pokemon1} showLevel={false} />
-                    <MiniCard pokemon={pokemon2} spriteSize={64} />
                   </Group>
                 </Stack>
               </Card>
@@ -223,9 +209,6 @@ const CardView: React.FC = () => {
                   <Group gap="md" wrap="wrap">
                     <MicroCard pokemon={pokemon1} />
                     <MicroCard pokemon={pokemon2} />
-                    <MicroCard pokemon={pokemon1} spriteSize={48} />
-                    <MicroCard pokemon={pokemon2} showLevel={false} />
-                    <MicroCard pokemon={pokemon1} enableHoverDetail={false} />
                   </Group>
                 </Stack>
               </Card>
