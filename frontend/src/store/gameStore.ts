@@ -103,15 +103,16 @@ export const useGameStore = create<GameStore>()(
             const battleData = await ApiService.getCachedBattle();
 
             // The cached battle already includes battle results
+            // Note: Use ?? instead of || to handle falsy values like 0 correctly
             const battleResult = {
               battleId: battleData.battleId || 'unknown',
               battleInstanceId: battleData.battleInstanceId, // Unique instance ID for animations
-              pokemon1Wins: battleData.pokemon1Wins || 0,
-              pokemon2Wins: battleData.pokemon2Wins || 0,
+              pokemon1Wins: battleData.pokemon1Wins ?? 0,
+              pokemon2Wins: battleData.pokemon2Wins ?? 0,
               draws: 0, // draws not included in cached battle response
-              totalBattles: battleData.totalBattles || 100,
-              winRate: battleData.winRate || 50,
-              executionTime: battleData.executionTime || 0
+              totalBattles: battleData.totalBattles ?? 100,
+              winRate: battleData.winRate ?? 50,
+              executionTime: battleData.executionTime ?? 0
             };
             
             // Construct the full battle result using cached data
