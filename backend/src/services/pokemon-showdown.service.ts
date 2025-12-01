@@ -844,28 +844,36 @@ class PokemonShowdownService {
                     } else if (source.includes('hail')) {
                       damageType = 'hail';
                     } else if (source.toLowerCase().includes('recoil') || source.includes('Recoil') || mightBeRecoil) {
-                      // Recoil damage - attach to the previous move card instead of creating a new one
+                      // Recoil damage - attach to the move card where this Pokemon was the attacker
+                      // Search backwards through turnEvents to find the most recent move by this Pokemon
                       if (turnEvents.length > 0) {
-                        const lastTurn = turnEvents[turnEvents.length - 1];
-                        // Only attach if this is recoil to the attacker of the last move
-                        if (lastTurn.attacker === pokemonName) {
-                          lastTurn.recoilDamage = damage;
-                          lastTurn.attackerRemainingHP = current;
-                          pokemonHP[pokemonName].lastHP = current;
-                          skipTurnEntry = true;
+                        for (let i = turnEvents.length - 1; i >= 0; i--) {
+                          const turn = turnEvents[i];
+                          // Find a real move (not stat change, not residual damage)
+                          if (turn.attacker === pokemonName && turn.move !== 'Stat Change' && !turn.move.includes('damage')) {
+                            turn.recoilDamage = damage;
+                            turn.attackerRemainingHP = current;
+                            pokemonHP[pokemonName].lastHP = current;
+                            skipTurnEntry = true;
+                            break;
+                          }
                         }
                       }
                       if (!skipTurnEntry) damageType = 'recoil';
                     } else if (source.includes('Life Orb')) {
-                      // Life Orb damage - attach to the previous move card
+                      // Life Orb damage - attach to the move card where this Pokemon was the attacker
                       if (turnEvents.length > 0) {
-                        const lastTurn = turnEvents[turnEvents.length - 1];
-                        if (lastTurn.attacker === pokemonName) {
-                          lastTurn.recoilDamage = damage;
-                          lastTurn.attackerRemainingHP = current;
-                          lastTurn.statusEffect = 'Life Orb';
-                          pokemonHP[pokemonName].lastHP = current;
-                          skipTurnEntry = true;
+                        for (let i = turnEvents.length - 1; i >= 0; i--) {
+                          const turn = turnEvents[i];
+                          // Find a real move (not stat change, not residual damage)
+                          if (turn.attacker === pokemonName && turn.move !== 'Stat Change' && !turn.move.includes('damage')) {
+                            turn.recoilDamage = damage;
+                            turn.attackerRemainingHP = current;
+                            turn.statusEffect = 'Life Orb';
+                            pokemonHP[pokemonName].lastHP = current;
+                            skipTurnEntry = true;
+                            break;
+                          }
                         }
                       }
                       if (!skipTurnEntry) damageType = 'Life Orb';
