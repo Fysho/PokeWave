@@ -9,7 +9,8 @@ import type {
   LeaderboardEntry,
   TickData,
   NewRoundData,
-  RoundResultsData
+  RoundResultsData,
+  PlayerMode
 } from '../types/online';
 import OnlineService from '../services/online';
 
@@ -45,6 +46,11 @@ interface OnlineStoreActions {
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
 
+  // Player mode actions
+  setPlayerMode: (mode: PlayerMode) => void;
+  requestJoinGame: () => void;
+  requestLeaveGame: () => void;
+
   // Reset
   reset: () => void;
 }
@@ -56,6 +62,8 @@ const initialState: OnlineStoreState = {
   userStats: null,
   currentGuess: null,
   hasSubmittedGuess: false,
+  playerMode: 'spectating',
+  pendingModeChange: null,
   lastResults: null,
   myLastResult: null,
   onlinePlayers: [],
@@ -89,6 +97,14 @@ export const useOnlineStore = create<OnlineStoreState & OnlineStoreActions>((set
   },
 
   handleNewRound: (data) => {
+    const state = get();
+    let newMode = state.playerMode;
+
+    // Handle pending mode changes at round start
+    if (state.pendingModeChange) {
+      newMode = state.pendingModeChange;
+    }
+
     set({
       roundState: {
         roundNumber: data.roundNumber,
@@ -101,7 +117,9 @@ export const useOnlineStore = create<OnlineStoreState & OnlineStoreActions>((set
       currentGuess: null,
       hasSubmittedGuess: false,
       lastResults: null,
-      myLastResult: null
+      myLastResult: null,
+      playerMode: newMode,
+      pendingModeChange: null
     });
   },
 
@@ -242,6 +260,24 @@ export const useOnlineStore = create<OnlineStoreState & OnlineStoreActions>((set
   // UI state actions
   setLoading: (isLoading) => set({ isLoading }),
   setError: (error) => set({ error }),
+
+  // Player mode actions
+  setPlayerMode: (mode) => set({ playerMode: mode }),
+
+  requestJoinGame: () => {
+    // Queue joining for next round
+    set({ pendingModeChange: 'playing' });
+  },
+
+  requestLeaveGame: () => {
+    const state = get();
+    if (state.playerMode === 'playing') {
+      // If currently playing, mark as leaving (will become spectator after current round)
+      set({ playerMode: 'leaving', pendingModeChange: 'spectating' });
+    } else {
+      // If already spectating or leaving, do nothing
+    }
+  },
 
   // Reset
   reset: () => set(initialState)

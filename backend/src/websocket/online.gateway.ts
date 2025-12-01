@@ -14,7 +14,7 @@ import { PrismaClient } from '@prisma/client';
 import jwt from 'jsonwebtoken';
 import { onlineRoundService } from '../services/online-round.service';
 import { onlineEloService } from '../services/online-elo.service';
-import { OnlinePhase, OnlinePlayer } from '../types/online.types';
+import { OnlinePhase, OnlinePlayer, PlayerMode } from '../types/online.types';
 import logger from '../utils/logger';
 
 const prisma = new PrismaClient();
@@ -22,6 +22,7 @@ const prisma = new PrismaClient();
 interface AuthenticatedSocket extends Socket {
   userId?: string;
   username?: string;
+  mode?: PlayerMode;
 }
 
 class OnlineWebSocketGateway {
@@ -118,6 +119,33 @@ class OnlineWebSocketGateway {
           data: { hasSubmitted: true }
         });
         await this.broadcastPlayerList();
+      }
+    });
+
+    // Handle mode change (spectating/playing)
+    socket.on('set-mode', async (data: { mode: PlayerMode }) => {
+      if (socket.userId && (data.mode === 'spectating' || data.mode === 'playing')) {
+        socket.mode = data.mode;
+
+        // For playing mode, it will be effective next round
+        // For spectating (leaving), if currently playing it becomes 'leaving'
+        const presence = await prisma.onlinePresence.findUnique({
+          where: { userId: socket.userId }
+        });
+
+        let newMode: PlayerMode = data.mode;
+        if (data.mode === 'spectating' && presence?.mode === 'playing') {
+          // User wants to leave - mark as leaving (will become spectator after current round)
+          newMode = 'leaving';
+        }
+
+        await prisma.onlinePresence.updateMany({
+          where: { userId: socket.userId },
+          data: { mode: newMode }
+        });
+
+        await this.broadcastPlayerList();
+        logger.debug(`User ${socket.username} changed mode to ${newMode}`);
       }
     });
 
@@ -289,6 +317,12 @@ class OnlineWebSocketGateway {
     try {
       const state = await onlineRoundService.getOrCreateRound(roundNumber);
 
+      // Transition players who were "leaving" to "spectating" at round start
+      await prisma.onlinePresence.updateMany({
+        where: { mode: 'leaving' },
+        data: { mode: 'spectating' }
+      });
+
       // Broadcast new round to all clients
       this.io?.to('online-room').emit('new-round', {
         roundNumber: state.roundNumber,
@@ -347,7 +381,8 @@ class OnlineWebSocketGateway {
           avatarPokemonId: user?.avatarPokemonId || 25,
           avatarSprite: user?.avatarSprite || '',
           hasSubmitted: p.hasSubmitted,
-          isOnline: true
+          isOnline: true,
+          mode: (p.mode as PlayerMode) || 'spectating'
         };
       });
 

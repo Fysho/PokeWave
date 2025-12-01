@@ -77,6 +77,8 @@ export interface OnlineRoundData {
 // PLAYER DATA
 // ==========================================
 
+export type PlayerMode = 'spectating' | 'playing' | 'leaving';
+
 export interface OnlinePlayer {
   userId: string;
   username: string;
@@ -86,6 +88,7 @@ export interface OnlinePlayer {
   avatarSprite: string;
   hasSubmitted: boolean;
   isOnline: boolean;
+  mode: PlayerMode;
 }
 
 export interface OnlineUserStats {

@@ -120,6 +120,8 @@ export interface PokemonData {
 // PLAYER DATA
 // ==========================================
 
+export type PlayerMode = 'spectating' | 'playing' | 'leaving';
+
 export interface OnlinePlayer {
   userId: string;
   username: string;
@@ -129,6 +131,7 @@ export interface OnlinePlayer {
   avatarSprite: string;
   hasSubmitted: boolean;
   isOnline: boolean;
+  mode: PlayerMode; // spectating, playing, or leaving (will spectate after current round)
 }
 
 export interface OnlineUserStats {
@@ -237,6 +240,10 @@ export interface OnlineStoreState {
   userStats: OnlineUserStats | null;
   currentGuess: number | null;
   hasSubmittedGuess: boolean;
+
+  // Player mode state
+  playerMode: PlayerMode; // Current user's mode
+  pendingModeChange: PlayerMode | null; // Mode to switch to at round end
 
   // Results state
   lastResults: OnlineRoundResults | null;

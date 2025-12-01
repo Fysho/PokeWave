@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import {
   Box,
   Title,
@@ -11,7 +11,6 @@ import {
   Button,
   Grid,
   Loader,
-  Progress,
   Avatar,
   Tooltip,
   useMantineTheme,
@@ -19,7 +18,8 @@ import {
   RingProgress,
   Paper,
   Divider,
-  ScrollArea
+  ScrollArea,
+  Tabs
 } from '@mantine/core';
 import {
   IconWifi,
@@ -34,7 +34,11 @@ import {
   IconMinus,
   IconLogin,
   IconChartBar,
-  IconCrown
+  IconCrown,
+  IconPlayerPlay,
+  IconPlayerStop,
+  IconEye,
+  IconSword
 } from '@tabler/icons-react';
 import { notifications } from '@mantine/notifications';
 import { useOnlineStore } from '../../store/onlineStore';
@@ -42,12 +46,14 @@ import { useAuthStore } from '../../store/authStore';
 import { useOnlineSocket } from '../../hooks/useOnlineSocket';
 import { FadeIn, SlideIn, BounceIn } from '../ui/transitions';
 import { TypeColorSlider } from '../ui/TypeColorSlider';
-import { getTypeColor } from '../../utils/typeColors';
+import { FullCard } from '../pokemon-cards';
 import {
   RANK_COLORS,
   RANK_LABELS,
+  ONLINE_CONFIG,
   type RankTier,
-  type OnlinePlayer
+  type OnlinePlayer,
+  type PlayerMode
 } from '../../types/online';
 
 // Rank badge component
@@ -104,53 +110,141 @@ const PlayerCard: React.FC<{ player: OnlinePlayer; isCurrentUser?: boolean }> = 
   );
 };
 
-// Online players list
+// Online players list with spectator/player separation
 const OnlinePlayersList: React.FC = () => {
-  const { onlinePlayers, userStats } = useOnlineStore();
+  const { onlinePlayers } = useOnlineStore();
   const { user } = useAuthStore();
+
+  // Separate players and spectators
+  const players = onlinePlayers.filter(p => p.mode === 'playing' || p.mode === 'leaving');
+  const spectators = onlinePlayers.filter(p => p.mode === 'spectating');
 
   return (
     <Card withBorder h="100%">
       <Card.Section withBorder p="sm">
         <Group gap="xs">
           <IconUsers size={18} />
-          <Text fw={600}>Online Players</Text>
+          <Text fw={600}>Online</Text>
           <Badge size="sm" variant="light">{onlinePlayers.length}</Badge>
         </Group>
       </Card.Section>
       <Card.Section p="sm">
-        <ScrollArea h={300}>
-          <Stack gap="xs">
-            {onlinePlayers.length === 0 ? (
-              <Text size="sm" c="dimmed" ta="center" py="md">
-                No players online
-              </Text>
-            ) : (
-              onlinePlayers.map((player) => (
-                <PlayerCard
-                  key={player.userId}
-                  player={player}
-                  isCurrentUser={player.userId === user?.id}
-                />
-              ))
-            )}
-          </Stack>
-        </ScrollArea>
+        <Tabs defaultValue="players" variant="pills" radius="xl">
+          <Tabs.List grow mb="sm">
+            <Tabs.Tab value="players" leftSection={<IconSword size={14} />}>
+              Playing ({players.length})
+            </Tabs.Tab>
+            <Tabs.Tab value="spectators" leftSection={<IconEye size={14} />}>
+              Spectating ({spectators.length})
+            </Tabs.Tab>
+          </Tabs.List>
+
+          <Tabs.Panel value="players">
+            <ScrollArea h={250}>
+              <Stack gap="xs">
+                {players.length === 0 ? (
+                  <Text size="sm" c="dimmed" ta="center" py="md">
+                    No players in game
+                  </Text>
+                ) : (
+                  players.map((player) => (
+                    <PlayerCard
+                      key={player.userId}
+                      player={player}
+                      isCurrentUser={player.userId === user?.id}
+                    />
+                  ))
+                )}
+              </Stack>
+            </ScrollArea>
+          </Tabs.Panel>
+
+          <Tabs.Panel value="spectators">
+            <ScrollArea h={250}>
+              <Stack gap="xs">
+                {spectators.length === 0 ? (
+                  <Text size="sm" c="dimmed" ta="center" py="md">
+                    No spectators
+                  </Text>
+                ) : (
+                  spectators.map((player) => (
+                    <PlayerCard
+                      key={player.userId}
+                      player={player}
+                      isCurrentUser={player.userId === user?.id}
+                    />
+                  ))
+                )}
+              </Stack>
+            </ScrollArea>
+          </Tabs.Panel>
+        </Tabs>
       </Card.Section>
     </Card>
   );
 };
 
-// Timer component
+// Smooth Timer component with CSS transition
 const RoundTimer: React.FC = () => {
   const { roundState } = useOnlineStore();
   const theme = useMantineTheme();
+  const [smoothProgress, setSmoothProgress] = useState(100);
+  const animationRef = useRef<number | null>(null);
+  const lastTimeRef = useRef<number | null>(null);
+
+  // Calculate total time based on phase
+  const isGuessing = roundState?.phase === 'guessing';
+  const totalTime = isGuessing ? ONLINE_CONFIG.GUESS_DURATION : ONLINE_CONFIG.RESULTS_DURATION;
+
+  // Smooth animation effect
+  useEffect(() => {
+    if (!roundState) return;
+
+    // When we receive a new tick, calculate the target progress
+    const targetProgress = (roundState.timeRemaining / totalTime) * 100;
+
+    // If this is a new phase or significant jump, set immediately
+    if (Math.abs(smoothProgress - targetProgress) > 15) {
+      setSmoothProgress(targetProgress);
+      return;
+    }
+
+    // Animate smoothly towards the target over ~1 second
+    const startProgress = smoothProgress;
+    const startTime = performance.now();
+    const duration = 1000; // 1 second to match tick interval
+
+    const animate = (currentTime: number) => {
+      const elapsed = currentTime - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+
+      // Use easeOutQuad for smooth deceleration
+      const eased = 1 - (1 - progress) * (1 - progress);
+      const newProgress = startProgress + (targetProgress - startProgress) * eased;
+
+      setSmoothProgress(Math.max(0, newProgress));
+
+      if (progress < 1) {
+        animationRef.current = requestAnimationFrame(animate);
+      }
+    };
+
+    // Cancel any existing animation
+    if (animationRef.current) {
+      cancelAnimationFrame(animationRef.current);
+    }
+
+    animationRef.current = requestAnimationFrame(animate);
+
+    return () => {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
+    };
+  }, [roundState?.timeRemaining, roundState?.phase, totalTime]);
 
   if (!roundState) return null;
 
-  const isGuessing = roundState.phase === 'guessing';
-  const totalTime = isGuessing ? 30 : 10;
-  const progress = (roundState.timeRemaining / totalTime) * 100;
   const isUrgent = roundState.timeRemaining <= 5;
 
   return (
@@ -168,7 +262,7 @@ const RoundTimer: React.FC = () => {
           roundCaps
           sections={[
             {
-              value: progress,
+              value: smoothProgress,
               color: isUrgent ? 'red' : isGuessing ? 'blue' : 'green'
             }
           ]}
@@ -177,6 +271,14 @@ const RoundTimer: React.FC = () => {
               {roundState.timeRemaining}s
             </Text>
           }
+          styles={{
+            root: {
+              // CSS transition for color changes
+              '& circle': {
+                transition: 'stroke 0.3s ease'
+              }
+            }
+          }}
         />
         <Text size="xs" c="dimmed">
           Round #{roundState.roundNumber}
@@ -253,99 +355,6 @@ const UserStatsCard: React.FC = () => {
         )}
       </Stack>
     </Card>
-  );
-};
-
-// Pokemon battle card (simplified for online mode)
-const OnlinePokemonCard: React.FC<{
-  pokemon: any;
-  position: 'left' | 'right';
-  winPercentage?: number;
-  showResults: boolean;
-}> = ({ pokemon, position, winPercentage, showResults }) => {
-  const { colorScheme } = useMantineColorScheme();
-  const theme = useMantineTheme();
-
-  if (!pokemon) return null;
-
-  return (
-    <SlideIn direction={position} delay={0.2}>
-      <Card withBorder h="100%">
-        <Stack align="center" gap="sm">
-          <Text size="sm" c="dimmed">Lv.{pokemon.level}</Text>
-          <Title order={3} tt="capitalize" ta="center">{pokemon.name}</Title>
-
-          <Box
-            style={{
-              width: 180,
-              height: 180,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}
-          >
-            {pokemon.sprites?.front ? (
-              <img
-                src={pokemon.shiny && pokemon.sprites.shiny ? pokemon.sprites.shiny : pokemon.sprites.front}
-                alt={pokemon.name}
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  objectFit: 'contain',
-                  filter: 'drop-shadow(0 8px 16px rgba(0,0,0,0.15))'
-                }}
-              />
-            ) : (
-              <Box
-                w={120}
-                h={120}
-                bg={colorScheme === 'dark' ? 'dark.6' : 'gray.1'}
-                style={{ borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-              >
-                <Text size="sm" c="dimmed">No Image</Text>
-              </Box>
-            )}
-          </Box>
-
-          <Group gap="xs" justify="center">
-            {pokemon.types?.map((type: string) => (
-              <Badge
-                key={type}
-                variant="filled"
-                color={getTypeColor(type)}
-                tt="capitalize"
-              >
-                {type}
-              </Badge>
-            ))}
-          </Group>
-
-          {pokemon.ability && (
-            <Badge variant="light" color="blue" tt="capitalize">
-              {pokemon.ability}
-            </Badge>
-          )}
-
-          {pokemon.item && (
-            <Badge variant="outline" color="teal" tt="capitalize">
-              {pokemon.item}
-            </Badge>
-          )}
-
-          {showResults && winPercentage !== undefined && (
-            <BounceIn delay={0.3}>
-              <Badge
-                size="xl"
-                variant="filled"
-                color={winPercentage >= 50 ? 'green' : 'red'}
-              >
-                {winPercentage.toFixed(1)}%
-              </Badge>
-            </BounceIn>
-          )}
-        </Stack>
-      </Card>
-    </SlideIn>
   );
 };
 
@@ -428,6 +437,91 @@ const ResultsDisplay: React.FC = () => {
   );
 };
 
+// Player mode control component
+const PlayerModeControl: React.FC<{ socket: ReturnType<typeof useOnlineSocket> }> = ({ socket }) => {
+  const { playerMode, pendingModeChange, requestJoinGame, requestLeaveGame, roundState } = useOnlineStore();
+  const { colorScheme } = useMantineColorScheme();
+
+  const isSpectating = playerMode === 'spectating';
+  const isPlaying = playerMode === 'playing';
+  const isLeaving = playerMode === 'leaving';
+  const willJoinNextRound = pendingModeChange === 'playing';
+
+  const handleJoinGame = () => {
+    requestJoinGame();
+    // Notify server of mode change
+    socket.socket?.emit('set-mode', { mode: 'playing' });
+    notifications.show({
+      title: 'Joining Game',
+      message: 'You will start playing in the next round',
+      color: 'blue'
+    });
+  };
+
+  const handleLeaveGame = () => {
+    requestLeaveGame();
+    // Notify server of mode change
+    socket.socket?.emit('set-mode', { mode: 'spectating' });
+    notifications.show({
+      title: 'Leaving Game',
+      message: 'You will return to spectating after this round',
+      color: 'orange'
+    });
+  };
+
+  return (
+    <Card withBorder p="md">
+      <Stack gap="sm">
+        <Group gap="xs">
+          {isSpectating ? <IconEye size={18} /> : <IconSword size={18} />}
+          <Text fw={600}>
+            {isSpectating ? 'Spectating' : isLeaving ? 'Playing (Leaving...)' : 'Playing'}
+          </Text>
+        </Group>
+        <Divider />
+        {isSpectating && (
+          <>
+            <Text size="sm" c="dimmed">
+              {willJoinNextRound
+                ? 'You will join the game next round!'
+                : 'Watch the action or join the game to compete for Elo!'}
+            </Text>
+            <Button
+              fullWidth
+              variant={willJoinNextRound ? 'light' : 'gradient'}
+              gradient={{ from: 'blue', to: 'grape' }}
+              leftSection={<IconPlayerPlay size={18} />}
+              onClick={handleJoinGame}
+              disabled={willJoinNextRound}
+            >
+              {willJoinNextRound ? 'Joining Next Round...' : 'Join Next Round'}
+            </Button>
+          </>
+        )}
+        {(isPlaying || isLeaving) && (
+          <>
+            <Text size="sm" c="dimmed">
+              {isLeaving
+                ? 'You will return to spectating after this round.'
+                : 'Submit your guess before time runs out!'}
+            </Text>
+            <Button
+              fullWidth
+              variant="light"
+              color="orange"
+              leftSection={<IconPlayerStop size={18} />}
+              onClick={handleLeaveGame}
+              disabled={isLeaving}
+            >
+              {isLeaving ? 'Leaving After Round...' : 'Leave Game'}
+            </Button>
+          </>
+        )}
+      </Stack>
+    </Card>
+  );
+};
+
 // Main Online Mode component
 const OnlineMode: React.FC = () => {
   const theme = useMantineTheme();
@@ -441,6 +535,8 @@ const OnlineMode: React.FC = () => {
     userStats,
     currentGuess,
     hasSubmittedGuess,
+    playerMode,
+    pendingModeChange,
     lastResults,
     isLoading,
     error,
@@ -450,7 +546,8 @@ const OnlineMode: React.FC = () => {
     setError
   } = useOnlineStore();
 
-  const { connect, disconnect, notifyGuessSubmitted } = useOnlineSocket({ autoConnect: false });
+  const socketHook = useOnlineSocket({ autoConnect: false });
+  const { connect, disconnect, notifyGuessSubmitted } = socketHook;
 
   const [guessValue, setGuessValue] = useState(50);
   const [hasJoined, setHasJoined] = useState(false);
@@ -492,6 +589,7 @@ const OnlineMode: React.FC = () => {
 
   const handleSubmitGuess = async () => {
     if (!roundState || hasSubmittedGuess || roundState.phase !== 'guessing') return;
+    if (playerMode !== 'playing' && playerMode !== 'leaving') return;
 
     try {
       await submitGuess(guessValue);
@@ -547,7 +645,6 @@ const OnlineMode: React.FC = () => {
                   href="#"
                   onClick={(e) => {
                     e.preventDefault();
-                    // Trigger sign in modal - assuming there's a global way to do this
                     notifications.show({
                       title: 'Sign In',
                       message: 'Please use the Sign In button in the header',
@@ -595,7 +692,8 @@ const OnlineMode: React.FC = () => {
   );
 
   const showResults = roundState?.phase === 'results';
-  const canSubmit = roundState?.phase === 'guessing' && !hasSubmittedGuess && isConnected;
+  const isPlaying = playerMode === 'playing' || playerMode === 'leaving';
+  const canSubmit = roundState?.phase === 'guessing' && !hasSubmittedGuess && isConnected && isPlaying;
 
   return (
     <Box>
@@ -610,6 +708,14 @@ const OnlineMode: React.FC = () => {
               </Group>
             </Title>
             <ConnectionStatus />
+            <Badge
+              size="lg"
+              variant={isPlaying ? 'filled' : 'light'}
+              color={isPlaying ? 'blue' : 'gray'}
+              leftSection={isPlaying ? <IconSword size={14} /> : <IconEye size={14} />}
+            >
+              {playerMode === 'leaving' ? 'Playing (Leaving...)' : playerMode === 'playing' ? 'Playing' : 'Spectating'}
+            </Badge>
           </Group>
           {roundState && (
             <Badge size="lg" variant="light">
@@ -619,10 +725,11 @@ const OnlineMode: React.FC = () => {
         </Group>
 
         <Grid gutter="md">
-          {/* Left sidebar - Timer and Stats */}
+          {/* Left sidebar - Timer, Mode Control, and Stats */}
           <Grid.Col span={{ base: 12, md: 3 }}>
             <Stack gap="md">
               <RoundTimer />
+              <PlayerModeControl socket={socketHook} />
               <UserStatsCard />
             </Stack>
           </Grid.Col>
@@ -631,23 +738,31 @@ const OnlineMode: React.FC = () => {
           <Grid.Col span={{ base: 12, md: 6 }}>
             {roundState ? (
               <Stack gap="md">
-                {/* Pokemon battle display */}
+                {/* Pokemon battle display using FullCard */}
                 <Grid gutter="md">
                   <Grid.Col span={6}>
-                    <OnlinePokemonCard
-                      pokemon={roundState.pokemon1}
-                      position="left"
-                      winPercentage={showResults ? roundState.actualWinPercent : undefined}
-                      showResults={showResults}
-                    />
+                    <SlideIn direction="left" delay={0.2}>
+                      <FullCard
+                        pokemon={roundState.pokemon1}
+                        showResults={showResults}
+                        position="left"
+                        winPercentage={showResults ? roundState.actualWinPercent : undefined}
+                        guessPercentage={isPlaying ? (hasSubmittedGuess ? currentGuess ?? 50 : guessValue) : undefined}
+                        animate={false}
+                      />
+                    </SlideIn>
                   </Grid.Col>
                   <Grid.Col span={6}>
-                    <OnlinePokemonCard
-                      pokemon={roundState.pokemon2}
-                      position="right"
-                      winPercentage={showResults ? 100 - (roundState.actualWinPercent || 0) : undefined}
-                      showResults={showResults}
-                    />
+                    <SlideIn direction="right" delay={0.2}>
+                      <FullCard
+                        pokemon={roundState.pokemon2}
+                        showResults={showResults}
+                        position="right"
+                        winPercentage={showResults ? 100 - (roundState.actualWinPercent || 0) : undefined}
+                        guessPercentage={isPlaying ? 100 - (hasSubmittedGuess ? (currentGuess ?? 50) : guessValue) : undefined}
+                        animate={false}
+                      />
+                    </SlideIn>
                   </Grid.Col>
                 </Grid>
 
@@ -674,67 +789,91 @@ const OnlineMode: React.FC = () => {
                   </Box>
                 </Center>
 
-                {/* Guess slider */}
-                <Card withBorder p="lg">
-                  <Stack gap="md">
-                    <Group justify="space-between">
-                      <Stack gap={2}>
-                        <Text fw={600}>{roundState.pokemon1?.name}</Text>
-                        <Text size="xl" fw={700} c="blue">
-                          {hasSubmittedGuess ? currentGuess : guessValue}%
-                        </Text>
-                      </Stack>
-                      <Text size="xl" fw={700}>VS</Text>
-                      <Stack gap={2} align="flex-end">
-                        <Text fw={600}>{roundState.pokemon2?.name}</Text>
-                        <Text size="xl" fw={700} c="grape">
-                          {100 - (hasSubmittedGuess ? (currentGuess || 50) : guessValue)}%
-                        </Text>
-                      </Stack>
-                    </Group>
+                {/* Guess slider - only show for players */}
+                {isPlaying ? (
+                  <Card withBorder p="lg">
+                    <Stack gap="md">
+                      <Group justify="space-between">
+                        <Stack gap={2}>
+                          <Text fw={600}>{roundState.pokemon1?.name}</Text>
+                          <Text size="xl" fw={700} c="blue">
+                            {hasSubmittedGuess ? currentGuess : guessValue}%
+                          </Text>
+                        </Stack>
+                        <Text size="xl" fw={700}>VS</Text>
+                        <Stack gap={2} align="flex-end">
+                          <Text fw={600}>{roundState.pokemon2?.name}</Text>
+                          <Text size="xl" fw={700} c="grape">
+                            {100 - (hasSubmittedGuess ? (currentGuess || 50) : guessValue)}%
+                          </Text>
+                        </Stack>
+                      </Group>
 
-                    <Box py="md">
-                      <TypeColorSlider
-                        value={hasSubmittedGuess ? (currentGuess || 50) : guessValue}
-                        onChange={(value) => !hasSubmittedGuess && setGuessValue(value)}
-                        leftType={roundState.pokemon1?.types?.[0] || 'normal'}
-                        rightType={roundState.pokemon2?.types?.[0] || 'normal'}
-                        min={0}
-                        max={100}
-                        step={1}
-                        disabled={!canSubmit}
-                        correctValue={showResults ? roundState.actualWinPercent : undefined}
-                        showCorrectIndicator={showResults}
-                        isCorrect={showResults && currentGuess !== null
-                          ? Math.abs(currentGuess - (roundState.actualWinPercent || 0)) <= 10
-                          : false
-                        }
-                      />
-                    </Box>
-
-                    <Center>
-                      {hasSubmittedGuess ? (
-                        <Badge size="lg" color="green" leftSection={<IconCheck size={14} />}>
-                          Guess Submitted - Waiting for results...
-                        </Badge>
-                      ) : canSubmit ? (
-                        <Button
-                          size="lg"
-                          variant="gradient"
-                          gradient={{ from: 'blue', to: 'grape' }}
-                          onClick={handleSubmitGuess}
+                      <Box py="md">
+                        <TypeColorSlider
+                          value={hasSubmittedGuess ? (currentGuess || 50) : guessValue}
+                          onChange={(value) => !hasSubmittedGuess && setGuessValue(value)}
+                          leftType={roundState.pokemon1?.types?.[0] || 'normal'}
+                          rightType={roundState.pokemon2?.types?.[0] || 'normal'}
+                          min={0}
+                          max={100}
+                          step={1}
                           disabled={!canSubmit}
-                        >
-                          Submit Guess
-                        </Button>
-                      ) : (
-                        <Badge size="lg" color="gray">
-                          {showResults ? 'Viewing Results' : 'Waiting for next round...'}
-                        </Badge>
+                          correctValue={showResults ? roundState.actualWinPercent : undefined}
+                          showCorrectIndicator={showResults}
+                          isCorrect={showResults && currentGuess !== null
+                            ? Math.abs(currentGuess - (roundState.actualWinPercent || 0)) <= 10
+                            : false
+                          }
+                        />
+                      </Box>
+
+                      <Center>
+                        {hasSubmittedGuess ? (
+                          <Badge size="lg" color="green" leftSection={<IconCheck size={14} />}>
+                            Guess Submitted - Waiting for results...
+                          </Badge>
+                        ) : canSubmit ? (
+                          <Button
+                            size="lg"
+                            variant="gradient"
+                            gradient={{ from: 'blue', to: 'grape' }}
+                            onClick={handleSubmitGuess}
+                            disabled={!canSubmit}
+                          >
+                            Submit Guess
+                          </Button>
+                        ) : (
+                          <Badge size="lg" color="gray">
+                            {showResults ? 'Viewing Results' : 'Waiting for next round...'}
+                          </Badge>
+                        )}
+                      </Center>
+                    </Stack>
+                  </Card>
+                ) : (
+                  /* Spectator view */
+                  <Card withBorder p="lg">
+                    <Stack align="center" gap="md">
+                      <Group gap="xs">
+                        <IconEye size={24} color="var(--mantine-color-gray-6)" />
+                        <Text size="lg" fw={600} c="dimmed">Spectating</Text>
+                      </Group>
+                      <Text c="dimmed" ta="center">
+                        {pendingModeChange === 'playing'
+                          ? 'You will join the game next round!'
+                          : 'Watch the battle unfold. Join the game to compete!'}
+                      </Text>
+                      {showResults && (
+                        <BounceIn delay={0.3}>
+                          <Badge size="xl" variant="filled" color="teal">
+                            Result: {roundState.actualWinPercent?.toFixed(1)}% - {(100 - (roundState.actualWinPercent || 0)).toFixed(1)}%
+                          </Badge>
+                        </BounceIn>
                       )}
-                    </Center>
-                  </Stack>
-                </Card>
+                    </Stack>
+                  </Card>
+                )}
 
                 {/* Results */}
                 {showResults && lastResults && <ResultsDisplay />}
