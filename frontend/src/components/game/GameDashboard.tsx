@@ -7,6 +7,7 @@ import Pokedex from '../pokedex/Pokedex';
 import DailyMode from './DailyMode';
 import BattleLab from './BattleLab';
 import Profile from '../profile/Profile';
+import AdminDashboard from '../admin/AdminDashboard';
 import { useGameStore } from '../../store/gameStore';
 import { useAuthStore } from '../../store/authStore';
 import { usePokedexStore } from '../../store/pokedexStore';
@@ -268,6 +269,9 @@ const GameDashboard: React.FC = () => {
 
       case 'profile':
         return <Profile />;
+
+      case 'admin':
+        return <AdminDashboard />;
 
       default:
         return null; // Prevent duplicate rendering

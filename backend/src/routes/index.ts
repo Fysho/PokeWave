@@ -8,6 +8,7 @@ import dailyChallengeRoutes from './daily-challenge.routes';
 import authRoutes from './auth.routes';
 import leaderboardRoutes from './leaderboard.routes';
 import userDataRoutes from './userdata.routes';
+import adminRoutes from './admin.routes';
 
 const router = Router();
 
@@ -21,5 +22,6 @@ router.use('/moves', pokemonMovesRoutes);
 router.use('/daily-challenge', dailyChallengeRoutes);
 router.use('/leaderboard', leaderboardRoutes);
 router.use('/user', userDataRoutes);
+router.use('/admin', adminRoutes);
 
 export default router;

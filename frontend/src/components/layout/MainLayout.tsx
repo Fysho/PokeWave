@@ -13,7 +13,8 @@ import {
   PixelPokeball,
   PixelLogout,
   PixelUser,
-  PixelFlask
+  PixelFlask,
+  PixelAdmin
 } from '../ui/PixelIcons';
 import LeftSidePanel from '../panels/LeftSidePanel';
 import RightSidePanel from '../panels/RightSidePanel';
@@ -71,6 +72,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({
     { id: 'battlelab', label: 'Battle Lab', icon: PixelFlask, description: 'Test custom battles' },
     { id: 'pokedex', label: 'Pokédex', icon: PixelPokeball, description: 'Browse all Pokémon' },
     { id: 'pokeinfo', label: 'PokeInfo', icon: PixelInfo, description: 'Pokemon debug information' },
+    { id: 'admin', label: 'Admin', icon: PixelAdmin, description: 'Admin dashboard' },
   ];
 
   return (

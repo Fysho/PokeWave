@@ -749,6 +749,40 @@ export const PixelFlask: React.FC<PixelIconProps> = ({
   </svg>
 );
 
+export const PixelAdmin: React.FC<PixelIconProps> = ({
+  size = 16,
+  color = 'currentColor',
+  className,
+  style
+}) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 16 16"
+    fill={color}
+    className={className}
+    style={{ ...baseStyle, ...style }}
+  >
+    {/* Shield with gear */}
+    <rect x="3" y="0" width="10" height="1" />
+    <rect x="2" y="1" width="12" height="1" />
+    <rect x="1" y="2" width="14" height="8" />
+    <rect x="2" y="10" width="12" height="1" />
+    <rect x="3" y="11" width="10" height="1" />
+    <rect x="4" y="12" width="8" height="1" />
+    <rect x="5" y="13" width="6" height="1" />
+    <rect x="6" y="14" width="4" height="1" />
+    <rect x="7" y="15" width="2" height="1" />
+    {/* Gear in center */}
+    <rect x="7" y="3" width="2" height="1" fill="#dc2626" />
+    <rect x="7" y="8" width="2" height="1" fill="#dc2626" />
+    <rect x="4" y="5" width="1" height="2" fill="#dc2626" />
+    <rect x="11" y="5" width="1" height="2" fill="#dc2626" />
+    <rect x="5" y="4" width="6" height="4" fill="#dc2626" />
+    <rect x="6" y="5" width="4" height="2" fill="var(--mantine-color-body)" />
+  </svg>
+);
+
 // Export all icons as a collection for easy mapping
 export const PixelIcons = {
   pokeball: PixelPokeball,
@@ -775,4 +809,5 @@ export const PixelIcons = {
   heart: PixelHeart,
   bolt: PixelBolt,
   flask: PixelFlask,
+  admin: PixelAdmin,
 };
