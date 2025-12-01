@@ -38,7 +38,7 @@ const CardView: React.FC = () => {
     setError(null);
 
     try {
-      const response = await ApiService.getRandomPokemonInstances({
+      const response = await ApiService.getRandomPokemonWithInstances({
         generation: 9,
         levelMode: 'fixed',
         level: 50,
