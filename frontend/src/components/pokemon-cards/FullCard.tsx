@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Card, Badge, Grid, Text, Box, Stack, Title, Group, Tooltip, useMantineTheme, useMantineColorScheme } from '@mantine/core';
-import { IconBolt, IconStar, IconCrown } from '@tabler/icons-react';
+import { IconCrown } from '@tabler/icons-react';
 import { SlideIn } from '../ui/transitions';
 import { getTypeColor, getCategoryIcon } from '../../utils/typeColors';
 import { getTypeEffectiveness } from '../../utils/typeEffectiveness';
@@ -184,11 +184,57 @@ export const FullCard: React.FC<FullCardProps> = ({
                 onMouseEnter={(e: React.MouseEvent<HTMLImageElement>) => (e.currentTarget.style.transform = 'scale(1.1)')}
                 onMouseLeave={(e: React.MouseEvent<HTMLImageElement>) => (e.currentTarget.style.transform = 'scale(1)')}
               />
+              {/* Item icon in top-right corner */}
+              {pokemon.item && (pokemon.itemDetail?.sprite || pokemon.itemDetail) && (
+                <Tooltip
+                  label={
+                    <Box maw={250}>
+                      <Text size="xs" fw={600} tt="capitalize" mb={4}>
+                        {formatItemName(pokemon.itemDetail?.name || pokemon.item)}
+                      </Text>
+                      {pokemon.itemDetail?.shortEffect && (
+                        <Text size="xs">{pokemon.itemDetail.shortEffect}</Text>
+                      )}
+                      {!pokemon.itemDetail?.shortEffect && pokemon.itemDetail?.effect && (
+                        <Text size="xs">{pokemon.itemDetail.effect}</Text>
+                      )}
+                    </Box>
+                  }
+                  position="top"
+                  withArrow
+                  multiline
+                >
+                  <Box
+                    pos="absolute"
+                    top={0}
+                    right={0}
+                    style={{
+                      cursor: 'help',
+                      backgroundColor: colorScheme === 'dark' ? 'var(--mantine-color-dark-5)' : 'var(--mantine-color-gray-1)',
+                      borderRadius: '8px',
+                      padding: '4px',
+                      border: colorScheme === 'dark' ? '1px solid var(--mantine-color-dark-4)' : '1px solid var(--mantine-color-gray-3)'
+                    }}
+                  >
+                    {pokemon.itemDetail?.sprite ? (
+                      <img
+                        src={pokemon.itemDetail.sprite}
+                        alt={pokemon.itemDetail.name || pokemon.item}
+                        style={{ width: 32, height: 32, imageRendering: 'pixelated' }}
+                      />
+                    ) : (
+                      <Box w={32} h={32} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <Text size="xs" c="dimmed">?</Text>
+                      </Box>
+                    )}
+                  </Box>
+                </Tooltip>
+              )}
               {showResults && pokemon.wins > 500 && (
                 <Box
                   pos="absolute"
                   top={-8}
-                  right={-8}
+                  left={-8}
                   w={40}
                   h={40}
                   bg="green.5"
@@ -321,10 +367,10 @@ export const FullCard: React.FC<FullCardProps> = ({
             </Group>
           )}
 
-          {/* Ability and Item */}
-          <Group justify="center" gap="md">
-            {pokemon.ability && (
-              pokemon.abilityDetail ? (
+          {/* Ability */}
+          {pokemon.ability && (
+            <Group justify="center" gap="md">
+              {pokemon.abilityDetail ? (
                 <Tooltip
                   label={
                     <Box maw={300}>
@@ -340,7 +386,6 @@ export const FullCard: React.FC<FullCardProps> = ({
                     variant="light"
                     size="md"
                     color="blue"
-                    leftSection={<IconBolt size={14} />}
                     tt="capitalize"
                     style={{
                       ...badgeStyle,
@@ -355,82 +400,14 @@ export const FullCard: React.FC<FullCardProps> = ({
                   variant="light"
                   size="md"
                   color="blue"
-                  leftSection={<IconBolt size={14} />}
                   tt="capitalize"
                   style={badgeStyle}
                 >
                   {pokemon.ability}
                 </Badge>
-              )
-            )}
-            {pokemon.item ? (
-              pokemon.itemDetail ? (
-                <Tooltip
-                  label={
-                    <Box maw={300}>
-                      <Text size="xs" fw={600} tt="capitalize" mb={4}>{formatItemName(pokemon.itemDetail.name)}</Text>
-                      <Text size="xs">{pokemon.itemDetail.shortEffect || pokemon.itemDetail.effect}</Text>
-                    </Box>
-                  }
-                  position="top"
-                  withArrow
-                  multiline
-                >
-                  <Badge
-                    variant="outline"
-                    size="md"
-                    color="teal"
-                    leftSection={
-                      pokemon.itemDetail.sprite ? (
-                        <img
-                          src={pokemon.itemDetail.sprite}
-                          alt={pokemon.itemDetail.name}
-                          style={{ width: 16, height: 16, imageRendering: 'pixelated' }}
-                        />
-                      ) : (
-                        <IconStar size={14} />
-                      )
-                    }
-                    tt="capitalize"
-                    style={{
-                      ...badgeStyle,
-                      fontWeight: 500,
-                      cursor: 'help'
-                    }}
-                  >
-                    {formatItemName(pokemon.item)}
-                  </Badge>
-                </Tooltip>
-              ) : (
-                <Badge
-                  variant="outline"
-                  size="md"
-                  color="teal"
-                  leftSection={<IconStar size={14} />}
-                  tt="capitalize"
-                  style={{
-                    ...badgeStyle,
-                    fontWeight: 500
-                  }}
-                >
-                  {formatItemName(pokemon.item)}
-                </Badge>
-              )
-            ) : (
-              <Badge
-                variant="outline"
-                size="md"
-                color="gray"
-                leftSection={<IconStar size={14} />}
-                style={{
-                  ...badgeStyle,
-                  fontWeight: 500
-                }}
-              >
-                No Item
-              </Badge>
-            )}
-          </Group>
+              )}
+            </Group>
+          )}
 
           {/* Moves */}
           {pokemon.moves && pokemon.moves.length > 0 && (

@@ -1,6 +1,5 @@
 import React from 'react';
 import { Card, Badge, Text, Box, Stack, Grid, Group, Title, Tooltip, useMantineTheme, useMantineColorScheme } from '@mantine/core';
-import { IconBolt, IconStar } from '@tabler/icons-react';
 import { getTypeColor, getCategoryIcon } from '../../utils/typeColors';
 import { getTypeEffectiveness } from '../../utils/typeEffectiveness';
 
@@ -51,8 +50,9 @@ export const HoverDetailCard: React.FC<HoverDetailCardProps> = ({
       <Stack gap="sm">
         {/* Header with sprite and basic info */}
         <Group gap="md" align="flex-start">
-          {/* Sprite */}
+          {/* Sprite with item overlay */}
           <Box
+            pos="relative"
             style={{
               width: 80,
               height: 80,
@@ -88,6 +88,43 @@ export const HoverDetailCard: React.FC<HoverDetailCardProps> = ({
                 <Text size="xs" c="gray.6">?</Text>
               </Box>
             )}
+            {/* Item icon in top-right corner */}
+            {pokemon.item && pokemon.itemDetail?.sprite && (
+              <Tooltip
+                label={
+                  <Box maw={200}>
+                    <Text size="xs" fw={600} tt="capitalize" mb={4}>
+                      {formatItemName(pokemon.itemDetail?.name || pokemon.item)}
+                    </Text>
+                    {pokemon.itemDetail?.shortEffect && (
+                      <Text size="xs">{pokemon.itemDetail.shortEffect}</Text>
+                    )}
+                  </Box>
+                }
+                position="top"
+                withArrow
+                multiline
+              >
+                <Box
+                  pos="absolute"
+                  top={-4}
+                  right={-4}
+                  style={{
+                    cursor: 'help',
+                    backgroundColor: colorScheme === 'dark' ? 'var(--mantine-color-dark-5)' : 'var(--mantine-color-gray-1)',
+                    borderRadius: '4px',
+                    padding: '2px',
+                    border: colorScheme === 'dark' ? '1px solid var(--mantine-color-dark-4)' : '1px solid var(--mantine-color-gray-3)'
+                  }}
+                >
+                  <img
+                    src={pokemon.itemDetail.sprite}
+                    alt={pokemon.itemDetail.name || pokemon.item}
+                    style={{ width: 20, height: 20, imageRendering: 'pixelated' }}
+                  />
+                </Box>
+              </Tooltip>
+            )}
           </Box>
 
           {/* Name, level, types */}
@@ -119,39 +156,19 @@ export const HoverDetailCard: React.FC<HoverDetailCardProps> = ({
               </Group>
             )}
 
-            {/* Ability and Item */}
-            <Group gap={4} mt={4}>
-              {pokemon.ability && (
+            {/* Ability */}
+            {pokemon.ability && (
+              <Group gap={4} mt={4}>
                 <Badge
                   variant="light"
                   size="xs"
                   color="blue"
-                  leftSection={<IconBolt size={10} />}
                   tt="capitalize"
                 >
                   {pokemon.ability}
                 </Badge>
-              )}
-              {pokemon.item ? (
-                <Badge
-                  variant="outline"
-                  size="xs"
-                  color="teal"
-                  leftSection={<IconStar size={10} />}
-                  tt="capitalize"
-                >
-                  {formatItemName(pokemon.item)}
-                </Badge>
-              ) : (
-                <Badge
-                  variant="outline"
-                  size="xs"
-                  color="gray"
-                >
-                  No Item
-                </Badge>
-              )}
-            </Group>
+              </Group>
+            )}
           </Stack>
         </Group>
 
