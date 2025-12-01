@@ -70,52 +70,92 @@ class OnlineEloService {
   }
 
   /**
-   * Calculate zero-sum Elo changes for all players
-   * Elo is transferred from worse performers to better performers
-   * Total Elo change across all players = 0
+   * Calculate expected rank for a player based on their Elo relative to others
+   * Uses standard Elo expected score formula for each pairwise comparison
+   * Returns expected rank (1 = expected to be first, n = expected to be last)
    */
-  calculateZeroSumEloChanges(
-    guessesWithScores: Array<{ oderId: string; accuracyScore: number; rankPosition: number }>
+  calculateExpectedRank(playerElo: number, allElos: number[]): number {
+    // Calculate expected score against each opponent using Elo formula
+    // E = 1 / (1 + 10^((opponentElo - playerElo) / 400))
+    let expectedWins = 0;
+    for (const opponentElo of allElos) {
+      if (opponentElo === playerElo) continue; // Skip self (handled by counting)
+      const expectedScore = 1 / (1 + Math.pow(10, (opponentElo - playerElo) / 400));
+      expectedWins += expectedScore;
+    }
+
+    // Expected rank = number of players - expected wins
+    // If you expect to beat everyone, expected rank = 1
+    // If you expect to lose to everyone, expected rank = n
+    const n = allElos.length;
+    const expectedRank = n - expectedWins;
+
+    return expectedRank;
+  }
+
+  /**
+   * Calculate zero-sum Elo changes based on expected vs actual rank
+   * - Performing better than expected = gain Elo
+   * - Performing worse than expected = lose Elo
+   * - High Elo beating low Elo = small gain (expected)
+   * - Low Elo beating high Elo = big gain (upset!)
+   */
+  calculateExpectedRankEloChanges(
+    players: Array<{ oderId: string; elo: number; actualRank: number }>
   ): Map<string, number> {
-    const n = guessesWithScores.length;
+    const n = players.length;
     const eloChanges = new Map<string, number>();
 
     if (n < 2) {
-      // No Elo changes with less than 2 players
-      guessesWithScores.forEach(g => eloChanges.set(g.oderId, 0));
+      players.forEach(p => eloChanges.set(p.oderId, 0));
       return eloChanges;
     }
 
-    // Sort by rank position (1st place first)
-    const sorted = [...guessesWithScores].sort((a, b) => a.rankPosition - b.rankPosition);
-
-    // Calculate Elo changes based on position
-    // Use a system where each player's change depends on their relative position
-    // Top half gains, bottom half loses, middle (if odd) gets 0
+    const allElos = players.map(p => p.elo);
     const baseChange = ONLINE_CONFIG.BASE_ELO_CHANGE;
 
-    // To ensure perfect zero-sum, we calculate changes and then adjust for rounding
-    const changes: number[] = [];
-    for (let i = 0; i < n; i++) {
-      // Position factor: ranges from +1 (1st place) to -1 (last place)
-      // Formula: (n - 1 - 2*i) / (n - 1)
-      // For 2 players: 1st gets +1, 2nd gets -1
-      // For 3 players: 1st gets +1, 2nd gets 0, 3rd gets -1
-      // For 4 players: 1st gets +1, 2nd gets +0.33, 3rd gets -0.33, 4th gets -1
-      const positionFactor = (n - 1 - 2 * i) / (n - 1);
-      changes.push(Math.round(baseChange * positionFactor));
+    // Calculate raw Elo changes based on expected vs actual rank
+    const rawChanges: { oderId: string; change: number }[] = [];
+
+    for (const player of players) {
+      const expectedRank = this.calculateExpectedRank(player.elo, allElos);
+
+      // Performance = expected rank - actual rank
+      // Positive = did better than expected (lower rank number is better)
+      // Negative = did worse than expected
+      const performance = expectedRank - player.actualRank;
+
+      // Scale performance to Elo change
+      // Max performance would be (n-1) if expected last but got first
+      // Normalize to [-1, 1] range, then multiply by base change
+      const maxPerformance = n - 1;
+      const normalizedPerformance = performance / maxPerformance;
+      const change = baseChange * normalizedPerformance;
+
+      rawChanges.push({ oderId: player.oderId, change });
     }
 
-    // Adjust for rounding errors to ensure zero-sum
-    const total = changes.reduce((sum, c) => sum + c, 0);
-    if (total !== 0) {
-      // Distribute the rounding error to middle players
-      const midIndex = Math.floor(n / 2);
-      changes[midIndex] -= total;
+    // Make it zero-sum by adjusting all changes
+    const totalChange = rawChanges.reduce((sum, r) => sum + r.change, 0);
+    const adjustment = totalChange / n;
+
+    for (const { oderId, change } of rawChanges) {
+      eloChanges.set(oderId, Math.round(change - adjustment));
     }
 
-    for (let i = 0; i < n; i++) {
-      eloChanges.set(sorted[i].oderId, changes[i]);
+    // Final adjustment for rounding errors
+    const finalTotal = Array.from(eloChanges.values()).reduce((sum, c) => sum + c, 0);
+    if (finalTotal !== 0) {
+      // Find player closest to 0 change and adjust them
+      let minAbsChange = Infinity;
+      let adjustPlayer = players[0].oderId;
+      for (const [oderId, change] of eloChanges) {
+        if (Math.abs(change) < minAbsChange) {
+          minAbsChange = Math.abs(change);
+          adjustPlayer = oderId;
+        }
+      }
+      eloChanges.set(adjustPlayer, eloChanges.get(adjustPlayer)! - finalTotal);
     }
 
     return eloChanges;
@@ -154,12 +194,19 @@ class OnlineEloService {
     // Determine if Elo changes should apply (need 2+ players)
     const applyEloChanges = guesses.length >= ONLINE_CONFIG.MIN_PLAYERS_FOR_ELO;
 
-    // Calculate zero-sum Elo changes for all players
-    const eloChangesMap = this.calculateZeroSumEloChanges(
+    // Fetch all player Elos for expected rank calculation
+    const playerElos = new Map<string, number>();
+    for (const guess of guessesWithScores) {
+      const { elo } = await this.getOrCreateElo(guess.userId);
+      playerElos.set(guess.userId, elo);
+    }
+
+    // Calculate zero-sum Elo changes based on expected vs actual rank
+    const eloChangesMap = this.calculateExpectedRankEloChanges(
       guessesWithScores.map(g => ({
         oderId: g.userId,
-        accuracyScore: g.accuracyScore,
-        rankPosition: (g as any).rankPosition
+        elo: playerElos.get(g.userId) || 1000,
+        actualRank: (g as any).rankPosition
       }))
     );
 
@@ -167,8 +214,8 @@ class OnlineEloService {
 
     // Process each guess
     for (const guess of guessesWithScores) {
-      // Get current Elo
-      const { elo: currentElo } = await this.getOrCreateElo(guess.userId);
+      // Get current Elo (already fetched above)
+      const currentElo = playerElos.get(guess.userId) || 1000;
 
       // Get zero-sum Elo change from pre-calculated map
       const eloChange = applyEloChanges
