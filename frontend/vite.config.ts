@@ -11,6 +11,13 @@ export default defineConfig({
         target: 'http://localhost:4000',
         changeOrigin: true
       }
+    },
+    // Reduce HMR connections - may help with Firefox file descriptor issues
+    hmr: {
+      // Use polling instead of websocket for more stability
+      // Uncomment if Firefox keeps crashing:
+      // protocol: 'ws',
+      // host: 'localhost',
     }
   }
 })

@@ -92,7 +92,8 @@ export const submitGuess = async (
       throw new ApiError(400, 'guessPercentage must be a number between 0 and 100');
     }
 
-    if (!actualWinRate || typeof actualWinRate !== 'number') {
+    // Note: actualWinRate can be 0, so don't use !actualWinRate check
+    if (actualWinRate === undefined || actualWinRate === null || typeof actualWinRate !== 'number') {
       throw new ApiError(400, 'actualWinRate is required and must be a number');
     }
 
