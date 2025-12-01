@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # Redis cache
   redis:
@@ -90,13 +88,13 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=shared-proxy-network"
-      - "traefik.http.routers.shared-proxy.pokewave-api.rule=Host(`pokewave.fysho.dev`) && (PathPrefix(`/api`) || Path(`/health`))"
-      - "traefik.http.routers.shared-proxy.pokewave-api.entrypoints=websecure"
-      - "traefik.http.routers.shared-proxy.pokewave-api.tls=true"
-      - "traefik.http.routers.shared-proxy.pokewave-api.tls.certresolver=letsencrypt"
-      - "traefik.http.services.shared-proxy.pokewave-api.loadbalancer.server.port=4000"
-      - "traefik.http.routers.shared-proxy.pokewave-api.service=shared-proxy.pokewave-api"
-      - "traefik.http.routers.shared-proxy.pokewave-api.priority=2"
+      - "traefik.http.routers.pokewave-api.rule=Host(`pokewave.fysho.dev`) && (PathPrefix(`/api`) || Path(`/health`))"
+      - "traefik.http.routers.pokewave-api.entrypoints=websecure"
+      - "traefik.http.routers.pokewave-api.tls=true"
+      - "traefik.http.routers.pokewave-api.tls.certresolver=letsencrypt"
+      - "traefik.http.services.pokewave-api.loadbalancer.server.port=4000"
+      - "traefik.http.routers.pokewave-api.service=pokewave-api"
+      - "traefik.http.routers.pokewave-api.priority=2"
 
   # Frontend
   frontend:
@@ -109,7 +107,7 @@ services:
         condition: service_healthy
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://localhost:80/"]
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:80/"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -124,13 +122,13 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=shared-proxy-network"
-      - "traefik.http.routers.shared-proxy.pokewave.rule=Host(`pokewave.fysho.dev`)"
-      - "traefik.http.routers.shared-proxy.pokewave.entrypoints=websecure"
-      - "traefik.http.routers.shared-proxy.pokewave.tls=true"
-      - "traefik.http.routers.shared-proxy.pokewave.tls.certresolver=letsencrypt"
-      - "traefik.http.services.shared-proxy.pokewave.loadbalancer.server.port=80"
-      - "traefik.http.routers.shared-proxy.pokewave.service=shared-proxy.pokewave"
-      - "traefik.http.routers.shared-proxy.pokewave.priority=1"
+      - "traefik.http.routers.pokewave.rule=Host(`pokewave.fysho.dev`)"
+      - "traefik.http.routers.pokewave.entrypoints=websecure"
+      - "traefik.http.routers.pokewave.tls=true"
+      - "traefik.http.routers.pokewave.tls.certresolver=letsencrypt"
+      - "traefik.http.services.pokewave.loadbalancer.server.port=80"
+      - "traefik.http.routers.pokewave.service=pokewave"
+      - "traefik.http.routers.pokewave.priority=1"
 
 networks:
   pokewave-network:
