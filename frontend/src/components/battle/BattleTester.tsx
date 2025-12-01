@@ -1,9 +1,9 @@
 import React from 'react';
-import { 
-  Box, 
-  Stack, 
-  Title, 
-  Text, 
+import {
+  Box,
+  Stack,
+  Title,
+  Text,
   ActionIcon,
   Collapse,
   Group,
@@ -11,21 +11,16 @@ import {
   Badge,
   Loader,
   ScrollArea,
-  Divider,
   Button,
   useMantineTheme,
   useMantineColorScheme
 } from '@mantine/core';
-import { 
-  IconChevronLeft, 
+import {
+  IconChevronLeft,
   IconChevronRight,
-  IconSwords,
-  IconHeart,
-  IconShield,
-  IconBolt,
-  IconTarget,
-  IconSkull
+  IconSwords
 } from '@tabler/icons-react';
+import BattleTurnDisplay, { BattleTurn } from './BattleTurnDisplay';
 
 interface BattleTesterProps {
   isExpanded: boolean;
@@ -37,28 +32,6 @@ interface BattleTesterProps {
   isSimulating: boolean;
   rightOffset?: number;
 }
-
-interface BattleTurn {
-  turn: number;
-  attacker: string;
-  defender: string;
-  move: string;
-  damage: number;
-  remainingHP: number;
-  critical: boolean;
-  effectiveness: 'super' | 'normal' | 'not very' | 'no';
-  missed?: boolean;
-  statusEffect?: string;
-  statusInflicted?: boolean;
-  healing?: number;
-  fainted?: boolean;
-  statChange?: {
-    stat: string;
-    stages: number;
-    type: 'boost' | 'unboost' | 'failed';
-  };
-}
-
 
 const BattleTester: React.FC<BattleTesterProps> = ({
   isExpanded,
@@ -73,138 +46,6 @@ const BattleTester: React.FC<BattleTesterProps> = ({
   const theme = useMantineTheme();
   const { colorScheme } = useMantineColorScheme();
   
-  // Debug logging
-  React.useEffect(() => {
-    console.log('BattleSimulation props:', {
-      isExpanded,
-      pokemon1,
-      pokemon2,
-      simulation,
-      isSimulating
-    });
-  }, [isExpanded, pokemon1, pokemon2, simulation, isSimulating]);
-  const getEffectivenessIcon = (effectiveness: string) => {
-    switch (effectiveness) {
-      case 'super':
-        return <IconBolt size={12} color="var(--mantine-color-orange-6)" />;
-      case 'not very':
-        return <IconShield size={12} color="var(--mantine-color-gray-6)" />;
-      case 'no':
-        return <IconTarget size={12} color="var(--mantine-color-gray-4)" />;
-      default:
-        return null;
-    }
-  };
-
-  const getEffectivenessText = (effectiveness: string) => {
-    switch (effectiveness) {
-      case 'super':
-        return 'Super effective!';
-      case 'not very':
-        return 'Not very effective...';
-      case 'no':
-        return 'No effect!';
-      default:
-        return '';
-    }
-  };
-
-  const getStatusEffectText = (status: string) => {
-    switch (status) {
-      case 'brn':
-        return 'burned';
-      case 'par':
-        return 'paralyzed';
-      case 'psn':
-        return 'poisoned';
-      case 'tox':
-        return 'badly poisoned';
-      case 'slp':
-        return 'fell asleep';
-      case 'frz':
-        return 'frozen';
-      case 'confusion':
-        return 'confused';
-      default:
-        return status;
-    }
-  };
-
-  const getStatusEffectColor = (status: string) => {
-    switch (status) {
-      case 'brn':
-      case 'burn':
-        return 'red';
-      case 'par':
-        return 'yellow';
-      case 'psn':
-      case 'tox':
-      case 'poison':
-        return 'violet';
-      case 'slp':
-        return 'indigo';
-      case 'frz':
-        return 'cyan';
-      case 'confusion':
-        return 'pink';
-      case 'sandstorm':
-        return 'orange';
-      case 'hail':
-        return 'blue';
-      case 'recoil':
-        return 'red';
-      case 'Life Orb':
-        return 'violet';
-      default:
-        return 'gray';
-    }
-  };
-
-  const getStatName = (stat: string) => {
-    switch (stat) {
-      case 'atk':
-        return 'Attack';
-      case 'def':
-        return 'Defense';
-      case 'spa':
-        return 'Special Attack';
-      case 'spd':
-        return 'Special Defense';
-      case 'spe':
-        return 'Speed';
-      case 'accuracy':
-        return 'Accuracy';
-      case 'evasion':
-        return 'Evasion';
-      default:
-        return stat;
-    }
-  };
-
-  const getStatChangeText = (statChange: { stat: string; stages: number; type: string }) => {
-    if (statChange.type === 'failed') {
-      if (statChange.stages > 0) {
-        return "stats can't go any higher!";
-      } else if (statChange.stages < 0) {
-        return "stats can't go any lower!";
-      }
-      return "stat change failed!";
-    }
-    
-    const statName = getStatName(statChange.stat);
-    const stages = Math.abs(statChange.stages);
-    const direction = statChange.stages > 0 ? 'rose' : 'fell';
-    
-    if (stages === 1) {
-      return `${statName} ${direction}!`;
-    } else if (stages === 2) {
-      return `${statName} ${direction} sharply!`;
-    } else if (stages >= 3) {
-      return `${statName} ${direction} drastically!`;
-    }
-    return `${statName} ${direction} by ${stages} stages!`;
-  };
-
   return (
     <Box
       style={{
@@ -338,9 +179,7 @@ const BattleTester: React.FC<BattleTesterProps> = ({
                       </Text>
                     </Group>
 
-                    <Divider />
-
-                    {/* Turn-by-turn breakdown */}
+                    {/* Turn-by-turn breakdown using shared component */}
                     <Box
                       style={{
                         border: `1px solid ${colorScheme === 'dark' ? theme.colors.dark[5] : theme.colors.gray[3]}`,
@@ -351,146 +190,14 @@ const BattleTester: React.FC<BattleTesterProps> = ({
                         overflowY: 'auto'
                       }}
                     >
-                        <Stack gap="xs">
-                        {simulation.turns?.map((turn: BattleTurn, index: number) => {
-                          // Check if this is the start of a new turn number
-                          const isNewTurn = index === 0 || turn.turn !== simulation.turns[index - 1].turn;
-                          
-                          return (
-                            <Box key={index}>
-                              {isNewTurn && index > 0 && (
-                                <>
-                                  <Box style={{ height: '8px' }} />
-                                  <Divider size="xs" label={`Turn ${turn.turn}`} labelPosition="center" />
-                                  <Box style={{ height: '8px' }} />
-                                </>
-                              )}
-                              <Card withBorder p="sm">
-                                <Stack gap="xs">
-                              <Group justify="space-between" align="center">
-                                <Text size="xs" fw={600} c="gray.7">
-                                  Turn {turn.turn}
-                                </Text>
-                                {turn.critical && (
-                                  <Badge size="xs" variant="filled" color="orange">
-                                    Critical!
-                                  </Badge>
-                                )}
-                              </Group>
-                              
-                              <Box>
-                                {/* Check if this is a stat change */}
-                                {turn.move === 'Stat Change' && turn.statChange ? (
-                                  <>
-                                    <Text component="span" size="xs" fw={500} tt="capitalize">
-                                      {turn.attacker}
-                                    </Text>
-                                    <Text component="span" size="xs">{"'s "}</Text>
-                                    <Text component="span" size="xs" fw={500} c={turn.statChange.stages > 0 ? 'green.6' : turn.statChange.stages < 0 ? 'red.6' : 'gray.6'}>
-                                      {getStatChangeText(turn.statChange)}
-                                    </Text>
-                                  </>
-                                ) : ['confusion', 'poison', 'burn', 'sandstorm', 'hail', 'recoil', 'Life Orb'].includes(turn.attacker) ? (
-                                  <>
-                                    <Text component="span" size="xs" fw={500} tt="capitalize">
-                                      {turn.defender}
-                                    </Text>
-                                    <Text component="span" size="xs">{' '}took{' '}</Text>
-                                    <Text component="span" size="xs" fw={500} c={getStatusEffectColor(turn.attacker)}>
-                                      {turn.damage} damage
-                                    </Text>
-                                    <Text component="span" size="xs">{' '}from{' '}</Text>
-                                    <Text component="span" size="xs" fw={500}>
-                                      {turn.attacker === 'confusion' ? 'confusion' : 
-                                       turn.attacker === 'recoil' ? 'recoil' :
-                                       turn.attacker === 'Life Orb' ? 'Life Orb' :
-                                       turn.attacker}
-                                    </Text>
-                                    <Text component="span" size="xs">{turn.attacker === 'confusion' && '!'}</Text>
-                                  </>
-                                ) : turn.move.startsWith("Can't move") ? (
-                                  <>
-                                    <Text component="span" size="xs" fw={500} tt="capitalize">
-                                      {turn.attacker}
-                                    </Text>
-                                    <Text component="span" size="xs" c="gray.6" fs="italic">
-                                      {' '}{turn.move.replace("Can't move", "couldn't move")}
-                                    </Text>
-                                  </>
-                                ) : (
-                                  <>
-                                    <Text component="span" size="xs" fw={500} tt="capitalize">
-                                      {turn.attacker}
-                                    </Text>
-                                    <Text component="span" size="xs">{' '}used{' '}</Text>
-                                    <Text component="span" size="xs" fw={500} tt="capitalize">
-                                      {turn.move}
-                                    </Text>
-                                    {turn.missed && (
-                                      <Text component="span" size="xs" c="gray.6" fs="italic">
-                                        {' '}but it missed!
-                                      </Text>
-                                    )}
-                                  </>
-                                )}
-                              </Box>
-                              
-                              {!turn.missed && turn.move !== 'Stat Change' && !['confusion', 'poison', 'burn', 'sandstorm', 'hail', 'recoil', 'Life Orb'].includes(turn.attacker) && (
-                                <Group gap="xs" align="center">
-                                  {turn.damage > 0 && (
-                                    <Text size="xs" c="red.6">
-                                      {turn.damage} damage
-                                    </Text>
-                                  )}
-                                  {turn.effectiveness !== 'normal' && (
-                                    <Group gap={2}>
-                                      {getEffectivenessIcon(turn.effectiveness)}
-                                      <Text size="xs" c="gray.6">
-                                        {getEffectivenessText(turn.effectiveness)}
-                                      </Text>
-                                    </Group>
-                                  )}
-                                </Group>
-                              )}
-                              
-                              {turn.statusInflicted && turn.statusEffect && (
-                                <Group gap="xs" align="center">
-                                  <Badge 
-                                    size="xs" 
-                                    variant="filled" 
-                                    color={getStatusEffectColor(turn.statusEffect)}
-                                  >
-                                    Status Effect
-                                  </Badge>
-                                  <Text size="xs" c="gray.7">
-                                    {turn.defender} was {getStatusEffectText(turn.statusEffect)}!
-                                  </Text>
-                                </Group>
-                              )}
-                              
-                              {/* Don't show HP line for stat changes */}
-                              {turn.move !== 'Stat Change' && (
-                                <Group gap="xs" align="center">
-                                  <IconHeart size={12} color="var(--mantine-color-red-6)" />
-                                  <Text size="xs" c="gray.7">
-                                    {turn.defender}: {turn.remainingHP} HP left
-                                  </Text>
-                                  {turn.remainingHP <= 0 && (
-                                    <Group gap={2}>
-                                      <IconSkull size={12} color="var(--mantine-color-gray-6)" />
-                                      <Text size="xs" c="gray.6">
-                                        Fainted!
-                                      </Text>
-                                    </Group>
-                                  )}
-                                </Group>
-                              )}
-                            </Stack>
-                          </Card>
-                            </Box>
-                          );
-                        })}
-                        </Stack>
+                      <BattleTurnDisplay
+                        turns={simulation.turns || []}
+                        pokemon1Name={pokemon1?.name}
+                        pokemon2Name={pokemon2?.name}
+                        pokemon1HP={simulation.pokemon1HP}
+                        pokemon2HP={simulation.pokemon2HP}
+                        showBattleStart={!!simulation.pokemon1HP && !!simulation.pokemon2HP}
+                      />
                     </Box>
                   </Stack>
                 </Card>
