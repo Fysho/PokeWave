@@ -1,6 +1,16 @@
 import React from 'react';
-import { Box, useMantineTheme } from '@mantine/core';
+import { Box, Tooltip, useMantineTheme } from '@mantine/core';
 import { getTypeColor } from '../../utils/typeColors';
+
+export interface PlayerGuessMarker {
+  userId: string;
+  username: string;
+  guess: number;
+  elo: number;
+  avatarPokemonId: number;
+  avatarSprite: string;
+  isCurrentUser?: boolean;
+}
 
 interface TypeColorSliderProps {
   value: number;
@@ -14,6 +24,10 @@ interface TypeColorSliderProps {
   correctValue?: number;
   showCorrectIndicator?: boolean;
   isCorrect?: boolean;
+  /** Player guess markers to show on the slider (for results phase) */
+  playerGuesses?: PlayerGuessMarker[];
+  /** Whether to show the player guess markers */
+  showPlayerGuesses?: boolean;
 }
 
 export const TypeColorSlider: React.FC<TypeColorSliderProps> = ({
@@ -28,6 +42,8 @@ export const TypeColorSlider: React.FC<TypeColorSliderProps> = ({
   correctValue,
   showCorrectIndicator = false,
   isCorrect = false,
+  playerGuesses = [],
+  showPlayerGuesses = false,
 }) => {
   const theme = useMantineTheme();
   
@@ -183,6 +199,84 @@ export const TypeColorSlider: React.FC<TypeColorSliderProps> = ({
             pointerEvents: 'none',
           }}
         />
+      )}
+
+      {/* Player Guess Markers - Show during results phase */}
+      {showPlayerGuesses && playerGuesses.length > 0 && (
+        <Box
+          style={{
+            position: 'absolute',
+            top: '-40px',
+            left: 0,
+            right: 0,
+            height: '36px',
+            pointerEvents: 'auto',
+          }}
+        >
+          {playerGuesses.map((player, index) => {
+            const guessPercentage = ((player.guess - min) / (max - min)) * 100;
+            const spriteUrl = player.avatarSprite ||
+              `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${player.avatarPokemonId}.png`;
+
+            return (
+              <Tooltip
+                key={player.userId || index}
+                label={
+                  <Box>
+                    <Box style={{ fontWeight: 600 }}>{player.username}</Box>
+                    <Box style={{ fontSize: '12px', opacity: 0.8 }}>
+                      Guess: {player.guess.toFixed(1)}% • Elo: {player.elo}
+                    </Box>
+                  </Box>
+                }
+                withArrow
+                position="top"
+              >
+                <Box
+                  style={{
+                    position: 'absolute',
+                    left: `${guessPercentage}%`,
+                    transform: 'translateX(-50%)',
+                    cursor: 'pointer',
+                    zIndex: player.isCurrentUser ? 10 : 1,
+                    transition: 'transform 0.2s ease',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = 'translateX(-50%) scale(1.2)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'translateX(-50%) scale(1)';
+                  }}
+                >
+                  <Box
+                    style={{
+                      width: '32px',
+                      height: '32px',
+                      borderRadius: '50%',
+                      overflow: 'hidden',
+                      border: player.isCurrentUser
+                        ? '3px solid var(--mantine-color-blue-5)'
+                        : '2px solid rgba(255,255,255,0.8)',
+                      boxShadow: '0 2px 4px rgba(0,0,0,0.3)',
+                      background: theme.white,
+                    }}
+                  >
+                    <img
+                      src={spriteUrl}
+                      alt={player.username}
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'contain',
+                        imageRendering: 'pixelated',
+                      }}
+                    />
+                  </Box>
+                </Box>
+              </Tooltip>
+            );
+          })}
+        </Box>
       )}
     </Box>
   );

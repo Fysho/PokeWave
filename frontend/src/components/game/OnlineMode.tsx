@@ -45,7 +45,7 @@ import { useOnlineStore } from '../../store/onlineStore';
 import { useAuthStore } from '../../store/authStore';
 import { useOnlineSocket } from '../../hooks/useOnlineSocket';
 import { FadeIn, SlideIn, BounceIn } from '../ui/transitions';
-import { TypeColorSlider } from '../ui/TypeColorSlider';
+import { TypeColorSlider, PlayerGuessMarker } from '../ui/TypeColorSlider';
 import { FullCard } from '../pokemon-cards';
 import {
   RANK_COLORS,
@@ -809,7 +809,7 @@ const OnlineMode: React.FC = () => {
                         </Stack>
                       </Group>
 
-                      <Box py="md">
+                      <Box py="md" pt={showResults && lastResults ? 50 : 'md'}>
                         <TypeColorSlider
                           value={hasSubmittedGuess ? (currentGuess || 50) : guessValue}
                           onChange={(value) => !hasSubmittedGuess && setGuessValue(value)}
@@ -825,6 +825,16 @@ const OnlineMode: React.FC = () => {
                             ? Math.abs(currentGuess - (roundState.actualWinPercent || 0)) <= 10
                             : false
                           }
+                          showPlayerGuesses={showResults && !!lastResults}
+                          playerGuesses={showResults && lastResults ? lastResults.results.map(r => ({
+                            userId: r.userId,
+                            username: r.username,
+                            guess: r.guess,
+                            elo: r.eloAfter,
+                            avatarPokemonId: r.avatarPokemonId,
+                            avatarSprite: r.avatarSprite,
+                            isCurrentUser: r.userId === user?.id
+                          })) : []}
                         />
                       </Box>
 
@@ -859,12 +869,57 @@ const OnlineMode: React.FC = () => {
                         <IconEye size={24} color="var(--mantine-color-gray-6)" />
                         <Text size="lg" fw={600} c="dimmed">Spectating</Text>
                       </Group>
-                      <Text c="dimmed" ta="center">
-                        {pendingModeChange === 'playing'
-                          ? 'You will join the game next round!'
-                          : 'Watch the battle unfold. Join the game to compete!'}
-                      </Text>
-                      {showResults && (
+                      {!showResults && (
+                        <Text c="dimmed" ta="center">
+                          {pendingModeChange === 'playing'
+                            ? 'You will join the game next round!'
+                            : 'Watch the battle unfold. Join the game to compete!'}
+                        </Text>
+                      )}
+                      {showResults && lastResults && (
+                        <>
+                          <BounceIn delay={0.3}>
+                            <Badge size="xl" variant="filled" color="teal">
+                              Result: {roundState.actualWinPercent?.toFixed(1)}% - {(100 - (roundState.actualWinPercent || 0)).toFixed(1)}%
+                            </Badge>
+                          </BounceIn>
+
+                          {/* Show slider with player guesses for spectators */}
+                          <Box w="100%" pt={50} pb="md">
+                            <Group justify="space-between" mb="sm">
+                              <Text size="sm" fw={600}>{roundState.pokemon1?.name}</Text>
+                              <Text size="sm" fw={600}>{roundState.pokemon2?.name}</Text>
+                            </Group>
+                            <TypeColorSlider
+                              value={roundState.actualWinPercent || 50}
+                              onChange={() => {}}
+                              leftType={roundState.pokemon1?.types?.[0] || 'normal'}
+                              rightType={roundState.pokemon2?.types?.[0] || 'normal'}
+                              min={0}
+                              max={100}
+                              step={1}
+                              disabled={true}
+                              correctValue={roundState.actualWinPercent}
+                              showCorrectIndicator={true}
+                              isCorrect={true}
+                              showPlayerGuesses={true}
+                              playerGuesses={lastResults.results.map(r => ({
+                                userId: r.userId,
+                                username: r.username,
+                                guess: r.guess,
+                                elo: r.eloAfter,
+                                avatarPokemonId: r.avatarPokemonId,
+                                avatarSprite: r.avatarSprite,
+                                isCurrentUser: false
+                              }))}
+                            />
+                          </Box>
+                          <Text size="xs" c="dimmed">
+                            Hover over player avatars to see their guesses
+                          </Text>
+                        </>
+                      )}
+                      {showResults && !lastResults && (
                         <BounceIn delay={0.3}>
                           <Badge size="xl" variant="filled" color="teal">
                             Result: {roundState.actualWinPercent?.toFixed(1)}% - {(100 - (roundState.actualWinPercent || 0)).toFixed(1)}%

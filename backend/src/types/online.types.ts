@@ -131,6 +131,8 @@ export interface OnlineGuessResult {
   eloChange: number;
   eloBefore: number;
   eloAfter: number;
+  avatarPokemonId: number;
+  avatarSprite: string;
 }
 
 export interface OnlineRoundResults {

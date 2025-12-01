@@ -198,10 +198,10 @@ class OnlineEloService {
         logger.error(`Failed to update results for user ${guess.userId}:`, error);
       }
 
-      // Get username for result
+      // Get username and avatar for result
       const user = await this.prisma.user.findUnique({
         where: { id: guess.userId },
-        select: { username: true }
+        select: { username: true, avatarPokemonId: true, avatarSprite: true }
       });
 
       results.push({
@@ -212,7 +212,9 @@ class OnlineEloService {
         rankPosition: (guess as any).rankPosition,
         eloChange,
         eloBefore: currentElo,
-        eloAfter: newElo
+        eloAfter: newElo,
+        avatarPokemonId: user?.avatarPokemonId || 25,
+        avatarSprite: user?.avatarSprite || ''
       });
     }
 
