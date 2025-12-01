@@ -10,7 +10,7 @@ import type {
   OnlinePlayer
 } from '../types/online';
 
-const WEBSOCKET_URL = import.meta.env.VITE_WS_URL || 'http://localhost:3001';
+const WEBSOCKET_URL = import.meta.env.VITE_WS_URL || 'http://localhost:4000';
 
 interface UseOnlineSocketOptions {
   autoConnect?: boolean;
