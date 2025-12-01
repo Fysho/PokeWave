@@ -49,6 +49,9 @@ interface BattleTurn {
     stages: number;
     type: 'boost' | 'unboost' | 'failed';
   };
+  // Recoil/self-damage from the move (shown on the same card)
+  recoilDamage?: number;
+  attackerRemainingHP?: number;
 }
 
 interface SingleBattleResult {
@@ -815,6 +818,7 @@ class PokemonShowdownService {
                   if ((source && (source.includes('[from]') || source.includes('confusion') || source.toLowerCase().includes('recoil') || source.includes('Recoil'))) || mightBeRecoil) {
                     let damageType = 'unknown';
                     let damageSource = '';
+                    let skipTurnEntry = false;
 
                     // Extract the move name from [from] move: MoveName format
                     const moveMatch = source.match(/\[from\]\s*move:\s*(.+)/i);
@@ -832,12 +836,32 @@ class PokemonShowdownService {
                       damageType = 'sandstorm';
                     } else if (source.includes('hail')) {
                       damageType = 'hail';
-                    } else if (source.toLowerCase().includes('recoil') || source.includes('Recoil')) {
-                      damageType = 'recoil';
+                    } else if (source.toLowerCase().includes('recoil') || source.includes('Recoil') || mightBeRecoil) {
+                      // Recoil damage - attach to the previous move card instead of creating a new one
+                      if (turnEvents.length > 0) {
+                        const lastTurn = turnEvents[turnEvents.length - 1];
+                        // Only attach if this is recoil to the attacker of the last move
+                        if (lastTurn.attacker === pokemonName) {
+                          lastTurn.recoilDamage = damage;
+                          lastTurn.attackerRemainingHP = current;
+                          pokemonHP[pokemonName].lastHP = current;
+                          skipTurnEntry = true;
+                        }
+                      }
+                      if (!skipTurnEntry) damageType = 'recoil';
                     } else if (source.includes('Life Orb')) {
-                      damageType = 'Life Orb';
-                    } else if (mightBeRecoil) {
-                      damageType = 'recoil';
+                      // Life Orb damage - attach to the previous move card
+                      if (turnEvents.length > 0) {
+                        const lastTurn = turnEvents[turnEvents.length - 1];
+                        if (lastTurn.attacker === pokemonName) {
+                          lastTurn.recoilDamage = damage;
+                          lastTurn.attackerRemainingHP = current;
+                          lastTurn.statusEffect = 'Life Orb';
+                          pokemonHP[pokemonName].lastHP = current;
+                          skipTurnEntry = true;
+                        }
+                      }
+                      if (!skipTurnEntry) damageType = 'Life Orb';
                     } else if (source.includes('Leech Seed')) {
                       damageType = 'Leech Seed';
                     } else if (source.includes('Curse')) {
@@ -855,34 +879,39 @@ class PokemonShowdownService {
                       damageType = damageSource;
                     }
 
-                    // Log when we have unknown damage type
-                    if (damageType === 'unknown') {
-                      logger.warn(`Battle Tester: Unknown damage type - source: "${source}"`);
+                    // Skip creating a new turn entry if we attached to existing
+                    if (skipTurnEntry) {
+                      // Already handled above
+                    } else {
+                      // Log when we have unknown damage type
+                      if (damageType === 'unknown') {
+                        logger.warn(`Battle Tester: Unknown damage type - source: "${source}"`);
+                      }
+
+                      // Format the display name
+                      const displayName = damageType;
+
+                      turnEvents.push({
+                        turn: currentTurn,
+                        attacker: damageType,
+                        defender: pokemonName,
+                        move: damageType === 'confusion' ? 'Confusion damage' :
+                              damageType === 'recoil' ? 'Recoil damage' :
+                              damageType === 'Life Orb' ? 'Life Orb damage' :
+                              damageType === 'poison' ? 'poison damage' :
+                              damageType === 'burn' ? 'burn damage' :
+                              `${displayName} damage`,
+                        damage: damage,
+                        remainingHP: current,
+                        critical: false,
+                        effectiveness: 'normal',
+                        statusEffect: damageType,
+                        statusInflicted: false
+                      });
+
+                      // Update HP tracking
+                      pokemonHP[pokemonName].lastHP = current;
                     }
-
-                    // Format the display name
-                    const displayName = damageType;
-
-                    turnEvents.push({
-                      turn: currentTurn,
-                      attacker: damageType,
-                      defender: pokemonName,
-                      move: damageType === 'confusion' ? 'Confusion damage' :
-                            damageType === 'recoil' ? 'Recoil damage' :
-                            damageType === 'Life Orb' ? 'Life Orb damage' :
-                            damageType === 'poison' ? 'poison damage' :
-                            damageType === 'burn' ? 'burn damage' :
-                            `${displayName} damage`,
-                      damage: damage,
-                      remainingHP: current,
-                      critical: false,
-                      effectiveness: 'normal',
-                      statusEffect: damageType,
-                      statusInflicted: false
-                    });
-                    
-                    // Update HP tracking
-                    pokemonHP[pokemonName].lastHP = current;
                   } else {
                     // Normal move damage - update the last turn
                     if (turnEvents.length > 0) {

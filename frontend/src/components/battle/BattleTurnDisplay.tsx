@@ -37,6 +37,9 @@ export interface BattleTurn {
     stages: number;
     type: 'boost' | 'unboost' | 'failed';
   };
+  // Recoil/self-damage from the move (shown on the same card)
+  recoilDamage?: number;
+  attackerRemainingHP?: number;
 }
 
 interface BattleTurnDisplayProps {
@@ -391,7 +394,7 @@ const BattleTurnDisplay: React.FC<BattleTurnDisplayProps> = ({
                 )}
 
                 {/* HP remaining - Don't show HP line for stat changes */}
-                {turn.move !== 'Stat Change' && (
+                {turn.move !== 'Stat Change' && !isResidualDamage(turn.attacker) && (
                   <Group gap="xs" align="center">
                     <IconHeart size={12} color="var(--mantine-color-red-6)" />
                     <Text size="xs" c="gray.7">
@@ -406,6 +409,31 @@ const BattleTurnDisplay: React.FC<BattleTurnDisplayProps> = ({
                       </Group>
                     )}
                   </Group>
+                )}
+
+                {/* Recoil/Life Orb damage to attacker - shown on same card */}
+                {turn.recoilDamage !== undefined && turn.recoilDamage > 0 && (
+                  <>
+                    <Group gap="xs" align="center">
+                      <Text size="xs" c={turn.statusEffect === 'Life Orb' ? 'violet.6' : 'orange.6'}>
+                        <Text component="span" tt="capitalize">{turn.attacker}</Text> took {turn.recoilDamage} damage from {turn.statusEffect === 'Life Orb' ? 'Life Orb' : 'recoil'}
+                      </Text>
+                    </Group>
+                    <Group gap="xs" align="center">
+                      <IconHeart size={12} color="var(--mantine-color-red-6)" />
+                      <Text size="xs" c="gray.7">
+                        {turn.attacker}: {turn.attackerRemainingHP} HP left
+                      </Text>
+                      {turn.attackerRemainingHP !== undefined && turn.attackerRemainingHP <= 0 && (
+                        <Group gap={2}>
+                          <IconSkull size={12} color="var(--mantine-color-gray-6)" />
+                          <Text size="xs" c="gray.6">
+                            Fainted!
+                          </Text>
+                        </Group>
+                      )}
+                    </Group>
+                  </>
                 )}
               </Stack>
             </Card>
