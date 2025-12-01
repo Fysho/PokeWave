@@ -45,7 +45,8 @@ import { useOnlineStore } from '../../store/onlineStore';
 import { useAuthStore } from '../../store/authStore';
 import { useOnlineSocket } from '../../hooks/useOnlineSocket';
 import { FadeIn, SlideIn, BounceIn } from '../ui/transitions';
-import { TypeColorSlider, PlayerGuessMarker } from '../ui/TypeColorSlider';
+import { TypeColorSlider } from '../ui/TypeColorSlider';
+import type { PlayerGuessMarker } from '../ui/TypeColorSlider';
 import { FullCard } from '../pokemon-cards';
 import {
   RANK_COLORS,

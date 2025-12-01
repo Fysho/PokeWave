@@ -2,7 +2,7 @@ import React from 'react';
 import { Box, Tooltip, useMantineTheme } from '@mantine/core';
 import { getTypeColor } from '../../utils/typeColors';
 
-interface PlayerGuessMarker {
+export interface PlayerGuessMarker {
   userId: string;
   username: string;
   guess: number;
@@ -11,8 +11,6 @@ interface PlayerGuessMarker {
   avatarSprite: string;
   isCurrentUser?: boolean;
 }
-
-export type { PlayerGuessMarker };
 
 interface TypeColorSliderProps {
   value: number;
