@@ -146,30 +146,49 @@ const MainLayout: React.FC<MainLayoutProps> = ({
         >
           <Group h="100%" px="md" justify="space-between">
             <Group>
-              <Group gap="sm">
-                <Box 
+              <Group
+                gap="sm"
+                style={{ cursor: 'pointer' }}
+                onClick={() => onTabChange('about')}
+              >
+                <Box
                   component="img"
-                  src="/PokeWaveLogo256.png" 
+                  src="/PokeWaveLogo256.png"
                   alt="PokeWave Logo"
                   h={40}
-                  style={{ 
-                    objectFit: 'contain',
-                    cursor: 'pointer'
-                  }}
-                  onClick={() => onTabChange('battle')}
-                />
-                <Text 
-                  size="xl"
-                  fw={700}
                   style={{
-                    backgroundImage: 'linear-gradient(135deg, var(--mantine-color-blue-6), var(--mantine-color-grape-6))',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                    backgroundClip: 'text'
+                    objectFit: 'contain'
                   }}
-                >
-                  PokeWave
-                </Text>
+                />
+                <Box style={{ position: 'relative' }}>
+                  <Text
+                    size="xl"
+                    fw={700}
+                    style={{
+                      backgroundImage: 'linear-gradient(135deg, var(--mantine-color-blue-6), var(--mantine-color-grape-6))',
+                      WebkitBackgroundClip: 'text',
+                      WebkitTextFillColor: 'transparent',
+                      backgroundClip: 'text'
+                    }}
+                  >
+                    PokeWave
+                  </Text>
+                  <Badge
+                    size="xs"
+                    variant="gradient"
+                    gradient={{ from: 'grape', to: 'blue', deg: 135 }}
+                    style={{
+                      position: 'absolute',
+                      bottom: -2,
+                      right: -24,
+                      fontSize: '8px',
+                      padding: '2px 4px',
+                      textTransform: 'lowercase'
+                    }}
+                  >
+                    beta
+                  </Badge>
+                </Box>
               </Group>
               
               {/* Navigation */}
