@@ -139,13 +139,24 @@ static async simulateSingleBattle(
 ```typescript
 {
   turn: number;               // Turn number (1, 2, 3...)
-  attacker: string;           // Name of attacking Pokemon
+  attacker: string;           // Name of attacking Pokemon (or damage source for residual damage)
   defender: string;           // Name of defending Pokemon
-  move: string;              // Move used (e.g., "Thunderbolt")
-  damage: number;            // Damage dealt
+  move: string;              // Move used (e.g., "Thunderbolt") or damage type (e.g., "Fire Spin damage")
+  damage: number;            // Damage dealt to defender
   remainingHP: number;       // Defender's remaining HP
   critical: boolean;         // Whether it was a critical hit
   effectiveness: 'super' | 'normal' | 'not very' | 'no';
+  missed?: boolean;          // Whether the move missed
+  statusEffect?: string;     // Status effect (brn, par, psn, slp, frz, confusion)
+  statusInflicted?: boolean; // Whether a status was inflicted this turn
+  fainted?: boolean;         // Whether the defender fainted
+  statChange?: {             // Stat changes from moves like Swords Dance, Growl
+    stat: string;            // atk, def, spa, spd, spe, accuracy, evasion
+    stages: number;          // +1 to +6 or -1 to -6
+    type: 'boost' | 'unboost' | 'failed';
+  };
+  recoilDamage?: number;     // Recoil/Life Orb damage to attacker (shown on same card)
+  attackerRemainingHP?: number; // Attacker's HP after recoil damage
 }
 ```
 
@@ -170,10 +181,46 @@ static async simulateSingleBattle(
 ### Event Parsing
 The backend parses Pokemon Showdown's battle log to extract:
 - Move usage (`|move|` events)
-- Damage dealt (`|-damage|` events)
+- Damage dealt (`|-damage|` events) with source detection
 - Critical hits (`|-crit|` events)
 - Type effectiveness (`|-supereffective|`, `|-resisted|`, `|-immune|`)
-- Battle end (`|win|` events)
+- Move misses (`|-miss|` events)
+- Status effects (`|-status|` events) - burn, paralysis, poison, sleep, freeze
+- Status condition start (`|-start|` events) - confusion, infatuation
+- Stat changes (`|-boost|`, `|-unboost|`, `|-fail|` events)
+- Healing (`|-heal|` events)
+- Fainting (`|faint|` events)
+- Battle end (`|win|`, `|tie|` events)
+
+### Residual Damage Types
+The Battle Tester properly identifies and displays various residual damage sources:
+
+**Recoil Moves** (shown on same card as the move):
+- Double-Edge, Submission, Take Down, Brave Bird, Flare Blitz
+- Head Smash, Wild Charge, Volt Tackle, Wood Hammer
+
+**Status Damage** (shown as separate cards):
+- Burn, Poison, Bad Poison (toxic)
+- Confusion self-hit
+
+**Weather Damage**:
+- Sandstorm, Hail
+
+**Trapping Moves** (residual damage over turns):
+- Fire Spin, Wrap, Bind, Whirlpool, Infestation
+- Magma Storm, Sand Tomb, Clamp, Snap Trap, Thunder Cage
+
+**Other Residual Damage**:
+- Leech Seed, Curse (ghost), Nightmare, Salt Cure
+- Stealth Rock, Spikes (entry hazards)
+- Life Orb (shown on same card as the move)
+
+### Display Consolidation
+To improve readability, related damage is consolidated onto single cards:
+- **Recoil damage**: Shown on the same card as the attack that caused it
+- **Life Orb damage**: Shown on the same card as the attack
+- **Regular damage**: "[Defender] took X damage" with HP remaining
+- **Residual damage**: "[Defender] took X damage from [Source]" with color-coded source name
 
 ## Key Implementation Files
 
@@ -203,14 +250,26 @@ The backend parses Pokemon Showdown's battle log to extract:
 ### Issue: Pokemon not found
 **Solution**: Backend validates Pokemon IDs against the Showdown Dex before simulation
 
+## Implemented Features
+
+The following enhancements have been implemented:
+
+1. ✅ **Detailed Battle Log**: Shows status conditions, stat changes, confusion, and more
+2. ✅ **Recoil/Life Orb Display**: Consolidated onto same card as the attack
+3. ✅ **Residual Damage Tracking**: Fire Spin, Wrap, Leech Seed, entry hazards, etc.
+4. ✅ **Color-Coded Damage Sources**: Each damage type has its own color
+5. ✅ **Stat Change Display**: Shows boost/unboost with stage counts
+6. ✅ **Miss Detection**: Shows "but it missed!" for failed attacks
+7. ✅ **Faint Detection**: Shows "Fainted!" when Pokemon reaches 0 HP
+
 ## Future Enhancements
 
-1. **Detailed Battle Log**: Show more events like status conditions, stat changes, abilities
-2. **Battle Replay**: Allow stepping through battles move by move
-3. **Battle Analysis**: Provide insights on type matchups and optimal moves
-4. **Custom Battles**: Let users set specific moves, abilities, and items
-5. **Battle History**: Store and review previous test battles
-6. **Performance Metrics**: Show detailed timing for each battle phase
+1. **Battle Replay**: Allow stepping through battles move by move
+2. **Battle Analysis**: Provide insights on type matchups and optimal moves
+3. **Custom Battles**: Let users set specific moves, abilities, and items
+4. **Battle History**: Store and review previous test battles
+5. **Performance Metrics**: Show detailed timing for each battle phase
+6. **Ability Triggers**: Display when abilities activate (Intimidate, Flash Fire, etc.)
 
 ## Testing the Battle Tester
 
