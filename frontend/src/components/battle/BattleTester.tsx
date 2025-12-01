@@ -20,7 +20,8 @@ import {
   IconChevronRight,
   IconSwords
 } from '@tabler/icons-react';
-import BattleTurnDisplay, { BattleTurn } from './BattleTurnDisplay';
+import BattleTurnDisplay from './BattleTurnDisplay';
+import type { BattleTurn } from './BattleTurnDisplay';
 
 interface BattleTesterProps {
   isExpanded: boolean;

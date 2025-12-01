@@ -32,7 +32,8 @@ import { IconSearch, IconRefresh, IconPlayerPlay, IconX, IconSwords } from '@tab
 import { getTypeColor } from '../../utils/typeColors';
 import ApiService from '../../services/api';
 import type { PokemonInstanceData } from '../../types/api';
-import BattleTurnDisplay, { BattleTurn } from '../battle/BattleTurnDisplay';
+import BattleTurnDisplay from '../battle/BattleTurnDisplay';
+import type { BattleTurn } from '../battle/BattleTurnDisplay';
 
 interface PokemonData {
   id: number;
