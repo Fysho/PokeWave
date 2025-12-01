@@ -248,30 +248,17 @@ export const TypeColorSlider: React.FC<TypeColorSliderProps> = ({
                     e.currentTarget.style.transform = 'translateX(-50%) scale(1)';
                   }}
                 >
-                  <Box
+                  <img
+                    src={spriteUrl}
+                    alt={player.username}
                     style={{
                       width: '32px',
                       height: '32px',
-                      borderRadius: '50%',
-                      overflow: 'hidden',
-                      border: player.isCurrentUser
-                        ? '3px solid var(--mantine-color-blue-5)'
-                        : '2px solid rgba(255,255,255,0.8)',
-                      boxShadow: '0 2px 4px rgba(0,0,0,0.3)',
-                      background: theme.white,
+                      objectFit: 'contain',
+                      imageRendering: 'pixelated',
+                      filter: 'drop-shadow(0 2px 2px rgba(0,0,0,0.3))',
                     }}
-                  >
-                    <img
-                      src={spriteUrl}
-                      alt={player.username}
-                      style={{
-                        width: '100%',
-                        height: '100%',
-                        objectFit: 'contain',
-                        imageRendering: 'pixelated',
-                      }}
-                    />
-                  </Box>
+                  />
                 </Box>
               </Tooltip>
             );
