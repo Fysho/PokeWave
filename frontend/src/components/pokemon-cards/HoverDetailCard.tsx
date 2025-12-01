@@ -110,11 +110,7 @@ export const HoverDetailCard: React.FC<HoverDetailCardProps> = ({
                   top={-4}
                   right={-4}
                   style={{
-                    cursor: 'help',
-                    backgroundColor: colorScheme === 'dark' ? 'var(--mantine-color-dark-5)' : 'var(--mantine-color-gray-1)',
-                    borderRadius: '4px',
-                    padding: '2px',
-                    border: colorScheme === 'dark' ? '1px solid var(--mantine-color-dark-4)' : '1px solid var(--mantine-color-gray-3)'
+                    cursor: 'help'
                   }}
                 >
                   <img
@@ -156,9 +152,9 @@ export const HoverDetailCard: React.FC<HoverDetailCardProps> = ({
               </Group>
             )}
 
-            {/* Ability */}
-            {pokemon.ability && (
-              <Group gap={4} mt={4}>
+            {/* Ability and Item */}
+            <Group gap={4} mt={4}>
+              {pokemon.ability && (
                 <Badge
                   variant="light"
                   size="xs"
@@ -167,8 +163,26 @@ export const HoverDetailCard: React.FC<HoverDetailCardProps> = ({
                 >
                   {pokemon.ability}
                 </Badge>
-              </Group>
-            )}
+              )}
+              {pokemon.item ? (
+                <Badge
+                  variant="outline"
+                  size="xs"
+                  color="teal"
+                  tt="capitalize"
+                >
+                  {formatItemName(pokemon.item)}
+                </Badge>
+              ) : (
+                <Badge
+                  variant="outline"
+                  size="xs"
+                  color="gray"
+                >
+                  No Item
+                </Badge>
+              )}
+            </Group>
           </Stack>
         </Group>
 
