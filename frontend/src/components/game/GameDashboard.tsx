@@ -6,6 +6,7 @@ import EndlessMode from './EndlessMode';
 import Pokedex from '../pokedex/Pokedex';
 import DailyMode from './DailyMode';
 import BattleLab from './BattleLab';
+import CardView from './CardView';
 import Profile from '../profile/Profile';
 import AdminDashboard from '../admin/AdminDashboard';
 import AboutPage from '../about/AboutPage';
@@ -267,6 +268,9 @@ const GameDashboard: React.FC = () => {
 
       case 'battlelab':
         return <BattleLab />;
+
+      case 'cardview':
+        return <CardView />;
 
       case 'profile':
         return <Profile />;

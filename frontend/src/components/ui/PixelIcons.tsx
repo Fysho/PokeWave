@@ -783,6 +783,39 @@ export const PixelAdmin: React.FC<PixelIconProps> = ({
   </svg>
 );
 
+export const PixelCards: React.FC<PixelIconProps> = ({
+  size = 16,
+  color = 'currentColor',
+  className,
+  style
+}) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 16 16"
+    fill={color}
+    className={className}
+    style={{ ...baseStyle, ...style }}
+  >
+    {/* Back card */}
+    <rect x="0" y="0" width="10" height="1" />
+    <rect x="0" y="1" width="1" height="12" />
+    <rect x="10" y="0" width="1" height="10" />
+    <rect x="0" y="13" width="8" height="1" />
+    {/* Front card */}
+    <rect x="5" y="3" width="10" height="1" />
+    <rect x="5" y="4" width="1" height="11" />
+    <rect x="15" y="3" width="1" height="12" />
+    <rect x="5" y="15" width="11" height="1" />
+    {/* Card content - Pokemon silhouette */}
+    <rect x="8" y="6" width="4" height="1" />
+    <rect x="7" y="7" width="6" height="3" />
+    <rect x="8" y="10" width="4" height="2" />
+    {/* Decorative lines */}
+    <rect x="7" y="13" width="6" height="1" />
+  </svg>
+);
+
 // Export all icons as a collection for easy mapping
 export const PixelIcons = {
   pokeball: PixelPokeball,
@@ -810,4 +843,5 @@ export const PixelIcons = {
   bolt: PixelBolt,
   flask: PixelFlask,
   admin: PixelAdmin,
+  cards: PixelCards,
 };

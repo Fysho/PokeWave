@@ -1,55 +1,63 @@
 import React from 'react';
-import { Card, Badge, Group, Text, Box, Stack, Title, useMantineTheme, useMantineColorScheme, Tooltip, ScrollArea } from '@mantine/core';
+import { Card, Badge, Group, Text, Box, Stack, Title, useMantineTheme, useMantineColorScheme, Tooltip } from '@mantine/core';
 import { getTypeColor } from '../../utils/typeColors';
-import { getTypeEffectiveness, formatTypeList } from '../../utils/typeEffectiveness';
-import { FullCard } from '../pokemon-cards';
+import { getTypeEffectiveness } from '../../utils/typeEffectiveness';
+import { FullCard } from './FullCard';
 
-interface CompactBattleCardProps {
+/**
+ * CompactCard - Condensed Pokemon display for grid layouts
+ *
+ * Used in: Daily Mode
+ * Shows: Smaller sprite (80-200px), name + level, shiny badge, types only
+ * Hover shows full FullCard in tooltip
+ */
+
+export interface CompactCardProps {
   pokemon: any;
-  showResults: boolean;
-  position: 'left' | 'right';
+  showResults?: boolean;
+  position?: 'left' | 'right';
   winPercentage?: number;
   guessPercentage?: number;
   totalBattles?: number;
 }
 
-export const CompactBattleCard: React.FC<CompactBattleCardProps> = ({
+export const CompactCard: React.FC<CompactCardProps> = ({
   pokemon,
-  showResults,
-  position,
+  showResults = false,
+  position = 'left',
   winPercentage,
   guessPercentage,
   totalBattles
 }) => {
   const theme = useMantineTheme();
   const { colorScheme } = useMantineColorScheme();
-  
-  const displayWinPercentage = winPercentage !== undefined 
-    ? winPercentage.toFixed(1) 
+
+  const displayWinPercentage = winPercentage !== undefined
+    ? winPercentage.toFixed(1)
     : showResults && totalBattles
-      ? ((pokemon.wins / totalBattles) * 100).toFixed(1) 
+      ? ((pokemon.wins / totalBattles) * 100).toFixed(1)
       : null;
 
   const calculateSpriteSize = () => {
     if (showResults) return 160;
-    
+
     const effectiveGuess = guessPercentage !== undefined ? guessPercentage : 50;
     const minSize = 80;
     const maxSize = 200;
-    
-    const scaleFactor = position === 'left' 
+
+    const scaleFactor = position === 'left'
       ? effectiveGuess / 100
       : (100 - effectiveGuess) / 100;
-    
+
     const size = minSize + (maxSize - minSize) * scaleFactor;
-    
+
     return Math.round(size);
   };
 
   const spriteSize = calculateSpriteSize();
 
   return (
-    <Card 
+    <Card
       h="100%"
       p="sm"
       className="relative transition-all duration-300"
@@ -58,19 +66,19 @@ export const CompactBattleCard: React.FC<CompactBattleCardProps> = ({
         {/* Header with shiny badge */}
         <Group justify="space-between" wrap="nowrap" h={20}>
           {pokemon.shiny ? (
-            <Badge size="xs" variant="dot" color="yellow">✨</Badge>
+            <Badge size="xs" variant="dot" color="yellow">Shiny</Badge>
           ) : (
             <Box w={20} />
           )}
           <Box w={16} />
         </Group>
-        
+
         <Title order={5} size="h6" fw={600} tt="capitalize" ta="center" lineClamp={1}>
           {pokemon.name} Lv.{pokemon.level}
         </Title>
 
         {/* Sprite */}
-        <Box 
+        <Box
           style={{
             height: '200px',
             display: 'flex',
@@ -106,8 +114,8 @@ export const CompactBattleCard: React.FC<CompactBattleCardProps> = ({
                 }
               }}
             >
-              <img 
-                src={pokemon.shiny && pokemon.sprites.shiny ? pokemon.sprites.shiny : pokemon.sprites.front} 
+              <img
+                src={pokemon.shiny && pokemon.sprites.shiny ? pokemon.sprites.shiny : pokemon.sprites.front}
                 alt={pokemon.name}
                 style={{
                   width: `${spriteSize}px`,
@@ -120,14 +128,14 @@ export const CompactBattleCard: React.FC<CompactBattleCardProps> = ({
               />
             </Tooltip>
           ) : (
-            <Box 
-              w={spriteSize} 
-              h={spriteSize} 
-              bg={colorScheme === 'dark' ? 'dark.6' : 'gray.1'} 
-              style={{ 
+            <Box
+              w={spriteSize}
+              h={spriteSize}
+              bg={colorScheme === 'dark' ? 'dark.6' : 'gray.1'}
+              style={{
                 borderRadius: '4px',
                 display: 'flex',
-                alignItems: 'center', 
+                alignItems: 'center',
                 justifyContent: 'center'
               }}
             >
@@ -152,9 +160,9 @@ export const CompactBattleCard: React.FC<CompactBattleCardProps> = ({
                           <Text size="xs">Weak to (2x):</Text>
                           <Group gap={4}>
                             {effectiveness.weakTo.map((weakType, idx) => (
-                              <Text 
-                                key={idx} 
-                                size="xs" 
+                              <Text
+                                key={idx}
+                                size="xs"
                                 c={getTypeColor(weakType)}
                                 tt="capitalize"
                                 span
@@ -170,9 +178,9 @@ export const CompactBattleCard: React.FC<CompactBattleCardProps> = ({
                           <Text size="xs">Resistant to (0.5x):</Text>
                           <Group gap={4}>
                             {effectiveness.resistantTo.map((resistType, idx) => (
-                              <Text 
-                                key={idx} 
-                                size="xs" 
+                              <Text
+                                key={idx}
+                                size="xs"
                                 c={getTypeColor(resistType)}
                                 tt="capitalize"
                                 span
@@ -188,9 +196,9 @@ export const CompactBattleCard: React.FC<CompactBattleCardProps> = ({
                           <Text size="xs">Immune to (0x):</Text>
                           <Group gap={4}>
                             {effectiveness.immuneTo.map((immuneType, idx) => (
-                              <Text 
-                                key={idx} 
-                                size="xs" 
+                              <Text
+                                key={idx}
+                                size="xs"
                                 c={getTypeColor(immuneType)}
                                 tt="capitalize"
                                 span
@@ -227,3 +235,5 @@ export const CompactBattleCard: React.FC<CompactBattleCardProps> = ({
     </Card>
   );
 };
+
+export default CompactCard;
