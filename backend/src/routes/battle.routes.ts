@@ -273,6 +273,40 @@ router.get('/hardest', getHardestBattles);
 // Get battle statistics by ID
 router.get('/stats/:battleId', getBattleStats);
 
+// Clear battle cache only (no regeneration)
+router.post('/cache-clear', devOnly, async (req, res, next) => {
+  try {
+    const { battleCacheService } = require('../services/battle-cache.service');
+    const { isDatabaseEnabled } = require('../config/database.config');
+
+    // Clear existing cache
+    await battleCacheService.clearCache();
+
+    // If database is enabled, also clear database records
+    if (isDatabaseEnabled()) {
+      const { prisma } = require('../lib/prisma');
+
+      // Delete all battles first (this will cascade delete related records)
+      const deletedBattles = await prisma.battle.deleteMany({});
+
+      // Delete all Pokemon instances
+      const deletedInstances = await prisma.pokemonInstance.deleteMany({});
+
+      res.json({
+        message: 'Battle cache and database cleared',
+        deletedBattles: deletedBattles.count,
+        deletedInstances: deletedInstances.count
+      });
+    } else {
+      res.json({
+        message: 'Battle cache cleared (no database)'
+      });
+    }
+  } catch (error) {
+    next(error);
+  }
+});
+
 // Refresh battle cache (development only)
 router.post('/cache-refresh', devOnly, async (req, res, next) => {
   try {

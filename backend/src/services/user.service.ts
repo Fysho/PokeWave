@@ -111,6 +111,11 @@ class UserService {
     return this.users.size;
   }
 
+  // Get all users (for admin purposes)
+  async getAllUsers(): Promise<User[]> {
+    return Array.from(this.users.values());
+  }
+
   // Update user's Pokedex data
   async updatePokedex(userId: string, pokedexData: PokedexData): Promise<User | null> {
     const user = this.users.get(userId);

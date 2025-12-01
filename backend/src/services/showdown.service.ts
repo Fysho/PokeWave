@@ -28,7 +28,6 @@ class ShowdownService {
     }
 
     const generation = pokemonInstanceStore.generation;
-    logger.info(`Simulating battle with Gen ${generation} mechanics`);
 
     return pokemonShowdownService.simulateMultipleBattles({
       pokemon1: pokemonInstanceStore.pokemonInstance1,

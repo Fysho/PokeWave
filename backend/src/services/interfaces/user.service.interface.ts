@@ -39,6 +39,7 @@ export interface IUserService {
   deleteUser(id: string): Promise<boolean>;
   getUserCount(): number;
   getUserCountAsync?(): Promise<number>;
+  getAllUsers(): Promise<User[]>;
   updatePokedex(userId: string, pokedexData: PokedexData): Promise<User | any | null>;
   updateGameStats(userId: string, gameStats: Partial<GameStats>): Promise<User | any | null>;
   unlockPokemon(userId: string, pokemonId: number, isShiny?: boolean): Promise<User | any | null>;

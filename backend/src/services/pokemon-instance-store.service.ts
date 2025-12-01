@@ -1,5 +1,4 @@
 import { PokemonInstanceData } from '../types/pokemon-instance.types';
-import logger from '../utils/logger';
 
 class PokemonInstanceStore {
 
@@ -12,7 +11,6 @@ class PokemonInstanceStore {
     this.pokemonInstance1 = p1;
     this.pokemonInstance2 = p2;
     this.generation = generation;
-    logger.info(`Pokemon instances stored for Gen ${generation} battle!`);
   }
 }
 

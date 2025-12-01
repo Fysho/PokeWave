@@ -89,7 +89,6 @@ class BattleTrackerService {
       });
 
       if (existingBattle) {
-        logger.info(`Found existing battle between ${pokemon1.name} and ${pokemon2.name}`);
         return existingBattle;
       }
 
@@ -108,7 +107,6 @@ class BattleTrackerService {
         }
       });
 
-      logger.info(`Created new battle record: ${pokemon1.name} vs ${pokemon2.name} (${Math.round(winRate * 100)}% win rate)`);
       return battle;
     } catch (error) {
       logger.error('Failed to save battle:', error);

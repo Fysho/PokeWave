@@ -98,7 +98,6 @@ class BattleCacheService {
    */
   private async generateAndCacheBattle(): Promise<CachedBattle> {
     try {
-      logger.info('Generating new battle for cache...');
 
       // Use the default generation from config
       const generation = BATTLE_CONFIG.DEFAULT_GENERATION;
@@ -158,7 +157,6 @@ class BattleCacheService {
             battleResult.executionTime
           );
           dbBattleId = dbBattle.id;
-          logger.info(`Saved battle to database with ID: ${dbBattleId}`);
         } catch (error) {
           logger.error('Failed to save battle to database:', error);
           // Continue without database tracking
@@ -186,7 +184,7 @@ class BattleCacheService {
       // Add to the list of cached battles
       await this.addBattleToList(cachedBattle.battleId);
       
-      logger.info(`Generated and cached battle ${cachedBattle.battleId} - ${pokemon1.name} vs ${pokemon2.name}`);
+      // Minimal logging - only log count at end of initialization
       
       return cachedBattle;
     } catch (error) {
@@ -254,13 +252,38 @@ class BattleCacheService {
   }
   
   /**
-   * Get cache statistics
+   * Get cache statistics with battle details
    */
-  async getCacheStats(): Promise<{ size: number; battles: string[] }> {
+  async getCacheStats(): Promise<{ size: number; battles: { id: string; summary: string }[] }> {
     const battleIds = await this.getCachedBattleIds();
+    const battleSummaries: { id: string; summary: string }[] = [];
+
+    for (const battleId of battleIds) {
+      const battle = await this.getCachedBattle(battleId);
+      if (battle) {
+        const p1Name = battle.pokemon1?.name || 'Unknown';
+        const p1Level = battle.pokemon1?.level || '?';
+        const p2Name = battle.pokemon2?.name || 'Unknown';
+        const p2Level = battle.pokemon2?.level || '?';
+        const p1Wins = battle.pokemon1Wins;
+        const p2Wins = battle.pokemon2Wins;
+        const winRate = battle.winRate?.toFixed(1) || '?';
+
+        battleSummaries.push({
+          id: battleId,
+          summary: `${p1Name} (L${p1Level}) vs ${p2Name} (L${p2Level}) - ${p1Wins}/${p2Wins} (${winRate}%)`
+        });
+      } else {
+        battleSummaries.push({
+          id: battleId,
+          summary: 'Unable to load battle details'
+        });
+      }
+    }
+
     return {
       size: battleIds.length,
-      battles: battleIds
+      battles: battleSummaries
     };
   }
 

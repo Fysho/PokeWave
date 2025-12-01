@@ -107,6 +107,18 @@ class UserServiceDB {
     return prisma.user.count();
   }
 
+  async getAllUsers(): Promise<UserWithRelations[]> {
+    return prisma.user.findMany({
+      include: {
+        pokedex: true,
+        gameStats: true
+      },
+      orderBy: {
+        createdAt: 'desc'
+      }
+    });
+  }
+
   async updatePokedex(userId: string, pokedexData: PokedexData): Promise<UserWithRelations | null> {
     try {
       // Convert array format to JSON object format for counts

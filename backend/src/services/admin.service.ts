@@ -155,34 +155,26 @@ class AdminService {
    */
   async getAllUsers(): Promise<UserOverview[]> {
     const userService = getUserService();
-    const users: UserOverview[] = [];
+    const allUsers = await userService.getAllUsers();
 
-    // Access the internal users map (in-memory service)
-    // For database version, this would be a proper query
-    if ('users' in userService) {
-      const usersMap = (userService as any).users as Map<string, any>;
-
-      for (const [, user] of usersMap.entries()) {
-        users.push({
-          id: user.id,
-          username: user.username,
-          createdAt: user.createdAt,
-          avatarPokemonId: user.avatarPokemonId,
-          avatarSprite: user.avatarSprite,
-          lastUpdated: user.lastUpdated,
-          stats: user.gameStats ? {
-            totalBattles: user.gameStats.totalBattles || 0,
-            totalCorrectGuesses: user.gameStats.totalCorrectGuesses || 0,
-            highestStreak: user.gameStats.highestStreak || 0,
-            endlessHighScore: user.gameStats.endlessHighScore || 0,
-          } : undefined,
-          pokedexCount: user.pokedex ? {
-            unlocked: user.pokedex.unlockedPokemon?.length || 0,
-            shiny: user.pokedex.unlockedShinyPokemon?.length || 0,
-          } : undefined,
-        });
-      }
-    }
+    const users: UserOverview[] = allUsers.map(user => ({
+      id: user.id,
+      username: user.username,
+      createdAt: typeof user.createdAt === 'string' ? user.createdAt : user.createdAt.toISOString(),
+      avatarPokemonId: user.avatarPokemonId,
+      avatarSprite: user.avatarSprite,
+      lastUpdated: user.lastUpdated || (user.updatedAt ? user.updatedAt.toISOString() : undefined),
+      stats: user.gameStats ? {
+        totalBattles: user.gameStats.totalBattles || 0,
+        totalCorrectGuesses: user.gameStats.totalCorrectGuesses || 0,
+        highestStreak: user.gameStats.highestStreak || 0,
+        endlessHighScore: user.gameStats.endlessHighScore || 0,
+      } : undefined,
+      pokedexCount: user.pokedex ? {
+        unlocked: user.pokedex.unlockedPokemon?.length || 0,
+        shiny: user.pokedex.unlockedShinyPokemon?.length || 0,
+      } : undefined,
+    }));
 
     // Sort by creation date (newest first)
     users.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
@@ -269,7 +261,8 @@ class AdminService {
    * Get Pokedex insights
    */
   async getPokedexInsights(): Promise<PokedexInsights> {
-    const users = await this.getAllUsers();
+    const userService = getUserService();
+    const allUsers = await userService.getAllUsers();
 
     // Track unlock counts per Pokemon
     const unlockCounts = new Map<number, number>();
@@ -283,33 +276,28 @@ class AdminService {
     const completionBuckets = { under25: 0, under50: 0, under75: 0, complete: 0 };
     const TOTAL_POKEMON = 1025;
 
-    for (const user of users) {
-      if (user.pokedexCount) {
+    for (const user of allUsers) {
+      if (user.pokedex) {
         usersWithPokedex++;
-        totalUnlocks += user.pokedexCount.unlocked;
-        totalShinyUnlocks += user.pokedexCount.shiny;
+        const unlockedCount = user.pokedex.unlockedPokemon?.length || 0;
+        const shinyCount = user.pokedex.unlockedShinyPokemon?.length || 0;
+        totalUnlocks += unlockedCount;
+        totalShinyUnlocks += shinyCount;
 
         // Calculate completion percentage
-        const completionPercent = (user.pokedexCount.unlocked / TOTAL_POKEMON) * 100;
+        const completionPercent = (unlockedCount / TOTAL_POKEMON) * 100;
         if (completionPercent >= 100) completionBuckets.complete++;
         else if (completionPercent >= 75) completionBuckets.under75++;
         else if (completionPercent >= 50) completionBuckets.under50++;
         else completionBuckets.under25++;
-      }
-    }
 
-    // Get detailed unlock counts from user data
-    const userService = getUserService();
-    if ('users' in userService) {
-      const usersMap = (userService as any).users as Map<string, any>;
-
-      for (const [, user] of usersMap.entries()) {
-        if (user.pokedex?.unlockedPokemon) {
+        // Track individual Pokemon unlock counts
+        if (user.pokedex.unlockedPokemon) {
           for (const pokemonId of user.pokedex.unlockedPokemon) {
             unlockCounts.set(pokemonId, (unlockCounts.get(pokemonId) || 0) + 1);
           }
         }
-        if (user.pokedex?.unlockedShinyPokemon) {
+        if (user.pokedex.unlockedShinyPokemon) {
           for (const pokemonId of user.pokedex.unlockedShinyPokemon) {
             shinyCounts.set(pokemonId, (shinyCounts.get(pokemonId) || 0) + 1);
           }
