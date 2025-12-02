@@ -88,6 +88,7 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=shared-proxy-network"
+      # API and health routes
       - "traefik.http.routers.pokewave-api.rule=Host(`pokewave.fysho.dev`) && (PathPrefix(`/api`) || Path(`/health`))"
       - "traefik.http.routers.pokewave-api.entrypoints=websecure"
       - "traefik.http.routers.pokewave-api.tls=true"
@@ -95,6 +96,13 @@ services:
       - "traefik.http.services.pokewave-api.loadbalancer.server.port=4000"
       - "traefik.http.routers.pokewave-api.service=pokewave-api"
       - "traefik.http.routers.pokewave-api.priority=2"
+      # WebSocket route for Online Mode
+      - "traefik.http.routers.pokewave-ws.rule=Host(`pokewave.fysho.dev`) && PathPrefix(`/ws`)"
+      - "traefik.http.routers.pokewave-ws.entrypoints=websecure"
+      - "traefik.http.routers.pokewave-ws.tls=true"
+      - "traefik.http.routers.pokewave-ws.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.pokewave-ws.service=pokewave-api"
+      - "traefik.http.routers.pokewave-ws.priority=3"
 
   # Frontend
   frontend:
