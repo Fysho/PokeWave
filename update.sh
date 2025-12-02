@@ -1,64 +1,64 @@
 #!/bin/bash
 
-echo "Updating PokeWave project..."
+# PokeWave Update Script
+# Pulls latest code, rebuilds containers, and restarts services
 
-# Check if Docker Compose is installed
-if ! command -v docker-compose &> /dev/null; then
-    echo "Error: docker-compose is not installed. Please install Docker Compose first."
-    exit 1
-fi
+set -e
 
-# Check if git is installed
-if ! command -v git &> /dev/null; then
-    echo "Error: git is not installed. Please install git first."
-    exit 1
-fi
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+NC='\033[0m'
 
-# Pull latest changes from git
-echo "Pulling latest changes from repository..."
-git pull origin main
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$SCRIPT_DIR"
 
-if [ $? -ne 0 ]; then
-    echo "❌ Failed to pull latest changes. Please check your git configuration."
-    exit 1
-fi
+echo -e "${YELLOW}Updating PokeWave...${NC}"
 
-# Rebuild Docker images
-echo "Rebuilding Docker images..."
-docker-compose -f docker-compose.prod.yml build --no-cache
-
-if [ $? -ne 0 ]; then
-    echo "❌ Failed to rebuild Docker images."
-    exit 1
-fi
-
-# Stop current services
-echo "Stopping current services..."
-docker-compose -f docker-compose.prod.yml down
-
-# Start updated services
-echo "Starting updated services..."
-docker-compose -f docker-compose.prod.yml up -d
-
-# Wait for services to be ready
-echo "Waiting for services to start..."
-sleep 5
-
-# Check if services are running
-if docker-compose -f docker-compose.prod.yml ps | grep -q "Up"; then
-    echo "✅ PokeWave updated and restarted successfully!"
-    echo ""
-    echo "Updated services are now running at:"
-    echo "  - Frontend: https://localhost (or your domain)"
-    echo "  - Backend API: https://localhost/api"
-    
-    # Clean up old images
-    echo ""
-    echo "Cleaning up old Docker images..."
-    docker image prune -f
-    
+# Load environment variables
+if [ -f .env.production ]; then
+    set -a
+    source .env.production
+    set +a
+    echo -e "${GREEN}✓ Loaded .env.production${NC}"
 else
-    echo "❌ Failed to start updated services. Check the logs with:"
-    echo "docker-compose -f docker-compose.prod.yml logs"
+    echo -e "${RED}✗ .env.production not found${NC}"
     exit 1
 fi
+
+# Pull latest changes
+echo -e "${YELLOW}Pulling latest changes...${NC}"
+git pull origin main
+if [ $? -ne 0 ]; then
+    echo -e "${RED}✗ Failed to pull latest changes${NC}"
+    exit 1
+fi
+echo -e "${GREEN}✓ Code updated${NC}"
+
+# Rebuild frontend
+echo -e "${YELLOW}Rebuilding frontend...${NC}"
+docker stop pokewave-frontend 2>/dev/null || true
+docker rm pokewave-frontend 2>/dev/null || true
+docker build --no-cache -t pokewave-frontend -f frontend/Dockerfile .
+echo -e "${GREEN}✓ Frontend rebuilt${NC}"
+
+# Rebuild backend
+echo -e "${YELLOW}Rebuilding backend...${NC}"
+docker stop pokewave-backend 2>/dev/null || true
+docker rm pokewave-backend 2>/dev/null || true
+docker build --no-cache -t pokewave-backend -f backend/Dockerfile .
+echo -e "${GREEN}✓ Backend rebuilt${NC}"
+
+# Start services using deploy.sh
+echo -e "${YELLOW}Starting services...${NC}"
+./deploy.sh start
+
+# Clean up old images
+echo -e "${YELLOW}Cleaning up old images...${NC}"
+docker image prune -f
+
+echo ""
+echo -e "${GREEN}✓ PokeWave updated successfully!${NC}"
+echo -e "  Frontend: https://pokewave.fysho.dev"
+echo -e "  API: https://pokewave.fysho.dev/api"
